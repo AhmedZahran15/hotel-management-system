@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('national_id')->unique();
-            $table->string('img_name')->defaulte("default.jpg");
+            $table->string('img_name')->default("default.jpg");
             $table->unsignedBigInteger('user_id')->nullable();
             $table->unsignedBigInteger('creator_user_id');
             $table->unsignedBigInteger('manager_id')->nullable();

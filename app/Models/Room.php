@@ -23,9 +23,9 @@ class Room extends Model
         return $this->belongsTo(User::class,"creator_user_id");
     }
     public function floor(){
-        return $this->belongsTo(Floor::class,"floor_number");
+        return $this->belongsTo(Floor::class,"floor_number","number");
     }
     public function reservations(){
-        return $this->hasMany(Reservation::class,"room_number");
+        return $this->hasMany(Reservation::class,"room_number","number");
     }
 }

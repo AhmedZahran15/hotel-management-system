@@ -46,7 +46,7 @@ class Role_PermissionSeeder extends Seeder
             'admin' => ['manage users', 'manage reservations', 'manage rooms', 'manage clients'],
             'manager' => ['view users', 'manage reservations', 'view rooms', 'approve clients'],
             'receptionist' => ['create reservations', 'edit reservations', 'delete reservations', 'view clients'],
-            'client' => ['view reservations'],
+            'client' => ['view reservations','create reservations'],
         ];
 
         // Assign permissions to roles
