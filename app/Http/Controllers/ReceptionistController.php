@@ -2,63 +2,97 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreReceptionistRequest;
+use App\Http\Requests\UpdateReceptionistRequest;
+use App\Models\Employee;
+use App\Models\User;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Hash;
+use Inertia\Inertia;
 
 class ReceptionistController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $receptionists = User::role('receptionist')->with('profile')->paginate(10);
+        // return Inertia::render('Receptionists/Index', ['receptionists' => $receptionists]);
+        return $receptionists;
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        //
+        // return Inertia::render('Receptionists/Create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(StoreReceptionistRequest $request): RedirectResponse
     {
-        //
+        $data = $request->validated();
+
+        //create user first
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+            'user_type' => 'employee',
+            'creator_user_id' => auth()->id(),
+        ]);
+
+        //assgin role to user
+        $user->assignRole('receptionist');
+
+        //create the associated profile with the user
+        $user->profile()->create([
+            'name' => $data['name'],
+            'national_id' => $data['national_id'],
+            'img_name' => $data['avatar_image'] ?? 'default.jpg',
+            'creator_user_id' => auth()->id(),
+        ]);
+
+        return redirect()->route('receptionists.index')
+        ->with('success', 'Receptionist created successfully.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function show(User $receptionist)
     {
-        //
+        // return Inertia::render('Receptionists/Show', ['receptionist' => $receptionist->load('profile')]);
+        return $receptionist->load('profile');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function edit(User $receptionist)
     {
-        //
+        // return Inertia::render('Receptionists/Edit', ['receptionist' => $receptionist->load('profile')]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function update(UpdateReceptionistRequest $request, User $receptionist): RedirectResponse
     {
-        //
+        $data = $request->validated();
+
+        //update user
+        $receptionist->update([
+            'name'  => $data['name'],
+            'email' => $data['email'],
+        ]);
+
+        //update password if it is not empty
+        if (!empty($data['password'])) {
+            $receptionist->update(['password' => Hash::make($data['password'])]);
+        }
+
+        //update the associated profile with the user
+        $receptionist->profile()->update([
+            'name'        => $data['name'],
+            'national_id' => $data['national_id'],
+            'img_name'    => $data['avatar_image'] ?? $receptionist->profile->img_name,
+        ]);
+
+        return redirect()->route('receptionists.index')
+        ->with('success', 'Receptionist updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy(User $receptionist): RedirectResponse
     {
-        //
+        $receptionist->delete();
+        return redirect()->route('receptionists.index')
+        ->with('success', 'Receptionist deleted successfully.');
     }
 }

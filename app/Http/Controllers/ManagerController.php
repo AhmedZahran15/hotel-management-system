@@ -56,7 +56,7 @@ class ManagerController extends Controller
     public function show(User $manager)
     {
         // return Inertia::render('Managers/Show', ['manager' => $manager ->load('profile')]);
-        return $manager;
+        return $manager->load('profile');
     }
 
     //will be tested later
