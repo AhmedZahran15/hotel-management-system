@@ -6,6 +6,8 @@ use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\Employee;
 use App\Models\Client;
+use App\Models\Floor;
+use App\Models\Room;
 use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
@@ -50,5 +52,11 @@ class DatabaseSeeder extends Seeder
                 'user_id' => $user->id,
             ]);
         });
+
+        // Create 10 floors
+        Floor::factory(10)->create();
+        
+        // Create 100 rooms
+        Room::factory(100)->create();
     }
 }
