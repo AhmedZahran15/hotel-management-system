@@ -11,6 +11,7 @@ class Client extends Model
     use SoftDeletes,HasFactory;
     protected $fillable = [
         "name",
+        "img_name",
         "country",
         "gender",
         "approved_by",
