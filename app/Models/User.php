@@ -6,11 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable,HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -21,6 +22,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        "creator_user_id",
+        "user_type  "
     ];
 
     /**
@@ -45,4 +48,27 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function profile()
+    {
+        return $this->user_type === 'client'
+            ? $this->hasOne(Client::class, 'user_id')
+            : $this->hasOne(Employee::class, 'user_id');
+    }
+    public function createdEmployees(){
+        return $this->hasMany(Employee::class,"creator_user_id");
+    }
+    public function floors(){
+        return $this->hasMany(Floor::class,"creator_user_id");
+    }
+    public function rooms(){
+        return $this->hasMany(Room::class,"creator_user_id");
+    }
+    public function createdUsers(){
+        return $this->hasMany(User::class,"creator_user_id");
+    }
+    public function approvedClients(){
+        return $this->hasMany(Client::class,"approved_by");
+    }
+
+
 }
