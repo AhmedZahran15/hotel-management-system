@@ -1,0 +1,38 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('rooms', function (Blueprint $table) {
+            $table->unsignedInteger("number")->unique();
+            $table->unsignedInteger("capacity");
+            $table->enum("state", ["available","occupied","being_reserved","maintenance"]);
+            $table->unsignedBigInteger('floor_number');
+            $table->unsignedBigInteger("creator_user_id");
+            $table->softDeletes();
+            $table->timestamps();
+
+            $table->primary(["number","floor_number"]);
+
+            $table->foreign('floor_number')->references('number')->on('floors')->onDelete('cascade');
+            $table->foreign("creator_user_id")->references("id")->on("users");
+
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('rooms');
+    }
+};
