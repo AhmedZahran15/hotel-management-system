@@ -23,8 +23,10 @@ return new class extends Migration
             $table->softDeletes();
 
         });
-        DB::statement("ALTER TABLE floors AUTO_INCREMENT = 1000;");
-
+        if (DB::getDriverName() !== 'sqlite') 
+        { 
+            DB::statement("ALTER TABLE floors AUTO_INCREMENT = 1000;"); 
+        }
     }
 
     /**
