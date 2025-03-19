@@ -16,16 +16,16 @@ return new class extends Migration
             $table->bigIncrements("number");
             $table->string("name");
             $table->unsignedBigInteger("creator_user_id");
+            $table->softDeletes();
             $table->timestamps();
 
             $table->foreign("creator_user_id")->references("id")->on("users");
 
-            $table->softDeletes();
 
         });
-        if (DB::getDriverName() !== 'sqlite') 
-        { 
-            DB::statement("ALTER TABLE floors AUTO_INCREMENT = 1000;"); 
+        if (DB::getDriverName() !== 'sqlite')
+        {
+            DB::statement("ALTER TABLE floors AUTO_INCREMENT = 1000;");
         }
     }
 

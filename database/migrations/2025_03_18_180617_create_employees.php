@@ -19,14 +19,13 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id')->nullable();
             $table->unsignedBigInteger('creator_user_id');
             $table->unsignedBigInteger('manager_id')->nullable();
-
+            $table->softDeletes();
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users'); // is a
             $table->foreign('creator_user_id')->references('id')->on('users'); //created by
             $table->foreign('manager_id')->references('id')->on('employees');
 
-            $table->softDeletes();
         });
     }
 

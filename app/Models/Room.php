@@ -4,18 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Room extends Model
 {
-    use SoftDeletes;
+    /** @use HasFactory<\Database\Factories\RoomFactory> */
+    use HasFactory,SoftDeletes;
 
     protected $fillable = [
         "number",
         "capacity",
-        "status",
+        "state",
         "floor_number",
         "creator_user_id",
-
     ];
 
     public function creatorUser(){
