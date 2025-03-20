@@ -38,7 +38,10 @@ class Role_PermissionSeeder extends Seeder
 
         // Create permissions
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+            Permission::firstOrCreate([
+                'name' => $permission,
+                'guard_name' => 'web',
+            ]);
         }
 
         // Define roles
@@ -46,12 +49,15 @@ class Role_PermissionSeeder extends Seeder
             'admin' => ['manage users', 'manage reservations', 'manage rooms', 'manage clients'],
             'manager' => ['view users', 'manage reservations', 'view rooms', 'approve clients'],
             'receptionist' => ['create reservations', 'edit reservations', 'delete reservations', 'view clients'],
-            'client' => ['view reservations'],
+            'client' => ['view reservations','create reservations'],
         ];
 
         // Assign permissions to roles
         foreach ($roles as $roleName => $rolePermissions) {
-            $role = Role::firstOrCreate(['name' => $roleName]);
+            $role = Role::firstOrCreate([
+                'name' => $roleName,
+                'guard_name' => 'web',
+        ]);
 
             foreach ($rolePermissions as $permissionName) {
                 $permission = Permission::where('name', $permissionName)->first();

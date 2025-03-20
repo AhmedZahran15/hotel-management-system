@@ -23,7 +23,7 @@ class RoomFactory extends Factory
             "capacity" => fake()->numberBetween(1, 5),
             "state" => fake()->randomElement(['available', 'maintenance']),
             "floor_number" => Floor::inRandomOrder()->first()->number,
-            "creator_user_id" => User::role(['manager', 'receptionist'])->inRandomOrder()->value('id') ?? 1,
+            "creator_user_id" => User::role(['manager', 'admin'])->inRandomOrder()->value('id') ?? 1,
         ];
     }
 }

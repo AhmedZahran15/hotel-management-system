@@ -74,6 +74,7 @@ class UserSeeder extends Seeder
                 $user->assignRole("client");
                 Client::create([
                     "name"=>$user->name,
+                    "img_name"=>"default.jpg",
                     "country"=> fake()->country,
                     "gender"=> fake()->randomElement(["male","female"]),
                     "approved_by"=>fake()->randomElement([
