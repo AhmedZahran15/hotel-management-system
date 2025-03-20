@@ -21,12 +21,6 @@ class DatabaseSeeder extends Seeder
         // Role::firstOrCreate(['name' => 'client']);
 
         // Create an admin user
-        $admin = User::factory()->admin()->create([
-            'name'  => 'Admin User',
-            'email' => 'admin@example.com',
-        ]);
-        $admin->assignRole('admin');
-
         $this->call(Role_PermissionSeeder::class);
         $this->call(AdminSeeder::class);
         $this->call(UserSeeder::class);
