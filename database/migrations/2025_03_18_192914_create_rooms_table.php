@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('rooms', function (Blueprint $table) {
             $table->unsignedInteger("number")->unique();
             $table->unsignedInteger("capacity");
+            $table->unsignedInteger('room_price');// will be in cents any way so no need to be double
             $table->enum("state", ["available","occupied","being_reserved","maintenance"]);
             $table->unsignedBigInteger('floor_number');
             $table->unsignedBigInteger("creator_user_id");

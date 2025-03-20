@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Floor extends Model
 {
 
-    /** @use HasFactory<\Database\Factories\FloorFactory> */
+    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, SoftDeletes;
     protected $fillable= [
         "name",
