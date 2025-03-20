@@ -10,11 +10,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
+use Inertia\Response;
+
 
 class ManagerController extends Controller
 {
     //✅ 
-    public function index()
+    public function index() :Response
     {
         $managers=User::role('manager')->with('profile')->paginate(10);
         // return Inertia::render('Managers/Index', ['managers' => $managers]);
