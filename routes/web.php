@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\ReceptionistController;
@@ -20,6 +21,10 @@ Route::middleware(['auth','role:admin'])->group(function(){
     Route::resource('managers', ManagerController::class);
     Route::resource('receptionists', ReceptionistController::class);
     Route::resource('clients', ClientController::class);
+
+    //ban and unban receptionist
+    Route::post('receptionists/{receptionist}/ban', [AdminUserController::class, 'ban'])->name('receptionists.ban');
+    Route::post('receptionists/{receptionist}/unban', [AdminUserController::class, 'unban'])->name('receptionists.unban');
 });
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
