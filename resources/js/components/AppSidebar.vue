@@ -14,6 +14,21 @@ const mainNavItems: NavItem[] = [
         href: '/dashboard',
         icon: LayoutGrid,
     },
+    { 
+        title: 'Manage Managers', 
+        href: '/manage-managers', 
+        icon: LayoutGrid, 
+    },
+    { 
+        title: 'Manage Receptionists', 
+        href: '/manage-receptionists', 
+        icon: LayoutGrid, 
+    },
+    { 
+        title: 'Manage Clients', 
+        href: '/manage-clients', 
+        icon: LayoutGrid, 
+    },
 ];
 
 const footerNavItems: NavItem[] = [

@@ -7,6 +7,7 @@ use App\Http\Controllers\ReceptionistController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+
 Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
@@ -25,6 +26,18 @@ Route::middleware(['auth','role:admin'])->group(function(){
     //ban and unban receptionist
     Route::post('receptionists/{receptionist}/ban', [AdminUserController::class, 'ban'])->name('receptionists.ban');
     Route::post('receptionists/{receptionist}/unban', [AdminUserController::class, 'unban'])->name('receptionists.unban');
+});
+//test routes for ui
+Route::get('/manage-managers', function () {
+    return Inertia::render('Admin/ManageManagers');
+});
+
+Route::get('/manage-receptionists', function () {
+    return Inertia::render('Admin/ManageReceptionists');
+});
+
+Route::get('/manage-clients', function () {
+    return Inertia::render('Admin/ManageClients');
 });
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

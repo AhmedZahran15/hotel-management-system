@@ -19,8 +19,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->unsignedBigInteger('creator_user_id')->nullable();
-            //added admin to the roles
-            $table->enum('user_type', ['admin','client','employee'])->default('client');
+            $table->enum('user_type', ['user','client','employee'])->default('client');
             $table->rememberToken();
             $table->softDeletes();
             $table->timestamps();

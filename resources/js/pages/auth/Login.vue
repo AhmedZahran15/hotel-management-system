@@ -1,30 +1,58 @@
 <script setup lang="ts">
-import InputError from '@/components/InputError.vue';
 import TextLink from '@/components/TextLink.vue';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import AuthBase from '@/layouts/AuthLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
-import { LoaderCircle } from 'lucide-vue-next';
-
+import { Head, router, usePage } from '@inertiajs/vue3'; // Add usePage import
+import { toTypedSchema } from '@vee-validate/zod';
+import { AlertCircle } from 'lucide-vue-next';
+import { useForm } from 'vee-validate';
+import { computed, ref } from 'vue'; // Add computed import
+import { z } from 'zod';
 defineProps<{
     status?: string;
     canResetPassword: boolean;
 }>();
 
-const form = useForm({
-    email: '',
-    password: '',
-    remember: false,
+// Get page from Inertia to access errors
+const page = usePage();
+const errors = computed(() => page.props.errors);
+
+// Define validation schema with zod
+const validationSchema = toTypedSchema(
+    z.object({
+        email: z.string().email('Invalid email address'),
+        password: z.string().min(1, 'Password is required').min(6, 'Password must be at least 6 characters long'),
+        remember: z.boolean().default(false),
+    }),
+);
+
+// Use vee-validate's useForm
+const { handleSubmit, isFieldDirty, isSubmitting } = useForm({
+    validationSchema,
+    initialValues: {
+        email: '',
+        password: '',
+        remember: false,
+    },
 });
 
-const submit = () => {
-    form.post(route('login'), {
-        onFinish: () => form.reset('password'),
+// Track Inertia form submission state
+const isProcessing = ref(false);
+
+// Submit handler
+const onSubmit = handleSubmit((values) => {
+    isProcessing.value = true;
+    router.post(route('login'), values, {
+        onFinish: () => {
+            values.password = '';
+            isProcessing.value = false;
+        },
     });
-};
+});
 </script>
 
 <template>
@@ -35,52 +63,78 @@ const submit = () => {
             {{ status }}
         </div>
 
-        <form @submit.prevent="submit" class="flex flex-col gap-6">
+        <Alert v-if="Object.keys(errors).length > 0" variant="destructive" class="mb-4">
+            <AlertCircle class="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+                <ul class="list-disc pl-4">
+                    <li v-for="(error, key) in errors" :key="key">{{ error }}</li>
+                </ul>
+            </AlertDescription>
+        </Alert>
+
+        <form @submit="onSubmit" class="flex flex-col gap-6">
             <div class="grid gap-6">
-                <div class="grid gap-2">
-                    <Label for="email">Email address</Label>
-                    <Input
-                        id="email"
-                        type="email"
-                        required
-                        autofocus
-                        :tabindex="1"
-                        autocomplete="email"
-                        v-model="form.email"
-                        placeholder="email@example.com"
-                    />
-                    <InputError :message="form.errors.email" />
-                </div>
+                <FormField name="email" v-slot="{ field }" :validate-on-blur="!isFieldDirty">
+                    <FormItem>
+                        <FormLabel for="email">Email address</FormLabel>
+                        <FormControl>
+                            <Input
+                                id="email"
+                                type="email"
+                                autofocus
+                                :tabindex="1"
+                                autocomplete="email"
+                                placeholder="email@example.com"
+                                v-bind="field"
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                </FormField>
 
-                <div class="grid gap-2">
-                    <div class="flex items-center justify-between">
-                        <Label for="password">Password</Label>
-                        <TextLink v-if="canResetPassword" :href="route('password.request')" class="text-sm" :tabindex="5">
-                            Forgot password?
-                        </TextLink>
-                    </div>
-                    <Input
-                        id="password"
-                        type="password"
-                        required
-                        :tabindex="2"
-                        autocomplete="current-password"
-                        v-model="form.password"
-                        placeholder="Password"
-                    />
-                    <InputError :message="form.errors.password" />
-                </div>
+                <FormField name="password" v-slot="{ field }" :validate-on-blur="!isFieldDirty">
+                    <FormItem>
+                        <div class="flex items-center justify-between">
+                            <FormLabel for="password">Password</FormLabel>
+                            <TextLink v-if="canResetPassword" :href="route('password.request')" class="text-sm" :tabindex="5">
+                                Forgot password?
+                            </TextLink>
+                        </div>
+                        <FormControl>
+                            <Input
+                                id="password"
+                                type="password"
+                                :tabindex="2"
+                                autocomplete="current-password"
+                                placeholder="Password"
+                                v-bind="field"
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                </FormField>
 
-                <div class="flex items-center justify-between" :tabindex="3">
-                    <Label for="remember" class="flex items-center space-x-3">
-                        <Checkbox id="remember" v-model:checked="form.remember" :tabindex="4" />
-                        <span>Remember me</span>
-                    </Label>
-                </div>
+                <FormField name="remember" v-slot="{ value, handleChange }">
+                    <FormItem class="flex items-center gap-2">
+                        <FormControl class="">
+                            <Checkbox :tabindex="3" :checked="value" @update:checked="(checked) => handleChange(checked)" />
+                        </FormControl>
+                        <FormLabel class="!my-auto cursor-pointer">Remember me</FormLabel>
+                        <FormMessage />
+                    </FormItem>
+                </FormField>
 
-                <Button type="submit" class="mt-4 w-full" :tabindex="4" :disabled="form.processing">
-                    <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
-                    Log in
+                <Button type="submit" class="mt-4 flex w-full gap-1" :tabindex="4" :disabled="isSubmitting || isProcessing">
+                    <svg v-if="isSubmitting || isProcessing" class="h-6 w-6 animate-spin" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                        <path
+                            class="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                    </svg>
+                    <span>Log in</span>
                 </Button>
             </div>
 
