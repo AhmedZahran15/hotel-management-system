@@ -10,10 +10,13 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Cog\Contracts\Ban\Bannable as BannableInterface;
 use Cog\Laravel\Ban\Traits\Bannable;
-class User extends Authenticatable implements BannableInterface
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+
+class User extends Authenticatable implements BannableInterface, HasMedia
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use Bannable, HasFactory, Notifiable,HasRoles;
+    use Bannable, HasFactory, Notifiable, HasRoles, InteractsWithMedia;
 
     /**
      * The attributes that are mass assignable.
@@ -24,8 +27,10 @@ class User extends Authenticatable implements BannableInterface
         'name',
         'email',
         'password',
-        "creator_user_id",
-        "user_type  "
+        'gender',
+        'country',
+        'creator_user_id',
+        'user_type'
     ];
 
     /**
@@ -37,6 +42,17 @@ class User extends Authenticatable implements BannableInterface
         'password',
         'remember_token',
     ];
+
+    /**
+     * Register media collections
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('profile_picture')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/jpg'])
+            ->useFallbackUrl(asset('default-profile-picture.jpg'));
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -56,20 +72,25 @@ class User extends Authenticatable implements BannableInterface
             ? $this->hasOne(Client::class, 'user_id')
             : $this->hasOne(Employee::class, 'user_id');
     }
-    public function createdEmployees(){
-        return $this->hasMany(Employee::class,"creator_user_id");
+    public function createdEmployees()
+    {
+        return $this->hasMany(Employee::class, "creator_user_id");
     }
-    public function floors(){
-        return $this->hasMany(Floor::class,"creator_user_id");
+    public function floors()
+    {
+        return $this->hasMany(Floor::class, "creator_user_id");
     }
-    public function rooms(){
-        return $this->hasMany(Room::class,"creator_user_id");
+    public function rooms()
+    {
+        return $this->hasMany(Room::class, "creator_user_id");
     }
-    public function createdUsers(){
-        return $this->hasMany(User::class,"creator_user_id");
+    public function createdUsers()
+    {
+        return $this->hasMany(User::class, "creator_user_id");
     }
-    public function approvedClients(){
-        return $this->hasMany(Client::class,"approved_by");
+    public function approvedClients()
+    {
+        return $this->hasMany(Client::class, "approved_by");
     }
 
 
