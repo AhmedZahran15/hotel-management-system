@@ -33,7 +33,7 @@ const validationSchema = toTypedSchema(
         .object({
             name: z.string().min(2, 'Name is required'),
             email: z.string().email('Invalid email address'),
-            password: z.string().min(6, 'Password must be at least 6 characters long'),
+            password: z.string().min(8, 'Password must be at least 8 characters long'),
             password_confirmation: z.string().min(1, 'Password confirmation is required'),
             gender: z.enum(['male', 'female'], { required_error: 'Please select a gender' }),
             country: z.string().min(1, 'Please select a country'),
