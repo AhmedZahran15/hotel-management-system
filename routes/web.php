@@ -38,20 +38,20 @@ Route::prefix('dashboard')->group(function () {
         Route::post('receptionists/{receptionist}/unban', [ManagerReceptionistController::class, 'unban'])->name('receptionists.unban');
     });
 
-    // Test UI routes
-    Route::get('/manage-managers', function () {
-        return Inertia::render('Admin/ManageManagers');
-    });
-
-    Route::get('/manage-receptionists', function () {
-        return Inertia::render('Admin/ManageReceptionists');
-    });
-
-    Route::get('/manage-clients', function () {
-        return Inertia::render('Admin/ManageClients');
-    });
 });
 
+// Test UI routes
+Route::get('/manage-managers', function () {
+    return Inertia::render('Admin/ManageManagers');
+});
+
+Route::get('/manage-receptionists', function () {
+    return Inertia::render('Admin/ManageReceptionists');
+});
+
+Route::get('/manage-clients', function () {
+    return Inertia::render('Admin/ManageClients');
+});
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 require __DIR__.'/floor.php';
