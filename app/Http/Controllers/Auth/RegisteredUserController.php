@@ -53,11 +53,15 @@ class RegisteredUserController extends Controller
             'country' => $request->country,
             'user_type' => 'client',
         ]);
-
-        // Handle profile picture upload using Spatie Media Library
+        
+        // Handle profile picture upload using Spatie Media Library with unique name
         if ($request->hasFile('profile_picture')) {
+            $extension = $request->file('profile_picture')->getClientOriginalExtension();
+            $uniqueFileName = time() . '_' . uniqid() . '.' . $extension;
+
             $user->addMediaFromRequest('profile_picture')
-                ->toMediaCollection('profile_picture');
+                ->usingFileName($uniqueFileName)
+                ->toMediaCollection('profile_picture'); // Use 'profile_pictures' as the collection name
         }
 
         // Assign the client role to the user if using role-based permissions
