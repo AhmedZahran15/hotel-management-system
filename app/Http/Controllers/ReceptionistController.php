@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ReceptionistController extends Controller
@@ -40,6 +41,15 @@ class ReceptionistController extends Controller
 
         //assgin role to user
         $user->assignRole('receptionist');
+
+        //handle avatar image upload
+        $filename = null;
+        if($request->file("avatar_image")){
+            $storagePath = config('app.emp_avatar_storage_path');
+            $extension = $request->file('avatar_image')->getClientOriginalExtension();
+            $filename = "user-{$user->id}.{$extension}";
+            $request->file("avatar_image")->storeAs($storagePath,$filename,"local"); // NeedEdit: add env var
+        }
 
         //create the associated profile with the user
         $user->profile()->create([
@@ -84,6 +94,12 @@ class ReceptionistController extends Controller
             $receptionist->update(['password' => Hash::make($data['password'])]);
         }
 
+         //handled avatar image update
+         if($request->hasFile("avatar_image")){
+            $storagePath = config('app.emp_avatar_storage_path');
+            Storage::disk("local")->delete("$storagePath"."/".$receptionist->profile->img_name);
+            $request->file("avatar_image")->storeAs($storagePath,$receptionist->profile->img_name,"local"); // NeedEdit: add env var
+        }
         //update the associated profile with the user
         $receptionist->profile()->update([
             'name'        => $data['name'],
@@ -97,11 +113,10 @@ class ReceptionistController extends Controller
 
     public function destroy(User $receptionist): RedirectResponse
     {
-        //ensure that the manger only can delete his receptionists
-        if (!auth()->user()->hasRole('admin') && $receptionist->creator_user_id !== auth()->id()) {
-            abort(403, 'You do not have permission to delete this receptionist.');
+        if ($receptionist->profile->img_name !== "default.jpg") {
+            $storagePath = config('app.emp_avatar_storage_path');
+            Storage::disk("local")->delete($storagePath."/".$receptionist->profile->img_name);
         }
-
         $receptionist->delete();
         return redirect()->route('receptionists.index')
         ->with('success', 'Receptionist deleted successfully.');

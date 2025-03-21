@@ -14,13 +14,14 @@ return new class extends Migration
         Schema::create('rooms', function (Blueprint $table) {
             $table->unsignedInteger("number")->unique();
             $table->unsignedInteger("capacity");
+            $table->unsignedInteger('room_price');// will be in cents any way so no need to be double
             $table->enum("state", ["available","occupied","being_reserved","maintenance"]);
             $table->unsignedBigInteger('floor_number');
             $table->unsignedBigInteger("creator_user_id");
             $table->softDeletes();
             $table->timestamps();
 
-            $table->primary(["number","floor_number"]);
+            $table->primary(["number"]);
 
             $table->foreign('floor_number')->references('number')->on('floors')->onDelete('cascade');
             $table->foreign("creator_user_id")->references("id")->on("users");

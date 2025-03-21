@@ -8,12 +8,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Room extends Model
 {
+        protected $primaryKey = 'number'; // Specify the primary key
+
     /** @use HasFactory<\Database\Factories\RoomFactory> */
     use HasFactory,SoftDeletes;
 
     protected $fillable = [
         "number",
         "capacity",
+        "room_price",
         "state",
         "floor_number",
         "creator_user_id",
