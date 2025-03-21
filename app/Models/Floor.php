@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Floor extends Model
 {
+    protected $primaryKey = 'number'; // Specify the primary key
 
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, SoftDeletes;
@@ -21,4 +22,5 @@ class Floor extends Model
     public function rooms(){
         return $this->hasMany(Room::class,"floor_number","number");
     }
+
 }

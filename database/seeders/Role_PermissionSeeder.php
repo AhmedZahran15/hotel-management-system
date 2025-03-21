@@ -52,7 +52,7 @@ class Role_PermissionSeeder extends Seeder
         // Define roles
         $roles = [
             'admin' => ['manage users', 'manage reservations', 'manage rooms', 'manage floors','manage clients'],
-            'manager' => ['view users', 'manage reservations', 'view rooms', 'approve clients','manage floors'],
+            'manager' => ['view users', 'manage reservations', 'manage rooms', 'manage clients','manage floors'],
             'receptionist' => ['create reservations', 'edit reservations', 'delete reservations', 'view clients'],
             'client' => ['view reservations','create reservations'],
         ];

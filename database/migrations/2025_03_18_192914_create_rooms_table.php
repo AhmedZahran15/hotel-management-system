@@ -21,7 +21,7 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
 
-            $table->primary(["number","floor_number"]);
+            $table->primary(["number"]);
 
             $table->foreign('floor_number')->references('number')->on('floors')->onDelete('cascade');
             $table->foreign("creator_user_id")->references("id")->on("users");

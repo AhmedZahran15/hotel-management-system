@@ -12,7 +12,7 @@ Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
 
-//profile route for all authenticated users 
+//profile route for all authenticated users
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -41,3 +41,6 @@ Route::get('/manage-clients', function () {
 });
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
+require __DIR__.'/floor.php';
+require __DIR__.'/room.php';
+require __DIR__.'/client.php';

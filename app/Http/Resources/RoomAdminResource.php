@@ -21,8 +21,8 @@ class RoomAdminResource extends JsonResource
             "capacity"=> $this->capacity,
             "room_price"=> $this->room_price,
             "state" => $this->state,
-            "floor"=> new FloorAdminResource(Floor::find($this->floor_number)),
-            "manager"=>new UserResource(User::find($this->creator_user_id))
-        ];
+            "floor"=> new FloorAdminResource($this->whenLoaded("floor")),
+            "manager"=>new UserResource($this->whenLoaded("creatorUser")),
+            ];
     }
 }

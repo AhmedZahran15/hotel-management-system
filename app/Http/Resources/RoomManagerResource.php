@@ -16,11 +16,11 @@ class RoomManagerResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-           "number"=> $this->number,
+            "number"=> $this->number,
             "capacity"=> $this->capacity,
             "room_price"=> $this->room_price,
             "state" => $this->state,
-            "floor"=> new FloorManagerResource(Floor::find($this->floor_number)),
+            "floor"=> new FloorManagerResource($this->whenLoaded("floor")),
         ];
     }
 }
