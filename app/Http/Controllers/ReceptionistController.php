@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateReceptionistRequest;
 use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 
@@ -34,7 +35,7 @@ class ReceptionistController extends Controller
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'user_type' => 'employee',
-            'creator_user_id' => auth()->id(),
+            'creator_user_id' => Auth::id(),
         ]);
 
         //assgin role to user
@@ -45,7 +46,7 @@ class ReceptionistController extends Controller
             'name' => $data['name'],
             'national_id' => $data['national_id'],
             'img_name' => $data['avatar_image'] ?? 'default.jpg',
-            'creator_user_id' => auth()->id(),
+            'creator_user_id' => Auth::id(),
         ]);
 
         return redirect()->route('receptionists.index')
@@ -65,6 +66,11 @@ class ReceptionistController extends Controller
 
     public function update(UpdateReceptionistRequest $request, User $receptionist): RedirectResponse
     {
+        //ensure that the manger only can update his receptionists
+        if (!auth()->user()->hasRole('admin') && $receptionist->creator_user_id !== auth()->id()) {
+            abort(403, 'You do not have permission to update this receptionist.');
+        }
+
         $data = $request->validated();
 
         //update user
@@ -91,6 +97,11 @@ class ReceptionistController extends Controller
 
     public function destroy(User $receptionist): RedirectResponse
     {
+        //ensure that the manger only can delete his receptionists
+        if (!auth()->user()->hasRole('admin') && $receptionist->creator_user_id !== auth()->id()) {
+            abort(403, 'You do not have permission to delete this receptionist.');
+        }
+
         $receptionist->delete();
         return redirect()->route('receptionists.index')
         ->with('success', 'Receptionist deleted successfully.');

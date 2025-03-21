@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -38,7 +39,7 @@ class ManagerController extends Controller
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'user_type' => 'employee', 
-            'creator_user_id' => auth()->id(),
+            'creator_user_id' => Auth::id(),
         ]);
         //assign role
         $user->assignRole('manager');
@@ -48,7 +49,7 @@ class ManagerController extends Controller
             'national_id' => $data['national_id'],
             'img_name' => $data['avatar_image'] ?? 'default.jpg', 
             'user_id' => $user->id,
-            'creator_user_id' => auth()->id(),
+            'creator_user_id' => Auth::id(),
         ]);
 
         return redirect()->route('managers.index')->with('success', 'Manager created successfully.');
