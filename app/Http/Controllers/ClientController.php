@@ -20,7 +20,7 @@ class ClientController extends Controller
     public function index()
     {
         if(Auth::user() && Auth::user()->hasAnyRole(["admin","manager"])) {
-            return Inertia::render("",["clients"=> ClientResource::collection(Client::with("user")->paginate(10))]);
+            return Inertia::render("Admin/ManageClients",["clients"=> ClientResource::collection(Client::with("user")->paginate(10))]);
         }
         else if(Auth::user()->hasRole("receptionist")) {
             return Inertia::render("",["clients"=> ClientResource::collection(Client::with("user")->where("approved_by")->paginate(10))]);
@@ -44,7 +44,7 @@ class ClientController extends Controller
     {
         $request->validate([
             "name"=>["required","string","min:3"],
-            "img"=>["image","mimes:jpg,jpeg","max:2048"],
+            "avatar_image"=>["image","mimes:jpg,jpeg","max:2048"],
             "country"=>["required","string"],
             "gender"=>["required","string","in:male,female"],
             "email"=>["required","string","email","unique:users",],
@@ -62,10 +62,11 @@ class ClientController extends Controller
 
         //handle profile picture
         $filename = null;
-        if($request->file("img")){
-            $extension = $request->file('img')->getClientOriginalExtension();
+        if($request->file("avatar_image")){
+            $storagePath = config('app.client_avatar_storage_path');
+            $extension = $request->file('avatar_image')->getClientOriginalExtension();
             $filename = "client-{$user->id}.{$extension}";
-            $request->file("img")->storeAs("/employees/avatars",$filename,"local"); // NeedEdit: add env var
+            $request->file("avatar_image")->storeAs($storagePath,$filename,"local"); // NeedEdit: add env var
         }
 
         //handle client creation
@@ -111,15 +112,16 @@ class ClientController extends Controller
             "gender"=>["required","string","in:male,female"],
             "email"=>["required","string",Rule::unique("users")->ignore($client->user->id)],
             "password"=>["sometimes","string","min:8","confirmed"],
-            "img"=>["sometimes","image","mimes:jpg,jpeg","max:2048"],
+            "avatar_image"=>["sometimes","image","mimes:jpg,jpeg","max:2048"],
         ]);
 
         $client->update(["name"=>$request->name,"country"=>$request->country, "gender"=>$request->gender]);
         $client->user->update(["email"=>$request->email]);
 
-        if($request->hasFile("img")){
-            Storage::disk("local")->delete("/employees/avatars/".$client->img_name);
-            $request->file("img")->storeAs("/employees/avatars",$client->img_name,"local"); // NeedEdit: add env var
+        if($request->hasFile("avatar_image")){
+            $storagePath = config('app.client_avatar_storage_path');
+            Storage::disk("local")->delete("$storagePath"."/".$client->img_name);
+            $request->file("avatar_image")->storeAs($storagePath,$client->img_name,"local"); // NeedEdit: add env var
         }
 
         if($request->filled("password")){
@@ -134,12 +136,14 @@ class ClientController extends Controller
      */
     public function destroy(string $id,Request $request)
     {
+
             $client = Client::with("user")->findOrFail( $id );
             $user = $client->user;
             $client->delete();
             $user->delete();
             if ($client->img_name !== "default.jpg") {
-                Storage::disk("local")->delete("/employees/avatars/".$client->user->img_name);
+                $storagePath = config('app.client_avatar_storage_path');
+                Storage::disk("local")->delete($storagePath."/".$client->img_name);
             }
 
             //case the user deleted his own account

@@ -21,7 +21,7 @@ Route::get('dashboard', function () {
 Route::middleware(['auth','role:admin'])->group(function(){
     Route::resource('managers', ManagerController::class);
     Route::resource('receptionists', ReceptionistController::class);
-    Route::resource('clients', ClientController::class);
+
 
     //ban and unban receptionist
     Route::post('receptionists/{receptionist}/ban', [AdminUserController::class, 'ban'])->name('receptionists.ban');

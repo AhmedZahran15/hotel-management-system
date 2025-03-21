@@ -22,6 +22,7 @@ class ClientResource extends JsonResource
             "country"=> $this->country,
             "gender"=> $this->gender,
             "user" => new UserResource($this->whenLoaded('user')),
+            "email"=>$this->user->email,
             "approved_by"=>$this->approved_by,
         ];
     }

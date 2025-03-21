@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 //no authentication needed to register or create account
 Route::get('/clients/create', [ClientController::class, 'create']);
-Route::post('/clients', [ClientController::class, 'store']);
+Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
 
 Route::middleware(['auth'])->group(function () {
 

@@ -123,4 +123,7 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'emp_avatar_storage_path' => env('EMP_AVATAR_STORAGE_PATH', 'employees/avatars'),
+    'client_avatar_storage_path' => env('CLIENT_AVATAR_STORAGE_PATH', 'clients/avatars'),
+
 ];

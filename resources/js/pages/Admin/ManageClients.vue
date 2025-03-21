@@ -1,11 +1,11 @@
 <template>
   <div class="p-6">
-    <h1 class="text-2xl font-bold mb-4 text-black">Manage Clients</h1>
+    <h1 class="mb-4 text-2xl font-bold text-black">Manage Clients</h1>
 
     <!-- Register Client Button -->
-    <button 
+    <button
       @click="showRegisterForm = true"
-      class="mb-4 px-4 py-2 text-white rounded bg-gray-600 hover:bg-gray-500"
+      class="px-4 py-2 mb-4 text-white bg-gray-600 rounded hover:bg-gray-500"
     >
       Register Client
     </button>
@@ -14,25 +14,29 @@
     <p v-else class="text-gray-500">No clients found.</p>
 
     <!-- Register Client Form Modal -->
-    <RegisterClientForm 
-      v-if="showRegisterForm" 
-      @close="showRegisterForm = false" 
-      @register="addClient" 
+    <RegisterClientForm
+      v-if="showRegisterForm"
+      @close="showRegisterForm = false"
+      @register="addClient"
     />
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, defineProps } from "vue";
 import DataTable from "@/components/Shared/DataTable.vue";
 import RegisterClientForm from "@/components/Admin/Clients/CreateClientForm.vue";
+import { router } from '@inertiajs/vue3';
 
+const props = defineProps(["clients"]);
 //Clients Data
-const clients = ref([
-  { id: 1, name: "Tom Wilson", email: "tom.wilson@example.com", country: "USA" },
-  { id: 2, name: "Anna Taylor", email: "anna.taylor@example.com", country: "UK" },
-  { id: 3, name: "David Lee", email: "david.lee@example.com", country: "Canada" },
-]);
+// const clients = ref([
+//   { id: 1, name: "Tom Wilson", email: "tom.wilson@example.com", country: "USA" },
+//   { id: 2, name: "Anna Taylor", email: "anna.taylor@example.com", country: "UK" },
+//   { id: 3, name: "David Lee", email: "david.lee@example.com", country: "Canada" },
+// ]);
+//console.log(props.clients)
+const clients = ref(props.clients.data);
 
 //Columns for DataTable
 const columns = ref([
@@ -43,8 +47,20 @@ const columns = ref([
 ]);
 const showRegisterForm = ref(false);
 const addClient = (newClient) => {
-  const newId = clients.value.length ? Math.max(...clients.value.map((c) => c.id)) + 1 : 1;
-  clients.value.push({ ...newClient, id: newId });
+//   const newId = clients.value.length ? Math.max(...clients.value.map((c) => c.id)) + 1 : 1;
+//   clients.value.push({ ...newClient, id: newId });
+router.post(route('clients.store'),newClient,
+{
+    preserveState: true,
+        onSuccess: () => {
+            selectedPost= {title:"",description:"",user_id:0};
+            file = null;
+            clearError();
+        },
+        onError:(errorMessagess)=>{
+            console.log(errorMessagess);
+        }
+    });
   showRegisterForm.value = false;
 };
 </script>
