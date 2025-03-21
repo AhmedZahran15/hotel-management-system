@@ -5,20 +5,25 @@ import { Button } from '@/components/ui/button';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AuthBase from '@/layouts/AuthLayout.vue';
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
 import { AlertCircle, LoaderCircle } from 'lucide-vue-next';
 import { useForm } from 'vee-validate';
 import { computed, ref } from 'vue';
 import { z } from 'zod';
 
-// Get page from Inertia to access errors
+// Define Country interface
+interface Country {
+    id: number;
+    name: string;
+}
+
 const page = usePage();
 const errors = computed(() => page.props.errors);
+const countries = computed<Country[]>(() => page.props.countries || []);
 
-// Profile picture preview
 const profilePicture = ref<File | null>(null);
 const profilePicturePreview = ref<string | null>(null);
 
@@ -95,9 +100,7 @@ const onSubmit = handleSubmit((values) => {
         setFieldError('profile_picture', 'Profile picture is required');
         return;
     }
-
     isProcessing.value = true;
-
     // Create form data for file upload
     const formData = new FormData();
     formData.append('name', values.name);
@@ -106,19 +109,14 @@ const onSubmit = handleSubmit((values) => {
     formData.append('password_confirmation', values.password_confirmation);
     formData.append('gender', values.gender);
     formData.append('country', values.country);
-
     formData.append('profile_picture', profilePicture.value);
-
-    for (const [key, value] of Object.entries(values)) {
-        console.log(`${key}: ${value}`);
-    }
-    // router.post(route('register'), formData, {
-    //     onFinish: () => {
-    //         values.password = '';
-    //         values.password_confirmation = '';
-    //         isProcessing.value = false;
-    //     },
-    // });
+    router.post(route('register'), formData, {
+        onFinish: () => {
+            values.password = '';
+            values.password_confirmation = '';
+            isProcessing.value = false;
+        },
+    });
 });
 </script>
 
@@ -301,7 +299,9 @@ const onSubmit = handleSubmit((values) => {
                                     <SelectValue placeholder="Select your country" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <!-- Countries will be added here later -->
+                                    <SelectItem v-for="country in countries" :key="country.id" :value="country.id.toString()">
+                                        {{ country.name }}
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                         </FormControl>
