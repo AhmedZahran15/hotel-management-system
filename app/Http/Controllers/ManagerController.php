@@ -60,7 +60,7 @@ class ManagerController extends Controller
             'national_id' => $data['national_id'],
             'img_name' => $filename ?? 'default.jpg',
             'user_id' => $user->id,
-            'creator_user_id' => auth()->id(),
+            'creator_user_id' => Auth::id(),
         ]);
 
         return redirect()->route('managers.index')->with('success', 'Manager created successfully.');
