@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Resources\ClientResource;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -39,12 +40,26 @@ class HandleInertiaRequests extends Middleware
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
+        $user = $request->user();
+
+        if ($user) {
+            // Load the profile relationship (Client or Employee) based on user_type
+            $formattedProfile = ($user->user_type == "client") ? new ClientResource($user->profile) : $user->profile;
+            // Also load the user's roles for authorization purposes
+            $user->load('roles:id,name');
+        }
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user ? [
+                    ...$user->toArray(),
+                    'profile' => $formattedProfile,
+                    'roles' => $user->roles,
+                    'avatar' => $user->getAvatarUrl(),
+                    'permissions' => $user->getAllPermissions(),
+                ] : null,
             ],
             'ziggy' => [
                 ...(new Ziggy)->toArray(),
