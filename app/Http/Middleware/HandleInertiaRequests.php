@@ -42,12 +42,20 @@ class HandleInertiaRequests extends Middleware
 
         $user = $request->user();
 
+        $formattedProfile = null;
         if ($user) {
-            // Load the profile relationship (Client or Employee) based on user_type
-            $formattedProfile = ($user->user_type == "client") ? new ClientResource($user->profile) : $user->profile;
-            // Also load the user's roles for authorization purposes
+            // Load the necessary relationships first
             $user->load('roles:id,name');
+
+            if ($user->user_type == "client" && $user->profile) {
+                // Load phones relationship first, then create the resource
+                $user->profile->load('phones');
+                $formattedProfile = new ClientResource($user->profile);
+            } elseif ($user->profile) {
+                $formattedProfile = $user->profile;
+            }
         }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
