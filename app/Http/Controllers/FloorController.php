@@ -81,9 +81,10 @@ class FloorController extends Controller
         //$floor = new FloorManagerResource(Floor::where('number', $floor)->firstOrFail());
         if (!Auth::check() || (!Auth::user()->hasRole("admin") && Auth::id() !== $floor->creator_user_id))
             return response()->json(['message' => 'Unauthorized'], 403);
-
+        if($floor->rooms()->count() > 0){
+        return back()->with("error","can't delete floor because it has romms attached to it.");
+        }
         $floor->delete();
-
         return back()->with("success","floor deleted");
     }
 

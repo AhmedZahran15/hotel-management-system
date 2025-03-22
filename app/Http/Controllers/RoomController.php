@@ -106,6 +106,8 @@ class RoomController extends Controller
     {
         if (!Auth::check() || (!Auth::user()->hasRole("admin") && Auth::id() !== $room->creator_user_id))
             return response()->json(['message' => 'Unauthorized'], 403);
+        if($room->reservations() !== null)
+            return back()->with("error","room can't be deleted because it's currently reserved");
 
         $room->delete();
 
