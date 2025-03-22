@@ -48,10 +48,26 @@ class User extends Authenticatable implements BannableInterface, HasMedia
      */
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('profile_picture')
+        $this->addMediaCollection('avatar_image')
             ->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/jpg'])
-            ->useFallbackUrl(asset('default-profile-picture.jpg'));
+            ->useFallbackUrl(asset('default-avatar.jpg'));
+    }
+
+    /**
+     * Get the URL for the user's avatar image
+     *
+     * @return string The URL to the user's avatar
+     */
+    public function getAvatarUrl(): string
+    {
+        $mediaUrl = $this->getFirstMediaUrl('avatar_image');
+        // For internal URLs, ensure proper path formatting using Laravel's url() helper
+        if (parse_url($mediaUrl, PHP_URL_HOST) === request()->getHost()) {
+            $path = parse_url($mediaUrl, PHP_URL_PATH);
+            return url($path);
+        }
+        return $mediaUrl;
     }
 
     /**

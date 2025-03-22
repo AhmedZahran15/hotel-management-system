@@ -13,32 +13,34 @@ Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
 
-//profile route for all authenticated users
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::prefix('dashboard')->group(function () {
+    // Dashboard homepage route
+    Route::get('/', function () {
+        return Inertia::render('Dashboard');
+    })->middleware(['auth', 'verified'])->name('dashboard');
 
-//acceciable routes for admin only
-Route::middleware(['auth','role:admin'])->group(function(){
-    Route::resource('managers', ManagerController::class);
-    Route::resource('receptionists', ReceptionistController::class);
+    // Admin routes
+    Route::middleware(['auth','role:admin'])->group(function(){
+        Route::resource('managers', ManagerController::class);
+        Route::resource('receptionists', ReceptionistController::class);
+        Route::resource('clients', ClientController::class);
 
+        Route::post('receptionists/{receptionist}/ban', [AdminUserController::class, 'ban'])->name('receptionists.ban');
+        Route::post('receptionists/{receptionist}/unban', [AdminUserController::class, 'unban'])->name('receptionists.unban');
+    });
 
-    //ban and unban receptionist
-    Route::post('receptionists/{receptionist}/ban', [AdminUserController::class, 'ban'])->name('receptionists.ban');
-    Route::post('receptionists/{receptionist}/unban', [AdminUserController::class, 'unban'])->name('receptionists.unban');
+    // Manager routes
+    Route::middleware(['auth','role:manager'])->group(function(){
+        Route::resource('receptionists', ReceptionistController::class);
+        Route::resource('clients', ClientController::class);
+
+        Route::post('receptionists/{receptionist}/ban', [ManagerReceptionistController::class, 'ban'])->name('receptionists.ban');
+        Route::post('receptionists/{receptionist}/unban', [ManagerReceptionistController::class, 'unban'])->name('receptionists.unban');
+    });
+
 });
 
-//acceciable routes for manager only
-Route::middleware(['auth','role:manager'])->group(function(){
-    Route::resource('receptionists', ReceptionistController::class);
-
-    //ban and unban receptionist
-    Route::post('receptionists/{receptionist}/ban', [ManagerReceptionistController::class, 'ban'])->name('receptionists.ban');
-    Route::post('receptionists/{receptionist}/unban', [ManagerReceptionistController ::class, 'unban'])->name('receptionists.unban');
-});
-
-//test routes for ui
+// Test UI routes
 Route::get('/manage-managers', function () {
     return Inertia::render('Admin/ManageManagers');
 });

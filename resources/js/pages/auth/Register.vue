@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import AuthBase from '@/layouts/AuthLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
-import { AlertCircle, LoaderCircle } from 'lucide-vue-next';
+import { AlertCircle, LoaderCircle, Upload } from 'lucide-vue-next';
 import { useForm } from 'vee-validate';
 import { computed, ref } from 'vue';
 import { z } from 'zod';
@@ -22,22 +22,25 @@ interface Country {
 
 const page = usePage();
 const errors = computed(() => page.props.errors);
-const countries = computed<Country[]>(() => page.props.countries || []);
-
-const profilePicture = ref<File | null>(null);
-const profilePicturePreview = ref<string | null>(null);
+const countries = computed<Country[]>(() => (Array.isArray(page.props.countries) ? (page.props.countries as Country[]) : []));
+const avatarImage = ref<File | null>(null);
+const avatarImagePreview = ref<string | null>(null);
 
 // Define validation schema with zod
 const validationSchema = toTypedSchema(
     z
         .object({
-            name: z.string().min(2, 'Name is required'),
+            name: z.string().min(1, 'Name is required').min(3, 'Name must be at least 3 characters long'),
             email: z.string().email('Invalid email address'),
             password: z.string().min(8, 'Password must be at least 8 characters long'),
             password_confirmation: z.string().min(1, 'Password confirmation is required'),
             gender: z.enum(['male', 'female'], { required_error: 'Please select a gender' }),
             country: z.string().min(1, 'Please select a country'),
-            profile_picture: z.any().refine((val) => val !== null, { message: 'Profile picture is required' }),
+            phone_number: z
+                .string()
+                .min(1, 'Phone number is required')
+                .regex(/^\+?[0-9]{8,15}$/, 'Please enter a valid phone number (8-15 digits, may start with +)'),
+            avatar_image: z.any().refine((val) => val !== null, { message: 'Profile picture is required' }),
         })
         .refine((data) => data.password === data.password_confirmation, {
             message: "Passwords don't match",
@@ -55,7 +58,8 @@ const { handleSubmit, isFieldDirty, isSubmitting, setFieldError, setFieldValue }
         password_confirmation: '',
         gender: 'male',
         country: '',
-        profile_picture: null,
+        phone_number: '',
+        avatar_image: null,
     },
 });
 
@@ -71,33 +75,30 @@ const handleFileUpload = (event: Event) => {
         // Check if the file is a JPG or JPEG
         const allowedTypes = ['image/jpeg', 'image/jpg'];
         if (!allowedTypes.includes(file.type)) {
-            alert('Only JPG/JPEG files are allowed');
-            // Reset the file input
+            setFieldError('avatar_image', 'Only JPG/JPEG files are allowed');
             target.value = '';
             return;
         }
 
-        profilePicture.value = file;
-        profilePicturePreview.value = URL.createObjectURL(file);
+        // Check file size (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            setFieldError('avatar_image', 'File size must be less than 2MB');
+            target.value = '';
+            return;
+        }
+
+        avatarImage.value = file;
+        avatarImagePreview.value = URL.createObjectURL(file);
 
         // Update form field value to clear error
-        setFieldValue('profile_picture', file);
+        setFieldValue('avatar_image', file);
     }
-};
-
-// Handle file removal
-const removeProfilePicture = () => {
-    profilePicture.value = null;
-    profilePicturePreview.value = null;
-    // Reset the file input
-    const fileInput = document.getElementById('profile-picture') as HTMLInputElement;
-    if (fileInput) fileInput.value = '';
 };
 
 // Submit handler
 const onSubmit = handleSubmit((values) => {
-    if (!profilePicture.value) {
-        setFieldError('profile_picture', 'Profile picture is required');
+    if (!avatarImage.value) {
+        setFieldError('avatar_image', 'Profile picture is required');
         return;
     }
     isProcessing.value = true;
@@ -109,7 +110,9 @@ const onSubmit = handleSubmit((values) => {
     formData.append('password_confirmation', values.password_confirmation);
     formData.append('gender', values.gender);
     formData.append('country', values.country);
-    formData.append('profile_picture', profilePicture.value);
+    formData.append('phone_number', values.phone_number);
+    formData.append('avatar_image', avatarImage.value);
+
     router.post(route('register'), formData, {
         onFinish: () => {
             values.password = '';
@@ -136,73 +139,50 @@ const onSubmit = handleSubmit((values) => {
 
         <form @submit="onSubmit" class="flex flex-col gap-6">
             <div class="grid gap-6">
-                <!-- Improved Profile Picture Upload -->
-                <div class="mx-auto flex flex-col items-center gap-3">
-                    <div
-                        class="relative h-28 w-28 overflow-hidden rounded-full border-2 border-dashed border-muted-foreground/25 bg-muted transition-all hover:border-primary/50"
-                    >
-                        <img v-if="profilePicturePreview" :src="profilePicturePreview" alt="Profile Preview" class="h-full w-full object-cover" />
-                        <div v-else class="flex h-full w-full flex-col items-center justify-center p-2 text-center text-sm text-muted-foreground">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                class="mb-1 h-8 w-8 opacity-50"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="1.5"
-                                    d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
-                                />
-                            </svg>
-                            Profile Photo
-                        </div>
-
-                        <!-- Remove button that appears when an image is selected -->
-                        <button
-                            v-if="profilePicturePreview"
-                            type="button"
-                            @click="removeProfilePicture"
-                            class="absolute right-0 top-0 rounded-full bg-destructive p-1 text-white shadow-sm transition-transform hover:scale-110"
-                            title="Remove image"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
-                                <path
-                                    d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
-                                />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <div class="flex flex-wrap items-center justify-center gap-2">
-                        <label
-                            for="profile-picture"
-                            class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-input bg-background px-3 py-1 text-xs font-medium text-primary hover:bg-accent hover:text-accent-foreground"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
-                                <path
-                                    d="M9.25 13.25a.75.75 0 001.5 0V4.636l2.955 3.129a.75.75 0 001.09-1.03l-4.25-4.5a.75.75 0 00-1.09 0l-4.25 4.5a.75.75 0 101.09 1.03L9.25 4.636v8.614z"
-                                />
-                                <path
-                                    d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z"
-                                />
-                            </svg>
-                            Upload Photo
-                        </label>
-                        <p class="text-xs font-medium text-destructive">Required</p>
-                    </div>
-                    <input id="profile-picture" type="file" accept="image/jpeg,image/jpg" class="hidden" @change="handleFileUpload" />
-                    <p class="text-xs text-muted-foreground">JPG/JPEG format only, max 2MB</p>
-
-                    <!-- Fix: Wrap FormMessage in FormItem -->
-                    <FormField name="profile_picture" v-slot="{ errorMessage }">
-                        <FormItem class="mt-0">
-                            <FormMessage v-if="errorMessage" class="mt-0">{{ errorMessage }}</FormMessage>
-                        </FormItem>
-                    </FormField>
-                </div>
+                <!-- Avatar Image Upload -->
+                <FormField name="avatar_image" v-slot="{ errorMessage }">
+                    <FormItem class="flex flex-col items-center">
+                        <FormLabel class="text-center">Profile Picture</FormLabel>
+                        <FormControl>
+                            <div class="flex w-full flex-col items-center space-y-4">
+                                <!-- Image Preview -->
+                                <div
+                                    class="relative h-28 w-28 overflow-hidden rounded-full border-2 border-dashed border-input bg-muted transition-all hover:border-primary/50"
+                                >
+                                    <img
+                                        v-if="avatarImagePreview"
+                                        :src="avatarImagePreview"
+                                        alt="Avatar Preview"
+                                        class="h-full w-full object-cover"
+                                    />
+                                    <div v-else class="flex h-full w-full flex-col items-center justify-center text-muted-foreground">
+                                        <Upload class="h-8 w-8 opacity-50" />
+                                    </div>
+                                </div>
+                                <div class="flex flex-col items-center gap-2">
+                                    <div class="relative">
+                                        <label
+                                            for="avatar_image"
+                                            class="flex h-10 w-full max-w-xs cursor-pointer items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        >
+                                            <Upload class="h-4 w-4" />
+                                            {{ avatarImagePreview ? 'Change photo' : 'Upload photo' }}
+                                        </label>
+                                        <Input
+                                            id="avatar_image"
+                                            type="file"
+                                            accept="image/jpeg, image/jpg"
+                                            class="sr-only"
+                                            @change="handleFileUpload"
+                                        />
+                                    </div>
+                                    <p class="text-xs text-muted-foreground">JPG/JPEG format only, max 2MB</p>
+                                </div>
+                            </div>
+                        </FormControl>
+                        <FormMessage v-if="errorMessage">{{ errorMessage }}</FormMessage>
+                    </FormItem>
+                </FormField>
 
                 <!-- Name -->
                 <FormField name="name" v-slot="{ field }" :validate-on-blur="!isFieldDirty">
@@ -226,12 +206,23 @@ const onSubmit = handleSubmit((values) => {
                     </FormItem>
                 </FormField>
 
+                <!-- Phone Number -->
+                <FormField name="phone_number" v-slot="{ field }" :validate-on-blur="!isFieldDirty">
+                    <FormItem>
+                        <FormLabel for="phone_number">Phone Number</FormLabel>
+                        <FormControl>
+                            <Input id="phone_number" type="tel" :tabindex="3" autocomplete="tel" placeholder="Phone number" v-bind="field" />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                </FormField>
+
                 <!-- Password -->
                 <FormField name="password" v-slot="{ field }" :validate-on-blur="!isFieldDirty">
                     <FormItem>
                         <FormLabel for="password">Password</FormLabel>
                         <FormControl>
-                            <Input id="password" type="password" :tabindex="3" autocomplete="new-password" placeholder="Password" v-bind="field" />
+                            <Input id="password" type="password" :tabindex="4" autocomplete="new-password" placeholder="Password" v-bind="field" />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -245,7 +236,7 @@ const onSubmit = handleSubmit((values) => {
                             <Input
                                 id="password_confirmation"
                                 type="password"
-                                :tabindex="4"
+                                :tabindex="5"
                                 autocomplete="new-password"
                                 placeholder="Confirm password"
                                 v-bind="field"
@@ -295,7 +286,7 @@ const onSubmit = handleSubmit((values) => {
                         <FormLabel for="country">Country</FormLabel>
                         <FormControl>
                             <Select v-bind="field">
-                                <SelectTrigger id="country" :tabindex="5" class="w-full">
+                                <SelectTrigger id="country" :tabindex="6" class="w-full">
                                     <SelectValue placeholder="Select your country" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -309,7 +300,7 @@ const onSubmit = handleSubmit((values) => {
                     </FormItem>
                 </FormField>
 
-                <Button type="submit" class="mt-2 w-full" tabindex="6" :disabled="isSubmitting || isProcessing">
+                <Button type="submit" class="mt-2 w-full" tabindex="7" :disabled="isSubmitting || isProcessing">
                     <LoaderCircle v-if="isSubmitting || isProcessing" class="mr-2 h-4 w-4 animate-spin" />
                     Create account
                 </Button>
@@ -317,7 +308,7 @@ const onSubmit = handleSubmit((values) => {
 
             <div class="text-center text-sm text-muted-foreground">
                 Already have an account?
-                <TextLink :href="route('login')" class="underline underline-offset-4" :tabindex="7">Log in</TextLink>
+                <TextLink :href="route('login')" class="underline underline-offset-4" :tabindex="8">Log in</TextLink>
             </div>
         </form>
     </AuthBase>
