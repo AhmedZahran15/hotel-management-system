@@ -9,6 +9,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
@@ -22,10 +23,10 @@ class RegisteredUserController extends Controller
      */
     public function create(): Response
     {
-        $action = World::countries();
-        if ($action->success) {
-            $countries = $action->data;
-        }
+        $countries = Cache::remember('countries', now()->addMonth(), function () {
+            $response = World::countries();
+            return $response->success ? $response->data : [];
+        });
         return Inertia::render('auth/Register', compact('countries'));
     }
 
