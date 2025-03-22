@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Client;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -36,12 +37,12 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'gender' => 'required|in:male,female',
+            'name' => 'required|string|min:3|max:255',
+            'avatar_image' => 'required|image|mimes:jpg,jpeg|max:2048',
             'country' => 'required|string',
-            'profile_picture' => 'required|image|mimes:jpg,jpeg|max:2048',
+            'gender' => 'required|string|in:male,female',
+            'email' => 'required|string|email|max:255|unique:' . User::class,
+            'password' => ['required', 'min:8', 'confirmed', Rules\Password::defaults()],
         ]);
 
         // Create the user first
@@ -49,25 +50,25 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'gender' => $request->gender,
-            'country' => $request->country,
             'user_type' => 'client',
         ]);
-        
+
+        $user->assignRole('client');
+
         // Handle profile picture upload using Spatie Media Library with unique name
-        if ($request->hasFile('profile_picture')) {
-            $extension = $request->file('profile_picture')->getClientOriginalExtension();
-            $uniqueFileName = time() . '_' . uniqid() . '.' . $extension;
+        $extension = $request->file('avatar_image')->getClientOriginalExtension();
+        $uniqueFileName = time() . '_' . $user->id . '.' . $extension;
+        $user->addMediaFromRequest('avatar_image')
+            ->usingFileName($uniqueFileName)
+            ->toMediaCollection('avatar_image'); // Use 'avatar_image' as the collection name
 
-            $user->addMediaFromRequest('profile_picture')
-                ->usingFileName($uniqueFileName)
-                ->toMediaCollection('profile_picture'); // Use 'profile_pictures' as the collection name
-        }
+        Client::create([
+            "name" => $request->name,
+            "country" => $request->country,
+            "gender" => $request->gender,
+            "user_id" => $user->id,
+        ]);
 
-        // Assign the client role to the user if using role-based permissions
-        if (method_exists($user, 'assignRole')) {
-            $user->assignRole('client');
-        }
 
         event(new Registered($user));
 
