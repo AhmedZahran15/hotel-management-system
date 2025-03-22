@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import AuthBase from '@/layouts/AuthLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
-import { AlertCircle, LoaderCircle, Upload, X } from 'lucide-vue-next';
+import { AlertCircle, LoaderCircle, Upload} from 'lucide-vue-next';
 import { useForm } from 'vee-validate';
 import { computed, ref } from 'vue';
 import { z } from 'zod';
@@ -22,7 +22,7 @@ interface Country {
 
 const page = usePage();
 const errors = computed(() => page.props.errors);
-const countries = computed<Country[]>(() => page.props.countries || []);
+const countries = computed<Country[]>(() => (Array.isArray(page.props.countries) ? page.props.countries as Country[] : []));
 
 const avatarImage = ref<File | null>(null);
 const avatarImagePreview = ref<string | null>(null);
