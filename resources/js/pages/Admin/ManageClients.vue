@@ -36,7 +36,7 @@ const props = defineProps(["clients"]);
 //   { id: 3, name: "David Lee", email: "david.lee@example.com", country: "Canada" },
 // ]);
 //console.log(props.clients)
-const clients = ref(props.clients.data);
+const clients = ref(props.clients?.data??[]);
 
 //Columns for DataTable
 const columns = ref([

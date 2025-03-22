@@ -10,11 +10,10 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 //no authentication needed to register or create account
-Route::get('/clients/create', [ClientController::class, 'create']);
 Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
 
-Route::middleware(['auth'])->group(function () {
-
+Route::middleware(['auth'])->prefix("dashboard")->group(function () {
+    Route::middleware([CheckForAnyPermission::class.":manage clients create clients"])->get('/clients/create', [ClientController::class, 'create']);
     Route::get('/clients', [ClientController::class, 'index'])->middleware([CheckForAnyPermission::class.":view clients,manage clients"]);
 
     Route::middleware(EnsureAdminOrOwnerUser::class)->group(function () {

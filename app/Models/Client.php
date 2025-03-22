@@ -15,7 +15,8 @@ class Client extends Model
         "country",
         "gender",
         "approved_by",
-        "user_id"
+        "user_id",
+        "phone",
 
     ];
     protected $casts = [
@@ -32,5 +33,8 @@ class Client extends Model
     public function approvedBy()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+    public function phones(){
+        return $this->hasMany(Phone::class);
     }
 }

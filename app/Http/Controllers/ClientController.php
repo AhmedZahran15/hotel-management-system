@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ClientResource;
 use App\Models\Client;
+use App\Models\Phone;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -20,10 +21,12 @@ class ClientController extends Controller
     public function index()
     {
         if(Auth::user() && Auth::user()->hasAnyRole(["admin","manager"])) {
-            return Inertia::render("Admin/ManageClients",["clients"=> ClientResource::collection(Client::with("user")->paginate(10))]);
+            return Inertia::render("Admin/ManageClients",["clients"=> ClientResource::collection(Client::with("user",'phones')->paginate(10))]);
         }
         else if(Auth::user()->hasRole("receptionist")) {
-            return Inertia::render("",["clients"=> ClientResource::collection(Client::with("user")->where("approved_by")->paginate(10))]);
+            return Inertia::render("Admin/ManageClients",
+            ["clients"=> ClientResource::collection(Client::with("user")->whereNull("approved_by")->paginate(10)),
+                    "approved_clients"=> ClientResource::collection(Client::with('user','phones')->where("approved_by",Auth::user()->id)->get()) ]);
         }
         else
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -49,6 +52,7 @@ class ClientController extends Controller
             "gender"=>["required","string","in:male,female"],
             "email"=>["required","string","email","unique:users",],
             "password"=>["required","string","min:8","confirmed"],
+            'phone' => ['sometimes', 'string', 'regex:/^\+?[0-9]{7,}$/'],
         ]);
         //handling adding user:
         $user = User::create([
@@ -77,7 +81,13 @@ class ClientController extends Controller
             "user_id"=> $user->id,
             "img_name" => $filename ?? "default.jpg"
         ]);
-
+        //handle phone;
+        if($request->phone){
+            $hpone = Phone::create([
+                "phone"=> $request->phone,
+                "client_id"=>$client->id
+            ]);
+        }
         return back()->with("success","Client created successfully");
     }
 
