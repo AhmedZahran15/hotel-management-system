@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import AuthBase from '@/layouts/AuthLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
-import { AlertCircle, LoaderCircle, Upload} from 'lucide-vue-next';
+import { AlertCircle, LoaderCircle, Upload } from 'lucide-vue-next';
 import { useForm } from 'vee-validate';
 import { computed, ref } from 'vue';
 import { z } from 'zod';
@@ -22,8 +22,7 @@ interface Country {
 
 const page = usePage();
 const errors = computed(() => page.props.errors);
-const countries = computed<Country[]>(() => (Array.isArray(page.props.countries) ? page.props.countries as Country[] : []));
-
+const countries = computed<Country[]>(() => (Array.isArray(page.props.countries) ? (page.props.countries as Country[]) : []));
 const avatarImage = ref<File | null>(null);
 const avatarImagePreview = ref<string | null>(null);
 
@@ -37,6 +36,10 @@ const validationSchema = toTypedSchema(
             password_confirmation: z.string().min(1, 'Password confirmation is required'),
             gender: z.enum(['male', 'female'], { required_error: 'Please select a gender' }),
             country: z.string().min(1, 'Please select a country'),
+            phone_number: z
+                .string()
+                .min(1, 'Phone number is required')
+                .regex(/^\+?[0-9]{8,15}$/, 'Please enter a valid phone number (8-15 digits, may start with +)'),
             avatar_image: z.any().refine((val) => val !== null, { message: 'Profile picture is required' }),
         })
         .refine((data) => data.password === data.password_confirmation, {
@@ -55,6 +58,7 @@ const { handleSubmit, isFieldDirty, isSubmitting, setFieldError, setFieldValue }
         password_confirmation: '',
         gender: 'male',
         country: '',
+        phone_number: '',
         avatar_image: null,
     },
 });
@@ -106,6 +110,7 @@ const onSubmit = handleSubmit((values) => {
     formData.append('password_confirmation', values.password_confirmation);
     formData.append('gender', values.gender);
     formData.append('country', values.country);
+    formData.append('phone_number', values.phone_number);
     formData.append('avatar_image', avatarImage.value);
 
     router.post(route('register'), formData, {
@@ -155,23 +160,23 @@ const onSubmit = handleSubmit((values) => {
                                     </div>
                                 </div>
                                 <div class="flex flex-col items-center gap-2">
-                                        <div class="relative">
-                                            <label
-                                                for="avatar_image"
-                                                class="flex h-10 w-full max-w-xs cursor-pointer items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                            >
-                                                <Upload class="h-4 w-4" />
-                                                {{ avatarImagePreview ? 'Change photo' : 'Upload photo' }}
-                                            </label>
-                                            <Input
-                                                id="avatar_image"
-                                                type="file"
-                                                accept="image/jpeg, image/jpg"
-                                                class="sr-only"
-                                                @change="handleFileUpload"
-                                            />
-                                        </div>
-                                        <p class="text-xs text-muted-foreground">JPG/JPEG format only, max 2MB</p>
+                                    <div class="relative">
+                                        <label
+                                            for="avatar_image"
+                                            class="flex h-10 w-full max-w-xs cursor-pointer items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        >
+                                            <Upload class="h-4 w-4" />
+                                            {{ avatarImagePreview ? 'Change photo' : 'Upload photo' }}
+                                        </label>
+                                        <Input
+                                            id="avatar_image"
+                                            type="file"
+                                            accept="image/jpeg, image/jpg"
+                                            class="sr-only"
+                                            @change="handleFileUpload"
+                                        />
+                                    </div>
+                                    <p class="text-xs text-muted-foreground">JPG/JPEG format only, max 2MB</p>
                                 </div>
                             </div>
                         </FormControl>
@@ -201,12 +206,23 @@ const onSubmit = handleSubmit((values) => {
                     </FormItem>
                 </FormField>
 
+                <!-- Phone Number -->
+                <FormField name="phone_number" v-slot="{ field }" :validate-on-blur="!isFieldDirty">
+                    <FormItem>
+                        <FormLabel for="phone_number">Phone Number</FormLabel>
+                        <FormControl>
+                            <Input id="phone_number" type="tel" :tabindex="3" autocomplete="tel" placeholder="Phone number" v-bind="field" />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                </FormField>
+
                 <!-- Password -->
                 <FormField name="password" v-slot="{ field }" :validate-on-blur="!isFieldDirty">
                     <FormItem>
                         <FormLabel for="password">Password</FormLabel>
                         <FormControl>
-                            <Input id="password" type="password" :tabindex="3" autocomplete="new-password" placeholder="Password" v-bind="field" />
+                            <Input id="password" type="password" :tabindex="4" autocomplete="new-password" placeholder="Password" v-bind="field" />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -220,7 +236,7 @@ const onSubmit = handleSubmit((values) => {
                             <Input
                                 id="password_confirmation"
                                 type="password"
-                                :tabindex="4"
+                                :tabindex="5"
                                 autocomplete="new-password"
                                 placeholder="Confirm password"
                                 v-bind="field"
@@ -270,7 +286,7 @@ const onSubmit = handleSubmit((values) => {
                         <FormLabel for="country">Country</FormLabel>
                         <FormControl>
                             <Select v-bind="field">
-                                <SelectTrigger id="country" :tabindex="5" class="w-full">
+                                <SelectTrigger id="country" :tabindex="6" class="w-full">
                                     <SelectValue placeholder="Select your country" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -284,7 +300,7 @@ const onSubmit = handleSubmit((values) => {
                     </FormItem>
                 </FormField>
 
-                <Button type="submit" class="mt-2 w-full" tabindex="6" :disabled="isSubmitting || isProcessing">
+                <Button type="submit" class="mt-2 w-full" tabindex="7" :disabled="isSubmitting || isProcessing">
                     <LoaderCircle v-if="isSubmitting || isProcessing" class="mr-2 h-4 w-4 animate-spin" />
                     Create account
                 </Button>
@@ -292,7 +308,7 @@ const onSubmit = handleSubmit((values) => {
 
             <div class="text-center text-sm text-muted-foreground">
                 Already have an account?
-                <TextLink :href="route('login')" class="underline underline-offset-4" :tabindex="7">Log in</TextLink>
+                <TextLink :href="route('login')" class="underline underline-offset-4" :tabindex="8">Log in</TextLink>
             </div>
         </form>
     </AuthBase>
