@@ -15,12 +15,27 @@ use Inertia\Response;
 
 class ReceptionistController extends Controller
 {
-    public function index() : Response
-    {
-        $receptionists = User::role('receptionist')->with('profile')->paginate(10);
-        // return Inertia::render('Receptionists/Index', ['receptionists' => $receptionists]);
-        return $receptionists;
+    public function index()
+{
+    $user = auth()->user();
+
+    $query = User::role('receptionist')->with('profile');
+
+    //show the accosited receptionists with the manager
+    if ($user->hasRole('manager')) {
+        $query->where('creator_user_id', $user->id);
     }
+
+    //show all receptionists for the admin and show the creator user
+    if ($user->hasRole('admin')) {
+        $query->with('createdUsers:id,name,email');
+    }
+
+    $receptionists = $query->paginate(10);
+    // return Inertia::render('Receptionists/Index', ['receptionists' => $receptionists]);
+    return $receptionists;
+}
+
 
     public function create()
     {
