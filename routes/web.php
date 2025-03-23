@@ -25,9 +25,11 @@ Route::middleware(['auth', 'verified', CheckClientApproval::class])->group(funct
 
         // Shared routes for admin and manager
         Route::middleware(['role:admin|manager|client'])->group(function () {
-            // Basic receptionist management
+            Route::get('reservations/available', [ReservationController::class, 'availableRooms'])
+                ->name('reservations.available');
             Route::resource('receptionists', ReceptionistController::class);
             Route::resource('reservations', ReservationController::class);
+            
         });
         
 
