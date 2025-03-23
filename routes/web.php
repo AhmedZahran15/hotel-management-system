@@ -20,17 +20,16 @@ Route::prefix('dashboard')->group(function () {
     })->middleware(['auth', 'verified'])->name('dashboard');
 
     // Admin routes
-    Route::middleware(['auth','role:admin'])->group(function(){
+    Route::middleware(['auth','role:admin'])->prefix('admin')->group(function(){
         Route::resource('managers', ManagerController::class);
         Route::resource('receptionists', ReceptionistController::class);
-        Route::resource('clients', ClientController::class);
-
+        
         Route::post('receptionists/{receptionist}/ban', [AdminUserController::class, 'ban'])->name('receptionists.ban');
         Route::post('receptionists/{receptionist}/unban', [AdminUserController::class, 'unban'])->name('receptionists.unban');
     });
 
     // Manager routes
-    Route::middleware(['auth','role:manager'])->group(function(){
+    Route::middleware(['auth','role:manager'])->prefix('manager')->group(function(){
         Route::resource('receptionists', ReceptionistController::class);
         Route::resource('clients', ClientController::class);
 

@@ -11,10 +11,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class ReceptionistController extends Controller
 {
-    public function index()
+    public function index() : Response
     {
         $receptionists = User::role('receptionist')->with('profile')->paginate(10);
         // return Inertia::render('Receptionists/Index', ['receptionists' => $receptionists]);
