@@ -10,40 +10,13 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 //no authentication needed to register or create account
-Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
 
 Route::middleware(['auth'])->prefix("dashboard")->group(function () {
-    Route::middleware([CheckForAnyPermission::class.":manage clients create clients"])->get('/clients/create', [ClientController::class, 'create']);
-    Route::get('/clients', [ClientController::class, 'index'])->middleware([CheckForAnyPermission::class.":view clients,manage clients"]);
 
-    Route::middleware(EnsureAdminOrOwnerUser::class)->group(function () {
-        Route::get('/clients/{client}/edit', [ClientController::class, 'edit']);
-        Route::put('/clients/{client}', [ClientController::class, 'update']);
-        Route::get('/clients/{client}', [ClientController::class, 'show']);
-        Route::delete('/clients/{client}', [ClientController::class, 'destroy']);
-    });
+    Route::resource("/clients", ClientController::class) ->only("index","store","create",)->
+    middleware([CheckForAnyPermission::class."create clients,manage clients,view clients"]);
 
+    Route::resource("/clients", ClientController::class) ->only("edit","update","show",)->
+    middleware(EnsureAdminOrOwnerUser::class);
 
-
-    Route::get('/clients/image/{client_id}', function ($client_id) {
-
-        $client = Client::with("user")->findOrFail( $client_id );
-        $authUser = Auth::user();
-
-        if (!$client->img_name) {
-            abort(404); // No image found
-        }
-
-        if ($authUser->hasRole('admin') ||
-            $authUser->hasRole('manager') || $authUser->hasRole('receptionist')||
-            $authUser->id === $client->user->id) {
-            $path = storage_path("app/private/employees/avatars/{$client->img_name}");
-            if (!file_exists($path))
-                abort(404);
-            return response()->file($path);
-        }
-        abort(403);
-    });
 });
-
-
