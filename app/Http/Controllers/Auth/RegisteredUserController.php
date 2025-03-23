@@ -72,14 +72,14 @@ class RegisteredUserController extends Controller
             "user_id" => $user->id,
         ]);
 
-        Phone::create(attributes: [
+        Phone::create([
             'phone_number' => $request->phone_number,
             'client_id' => $client->id,
         ]);
+
         event(new Registered($user));
 
-        Auth::login($user);
-
-        return to_route('dashboard');
+        return to_route('login')
+            ->with('status', 'Registration successful! Your account is pending approval. You will be notified once your account is approved.');
     }
 }
