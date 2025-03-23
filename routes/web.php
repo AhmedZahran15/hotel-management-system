@@ -5,6 +5,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\ManagerReceptionistController;
 use App\Http\Controllers\ReceptionistController;
+use App\Http\Controllers\ReservationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Middleware\CheckClientApproval;
@@ -23,10 +24,12 @@ Route::middleware(['auth', 'verified', CheckClientApproval::class])->group(funct
         })->name('dashboard');
 
         // Shared routes for admin and manager
-        Route::middleware(['role:admin|manager'])->group(function () {
+        Route::middleware(['role:admin|manager|client'])->group(function () {
             // Basic receptionist management
             Route::resource('receptionists', ReceptionistController::class);
+            Route::resource('reservations', ReservationController::class);
         });
+        
 
         // Admin-specific routes
         Route::middleware(['role:admin'])->group(function () {
