@@ -14,13 +14,13 @@ use Inertia\Response;
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Show the login page.
+     * Display the login view.
      */
-    public function create(Request $request): Response
+    public function create(): Response
     {
         return Inertia::render('auth/Login', [
             'canResetPassword' => Route::has('password.request'),
-            'status' => $request->session()->get('status'),
+            'status' => session('status'),
         ]);
     }
 
@@ -31,9 +31,24 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
-        $request->session()->regenerate();
+        // Apply the client approval check right after successful authentication
+        if (Auth::user()->user_type === 'client') {
+            $client = Auth::user()->profile;
 
-        return redirect()->intended(route('dashboard', absolute: false));
+            if ($client && $client->approved_by === null) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                // Flash the error message
+                return to_route('login')
+                    ->withErrors(['approval' => 'Your account is pending approval. You will be notified once your account is approved.']);
+            }
+        }
+
+        $request->session()->regenerate();
+        // Use the route name directly instead of RouteServiceProvider::HOME
+        return redirect()->intended(default: route('dashboard'));
     }
 
     /**
@@ -44,8 +59,9 @@ class AuthenticatedSessionController extends Controller
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
+
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return to_route('home');
     }
 }

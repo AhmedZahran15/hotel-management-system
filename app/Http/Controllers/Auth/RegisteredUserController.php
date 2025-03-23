@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\Phone;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -44,6 +45,7 @@ class RegisteredUserController extends Controller
             'gender' => 'required|string|in:male,female',
             'email' => 'required|string|email|max:255|unique:' . User::class,
             'password' => ['required', 'min:8', 'confirmed', Rules\Password::defaults()],
+            'phone_number' => 'required|string|regex:/^\+?[0-9]{8,15}$/',
         ]);
 
         // Create the user first
@@ -63,18 +65,21 @@ class RegisteredUserController extends Controller
             ->usingFileName($uniqueFileName)
             ->toMediaCollection('avatar_image'); // Use 'avatar_image' as the collection name
 
-        Client::create([
+        $client = Client::create([
             "name" => $request->name,
             "country" => $request->country,
             "gender" => $request->gender,
             "user_id" => $user->id,
         ]);
 
+        Phone::create([
+            'phone_number' => $request->phone_number,
+            'client_id' => $client->id,
+        ]);
 
         event(new Registered($user));
 
-        Auth::login($user);
-
-        return to_route('dashboard');
+        return to_route('login')
+            ->with('status', 'Registration successful! Your account is pending approval. You will be notified once your account is approved.');
     }
 }

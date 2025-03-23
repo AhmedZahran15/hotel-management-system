@@ -5,55 +5,80 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\ManagerReceptionistController;
 use App\Http\Controllers\ReceptionistController;
+use App\Http\Controllers\ReservationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Middleware\CheckClientApproval;
 
-
+// Public routes
 Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
 
-Route::prefix('dashboard')->group(function () {
-    // Dashboard homepage route
-    Route::get('/', function () {
-        return Inertia::render('Dashboard');
-    })->middleware(['auth', 'verified'])->name('dashboard');
+// Protected routes
+Route::middleware(['auth', 'verified', CheckClientApproval::class])->group(function () {
+    Route::prefix('dashboard')->group(function () {
+        // Dashboard homepage
+        Route::get('/', function () {
+            return Inertia::render('Dashboard');
+        })->name('dashboard');
 
-    // Admin routes
-    Route::middleware(['auth','role:admin'])->group(function(){
-        Route::resource('managers', ManagerController::class);
-        Route::resource('receptionists', ReceptionistController::class);
-        Route::resource('clients', ClientController::class);
+        // Shared routes for admin and manager
+        Route::middleware(['role:admin|manager|client'])->group(function () {
+            Route::get('reservations/available', [ReservationController::class, 'availableRooms'])
+                ->name('reservations.available');
+            Route::get('reservations/rooms/{roomId}', [ReservationController::class, 'create'])
+                ->name('reservations.create');
+            Route::resource('receptionists', ReceptionistController::class);
+            Route::resource('reservations', ReservationController::class);
+        });
 
-        Route::post('receptionists/{receptionist}/ban', [AdminUserController::class, 'ban'])->name('receptionists.ban');
-        Route::post('receptionists/{receptionist}/unban', [AdminUserController::class, 'unban'])->name('receptionists.unban');
+
+        // Admin-specific routes
+        Route::middleware(['role:admin'])->group(function () {
+            // Manager management
+            Route::resource('managers', ManagerController::class);
+
+            // Client management
+            Route::resource('clients', ClientController::class);
+
+            // Admin specific receptionist actions
+            Route::prefix('receptionists')->name('admin.receptionists.')->group(function () {
+                Route::post('{receptionist}/ban', [AdminUserController::class, 'ban'])->name('ban');
+                Route::post('{receptionist}/unban', [AdminUserController::class, 'unban'])->name('unban');
+            });
+        });
+
+        // Manager-specific routes
+        Route::middleware(['role:manager'])->group(function () {
+            // Client management
+            Route::resource('clients', ClientController::class);
+
+            // Manager specific receptionist actions
+            Route::prefix('receptionists')->name('manager.receptionists.')->group(function () {
+                Route::post('{receptionist}/ban', [ManagerReceptionistController::class, 'ban'])->name('ban');
+                Route::post('{receptionist}/unban', [ManagerReceptionistController::class, 'unban'])->name('unban');
+            });
+        });
     });
-
-    // Manager routes
-    Route::middleware(['auth','role:manager'])->group(function(){
-        Route::resource('receptionists', ReceptionistController::class);
-        Route::resource('clients', ClientController::class);
-
-        Route::post('receptionists/{receptionist}/ban', [ManagerReceptionistController::class, 'ban'])->name('receptionists.ban');
-        Route::post('receptionists/{receptionist}/unban', [ManagerReceptionistController::class, 'unban'])->name('receptionists.unban');
-    });
-
 });
 
 // Test UI routes
-Route::get('/manage-managers', function () {
-    return Inertia::render('Admin/ManageManagers');
+Route::prefix('manage')->group(function () {
+    Route::get('managers', function () {
+        return Inertia::render('Admin/ManageManagers');
+    });
+    Route::get('receptionists', function () {
+        return Inertia::render('Admin/ManageReceptionists');
+    });
+    Route::get('clients', function () {
+        return Inertia::render('Admin/ManageClients');
+    });
 });
 
-Route::get('/manage-receptionists', function () {
-    return Inertia::render('Admin/ManageReceptionists');
-});
-
-Route::get('/manage-clients', function () {
-    return Inertia::render('Admin/ManageClients');
-});
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';
-require __DIR__.'/floor.php';
-require __DIR__.'/room.php';
-require __DIR__.'/client.php';
+// Include other route files
+require __DIR__ . '/settings.php';
+require __DIR__ . '/auth.php';
+require __DIR__ . '/floor.php';
+require __DIR__ . '/room.php';
+require __DIR__ . '/client.php';

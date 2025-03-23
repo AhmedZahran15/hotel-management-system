@@ -11,15 +11,31 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class ReceptionistController extends Controller
 {
     public function index()
-    {
-        $receptionists = User::role('receptionist')->with('profile')->paginate(10);
-        // return Inertia::render('Receptionists/Index', ['receptionists' => $receptionists]);
-        return $receptionists;
+{
+    $user = auth()->user();
+
+    $query = User::role('receptionist')->with('profile');
+
+    //show the associated receptionists with the manager if logged in as a manager
+    if ($user->hasRole('manager')) {
+        $query->where('creator_user_id', $user->id);
     }
+
+    //show the manger who created the receptionists logged in as an admin 
+    if ($user->hasRole('admin')) {
+        $query->with('createdUsers:id,name,email');
+    }
+
+    $receptionists = $query->paginate(10);
+    // return Inertia::render('Receptionists/Index', ['receptionists' => $receptionists]);
+    return $receptionists;
+}
+
 
     public function create()
     {
