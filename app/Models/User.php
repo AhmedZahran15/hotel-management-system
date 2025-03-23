@@ -65,7 +65,7 @@ class User extends Authenticatable implements BannableInterface, HasMedia
         // For internal URLs, ensure proper path formatting using Laravel's url() helper
         if (parse_url($mediaUrl, PHP_URL_HOST) === request()->getHost()) {
             $path = parse_url($mediaUrl, PHP_URL_PATH);
-            return url($path);
+            return url((string)$path);
         }
         return $mediaUrl;
     }
