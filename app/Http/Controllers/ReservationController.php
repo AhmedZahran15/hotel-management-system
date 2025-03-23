@@ -6,9 +6,12 @@ use App\Http\Requests\StoreReservationRequest;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Services\ReservationService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ReservationController extends Controller
 {
@@ -18,10 +21,12 @@ class ReservationController extends Controller
     {
         $this->reservationService = $reservationService;
     }
-    public function index()
+
+    public function index(): Response
     {
         $user = Auth::user();
         $query = Reservation::with(['room', 'client']);
+
         //load all reservations for admin
         if ($user->hasRole('admin')) {
             $query->with('client.approvedBy:id,name,email');
@@ -31,7 +36,7 @@ class ReservationController extends Controller
                 $q->where('creator_user_id', $user->id);
             });
         } elseif ($user->hasRole('client')) {
-            //retrive all client reservations if logged is a client 
+            //retrive all client reservations if logged is a client
             $client = $user->profile;
             if ($client) {
                 $query->where('client_id', $client->id);
@@ -42,18 +47,24 @@ class ReservationController extends Controller
 
         $reservations = $query->orderBy('created_at', 'desc')->paginate(10);
 
+        // return Inertia::render('Reservations/Index', [
+        //     'reservations' => $reservations,
+        // ]);
         return $reservations;
     }
 
-
-    public function create($roomId)
+    public function create($roomId): Response
     {
         $room = Room::findOrFail($roomId);
-        return view('reservations.create', compact('room'));
+
+        return Inertia::render('Reservations/Create', [
+            'room' => $room,
+        ]);
     }
 
-    public function store(StoreReservationRequest $request, $roomId)
+    public function store(StoreReservationRequest $request): RedirectResponse
     {
+        $roomId = $request->input('room_id');
         $room = Room::findOrFail($roomId);
 
         try {
@@ -69,10 +80,11 @@ class ReservationController extends Controller
             ->with('success', 'Reservation created successfully.');
     }
 
-    public function show($id)
+    public function show($id): Response
     {
         $user = Auth::user();
         $reservation = Reservation::with(['room', 'client'])->findOrFail($id);
+
         //load the reservation made by the client only
         if ($user->hasRole('client')) {
             $client = $user->profile;
@@ -90,11 +102,19 @@ class ReservationController extends Controller
             }
         }
 
-        return $reservation;
+        return Inertia::render('Reservations/Show', [
+            'reservation' => $reservation,
+        ]);
     }
-    public function availableRooms()
+
+    // List available rooms using an Inertia response
+    public function availableRooms(): Response
     {
         $rooms = Room::available()->paginate(10);
+
+        // return Inertia::render('Reservations/Available', [
+        //     'rooms' => $rooms,
+        // ]);
         return $rooms;
     }
 }

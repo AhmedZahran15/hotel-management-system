@@ -27,20 +27,21 @@ Route::middleware(['auth', 'verified', CheckClientApproval::class])->group(funct
         Route::middleware(['role:admin|manager|client'])->group(function () {
             Route::get('reservations/available', [ReservationController::class, 'availableRooms'])
                 ->name('reservations.available');
+            Route::get('reservations/rooms/{roomId}', [ReservationController::class, 'create'])
+                ->name('reservations.create');
             Route::resource('receptionists', ReceptionistController::class);
             Route::resource('reservations', ReservationController::class);
-            
         });
-        
+
 
         // Admin-specific routes
         Route::middleware(['role:admin'])->group(function () {
             // Manager management
             Route::resource('managers', ManagerController::class);
-            
+
             // Client management
             Route::resource('clients', ClientController::class);
-            
+
             // Admin specific receptionist actions
             Route::prefix('receptionists')->name('admin.receptionists.')->group(function () {
                 Route::post('{receptionist}/ban', [AdminUserController::class, 'ban'])->name('ban');
@@ -52,7 +53,7 @@ Route::middleware(['auth', 'verified', CheckClientApproval::class])->group(funct
         Route::middleware(['role:manager'])->group(function () {
             // Client management
             Route::resource('clients', ClientController::class);
-            
+
             // Manager specific receptionist actions
             Route::prefix('receptionists')->name('manager.receptionists.')->group(function () {
                 Route::post('{receptionist}/ban', [ManagerReceptionistController::class, 'ban'])->name('ban');
