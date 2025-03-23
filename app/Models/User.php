@@ -71,6 +71,21 @@ class User extends Authenticatable implements BannableInterface, HasMedia
     }
 
     /**
+     * Update user's profile picture
+     *
+     * @param mixed $newImage The new image file to use as avatar
+     * @return void
+     */
+    public function updateAvatar($newImage): void
+    {
+        // First clear the existing avatar image
+        $this->clearMediaCollection('avatar_image');
+
+        // Then add the new avatar image
+        $this->addMedia($newImage)->toMediaCollection('avatar_image');
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
