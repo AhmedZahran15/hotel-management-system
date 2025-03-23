@@ -44,6 +44,7 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
 
         $formattedProfile = null;
+        $permissions = null;
         if ($user) {
             // Load the necessary relationships first
             $user->load('roles:id,name');
@@ -55,6 +56,7 @@ class HandleInertiaRequests extends Middleware
             } elseif ($user->profile) {
                 $formattedProfile = $user->profile;
             }
+            $permissions = $user->getAllPermissions()->pluck('name')->map(fn($permission) => strtolower(str($permission)->title()));
         }
 
         return [
@@ -65,9 +67,11 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user ? [
                     ...(new UserResource(resource: $user))->resolve(),
                     'profile' => $formattedProfile,
-                    'roles' => $user->roles,
+                    'roles' => $user->roles
+                        ->pluck('name')
+                        ->map(fn($role) => strtolower(str($role)->title())),
                     'avatar' => $user->getAvatarUrl(),
-                    'permissions' => $user->getAllPermissions(),
+                    'permissions' => $permissions,
                 ] : null,
             ],
             'ziggy' => [
