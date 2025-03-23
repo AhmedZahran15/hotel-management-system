@@ -21,12 +21,12 @@ class ReceptionistController extends Controller
 
     $query = User::role('receptionist')->with('profile');
 
-    //show the accosited receptionists with the manager
+    //show the associated receptionists with the manager if logged in as a manager
     if ($user->hasRole('manager')) {
         $query->where('creator_user_id', $user->id);
     }
 
-    //show all receptionists for the admin and show the creator user
+    //show the manger who created the receptionists logged in as an admin 
     if ($user->hasRole('admin')) {
         $query->with('createdUsers:id,name,email');
     }
