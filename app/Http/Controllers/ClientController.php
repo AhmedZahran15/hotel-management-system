@@ -24,12 +24,14 @@ class ClientController extends Controller
             return Inertia::render("Admin/ManageClients",["clients"=> ClientResource::collection(Client::with("user",'phones')->paginate(10))]);
         }
         else if(Auth::user()->hasRole("receptionist")) {
-            return Inertia::render("Admin/ManageClients",
-            ["clients"=> ClientResource::collection(Client::with("user")->whereNull("approved_by")->paginate(10)),
-                    "approved_clients"=> ClientResource::collection(Client::with('user','phones')->where("approved_by",Auth::user()->id)->get()) ]);
+            return Inertia::render("Admin/ManageClients",[
+                "clients"=> ClientResource::collection(Client::with("user")->whereNull("approved_by")->paginate(10)),
+                "approved_clients"=> ClientResource::collection(Client::with('user','phones')->where("approved_by",Auth::id())->get())
+            ]);
         }
-        else
+        else {
             return response()->json(['message' => 'Unauthorized'], 403);
+        }
     }
 
     /**
@@ -169,4 +171,46 @@ class ClientController extends Controller
             return back()->with("success","Client deleted successfully");
         }
 
+    /**
+     * Approve a client account
+     */
+    public function approve(string $id)
+    {
+        // Ensure only authorized users can approve clients
+        if (!Auth::check() || !Auth::user()->hasAnyPermission(['approve clients', 'manage clients'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $client = Client::findOrFail($id);
+
+        // Only update if not already approved
+        if ($client->approved_by === null) {
+            $client->update([
+                'approved_by' => Auth::id()
+            ]);
+
+            return back()->with('success', 'Client has been approved successfully');
+        }
+
+        return back()->with('info', 'Client was already approved');
     }
+
+    /**
+     * Display pending clients for approval
+     */
+    public function pending()
+    {
+        // Ensure only authorized users can view pending clients
+        if (!Auth::check() || !Auth::user()->hasAnyPermission(['approve clients', 'manage clients', 'view clients'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $pendingClients = Client::with('user', 'phones')
+            ->whereNull('approved_by')
+            ->paginate(10);
+
+        return Inertia::render("Admin/PendingClients", [
+            "clients" => ClientResource::collection($pendingClients)
+        ]);
+    }
+}
