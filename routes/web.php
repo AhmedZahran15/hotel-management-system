@@ -30,3 +30,4 @@ require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/floor.php';
 require __DIR__ . '/room.php';
+require __DIR__ . '/reservation.php';
