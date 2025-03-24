@@ -19,10 +19,13 @@ interface Country {
     id: number;
     name: string;
 }
+interface Props {
+    countries: Country[];
+}
+defineProps<Props>();
 
 const page = usePage();
 const errors = computed(() => page.props.errors);
-const countries = computed<Country[]>(() => (Array.isArray(page.props.countries) ? (page.props.countries as Country[]) : []));
 const avatarImage = ref<File | null>(null);
 const avatarImagePreview = ref<string | null>(null);
 
