@@ -192,6 +192,15 @@ const onSubmit = handleSubmit((values: FormValues) => {
     formData.append('_method', 'PATCH');
 
     router.post(route('profile.update'), formData, {
+        onSuccess: () => {
+            // Reload the page data without refreshing the page
+            // This will update all components that use page.props.auth.user
+            router.visit(window.location.pathname, {
+                only: ['auth'],
+                preserveScroll: true,
+                preserveState: true,
+            });
+        },
         onFinish: () => {
             isProcessing.value = false;
         },
