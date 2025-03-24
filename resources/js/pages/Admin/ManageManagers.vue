@@ -1,70 +1,89 @@
+<script setup lang="ts">
+import ManagerForm from '@/components/Admin/Managers/ManagerForm.vue';
+import DataTable from '@/components/Shared/DataTable.vue';
+import ManageModal from '@/components/Shared/ManageModalEdit.vue';
+import { Button } from '@/components/ui/button';
+import AppSidebarLayout from '@/layouts/app/AppSidebarLayout.vue';
+import { usePage } from '@inertiajs/vue3';
+import axios from 'axios';
+import { computed, ref } from 'vue';
+
+// ✅ Fetch managers from Inertia
+const page = usePage();
+const managers = ref(page.props.managers?.data || []);
+const totalPages = computed(() => page.props.managers?.last_page || 1);
+
+// ✅ State for Modals
+const showModal = ref(false);
+const editingManager = ref(null);
+const showDeleteDialog = ref(false);
+const managerToDelete = ref(null);
+
+// ✅ Fetch Updated Manager Data (Table Refresh)
+const refreshManagers = async () => {
+    try {
+        const response = await axios.get('/dashboard/managers');
+        managers.value = response.data.data; // ✅ Update state dynamically
+    } catch (error) {
+        console.error('❌ Error fetching managers:', error);
+    }
+};
+
+// ✅ Open Modal for Create/Edit
+const openModal = (manager = null) => {
+    editingManager.value = manager;
+    showModal.value = true;
+};
+
+// ✅ Open Delete Confirmation
+const confirmDelete = (manager) => {
+    managerToDelete.value = manager;
+    showDeleteDialog.value = true;
+};
+
+// ✅ Delete Manager via Axios & Update State
+const deleteManager = async () => {
+    try {
+        await axios.delete(`/dashboard/managers/${managerToDelete.value.id}`);
+        alert('✅ Manager deleted successfully!');
+        showDeleteDialog.value = false;
+
+        // ✅ Remove the deleted manager from the table (No reload)
+        managers.value = managers.value.filter((m) => m.id !== managerToDelete.value.id);
+    } catch (error) {
+        console.error('❌ Error deleting manager:', error.response?.data || error.message);
+        alert('❌ Failed to delete manager.');
+    }
+};
+</script>
+
 <template>
-    <div class="p-6">
-      <h1 class="text-2xl font-bold mb-4 text-black">Manage Managers</h1>
-  
-      <!-- Add Manager Button -->
-      <button
-        @click="showCreateForm = true"
-        class="mb-4 px-4 py-2 text-white rounded bg-gray-600 hover:bg-gray-500  "
-      >
-        Add Manager
-      </button>
-  
-      <!-- Data Table -->
-      <DataTable :columns="columns" :data="managers" @delete="deleteManager" @edit="editManager" />
-  
-      <!-- Create Manager Form Modal -->
-      <CreateManagerForm v-if="showCreateForm" @close="showCreateForm = false" @create="addManager" />
-    </div>
-  </template>
-  
-  <script setup>
-  import { ref, computed } from "vue";
-  import { usePage } from "@inertiajs/vue3";
-  import DataTable from "@/components/Shared/DataTable.vue";
-  import CreateManagerForm from "@/components/Admin/Managers/CreateManagerForm.vue";
-  
-  const managers = ref(usePage().props.managers ?? []);
+    <AppSidebarLayout>
+        <div>
+            <h2 class="mb-4 text-xl font-bold">Manage Managers</h2>
 
-  const columns = [
-    { accessorKey: "id", header: "ID" },
-    { accessorKey: "name", header: "Name" },
-    { accessorKey: "email", header: "Email" },
-    { accessorKey: "national_id", header: "National ID" },
-    { accessorKey: "role", header: "Role" },
-    {
-      accessorKey: "avatar_image",
-      header: "Avatar",
-      cell: ({ row }) =>
-        row.original.avatar_image
-          ? `<img src="${row.original.avatar_image}" class="w-10 h-10 rounded-full"/>`
-          : "N/A",
-    },
-  ];
+            <!-- ✅ Add Manager Button -->
+            <Button variant="secondary" @click="openModal()" class="mb-4">+ Add Manager</Button>
 
-  const showCreateForm = ref(false);
+            <!-- ✅ Data Table -->
+            <DataTable
+                :columns="[
+                    { accessorKey: 'id', header: 'ID', sortable: true },
+                    { accessorKey: 'name', header: 'Name', sortable: true },
+                    { accessorKey: 'email', header: 'Email', sortable: true },
+                    { accessorKey: 'profile.national_id', header: 'National ID', sortable: true },
+                    { accessorKey: 'profile.img_name', header: 'Avatar' },
+                ]"
+                :data="managers"
+                :totalPages="totalPages"
+                @edit="openModal"
+                @delete="confirmDelete"
+            />
 
-  const addManager = (newManager) => {
-    const newId = managers.value.length ? Math.max(...managers.value.map((m) => m.id)) + 1 : 1;
-    managers.value.push({ ...newManager, id: newId, role: "Manager" });
-    showCreateForm.value = false;
-  };
-
-  const editManager = (manager) => {
-    console.log("Editing manager:", manager);
-  };
-
-  const deleteManager = (managerId) => {
-    managers.value = managers.value.filter((m) => m.id !== managerId);
-    console.log("Deleted manager with ID:", managerId);
-  };
-  </script>
-  
-  <script>
-  import AdminLayout from "@/layouts/AdminLayout.vue";
-  
-  export default {
-    layout: AdminLayout,
-  };
-  </script>
-  
+            <!-- ✅ Manager Form Modal -->
+            <ManageModal :open="showModal" :title="editingManager ? 'Edit Manager' : 'Create Manager'" @update:open="showModal = false">
+                <ManagerForm :manager="editingManager" @close="showModal = false" @refresh="refreshManagers" />
+            </ManageModal>
+        </div>
+    </AppSidebarLayout>
+</template>

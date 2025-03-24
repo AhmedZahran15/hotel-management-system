@@ -57,19 +57,6 @@ Route::middleware(['auth', 'verified', CheckClientApproval::class])->group(funct
     });
 });
 
-// Test UI routes
-Route::prefix('manage')->group(function () {
-    Route::get('managers', function () {
-        return Inertia::render('Admin/ManageManagers');
-    });
-    Route::get('receptionists', function () {
-        return Inertia::render('Admin/ManageReceptionists');
-    });
-    Route::get('clients', function () {
-        return Inertia::render('Admin/ManageClients');
-    });
-});
-
 // Include other route files
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';

@@ -16,17 +16,17 @@ const mainNavItems: NavItem[] = [
     },
     { 
         title: 'Manage Managers', 
-        href: '/manage-managers', 
+        href: '/dashboard/managers', 
         icon: LayoutGrid, 
     },
     { 
         title: 'Manage Receptionists', 
-        href: '/manage-receptionists', 
+        href: '/dashboard/receptionists', 
         icon: LayoutGrid, 
     },
     { 
         title: 'Manage Clients', 
-        href: '/manage-clients', 
+        href: '/dashboard/clients', 
         icon: LayoutGrid, 
     },
 ];
