@@ -15,12 +15,27 @@ use Inertia\Response;
 
 class ReceptionistController extends Controller
 {
-    public function index() : Response
-    {
-        $receptionists = User::role('receptionist')->with('profile')->paginate(10);
-        // return Inertia::render('Receptionists/Index', ['receptionists' => $receptionists]);
-        return $receptionists;
+    public function index()
+{
+    $user = auth()->user();
+
+    $query = User::role('receptionist')->with('profile');
+
+    //show the associated receptionists with the manager if logged in as a manager
+    if ($user->hasRole('manager')) {
+        $query->where('creator_user_id', $user->id);
     }
+
+    //show the manger who created the receptionists logged in as an admin 
+    if ($user->hasRole('admin')) {
+        $query->with('createdUsers:id,name,email');
+    }
+
+    $receptionists = $query->paginate(10);
+    // return Inertia::render('Receptionists/Index', ['receptionists' => $receptionists]);
+    return $receptionists;
+}
+
 
     public function create()
     {
@@ -118,7 +133,11 @@ class ReceptionistController extends Controller
             $storagePath = config('app.emp_avatar_storage_path');
             Storage::disk("local")->delete($storagePath."/".$receptionist->profile->img_name);
         }
-        $receptionist->delete();
+        $profile = $receptionist->profile;
+        if ($profile) {
+            $profile->update(['user_id' => null]);
+            $profile->delete();
+        }        $receptionist->delete();
         return redirect()->route('receptionists.index')
         ->with('success', 'Receptionist deleted successfully.');
     }

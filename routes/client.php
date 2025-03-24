@@ -10,24 +10,13 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 //no authentication needed to register or create account
-Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
 
 Route::middleware(['auth'])->prefix("dashboard")->group(function () {
-    Route::middleware([CheckForAnyPermission::class . ":manage clients create clients"])->get('/clients/create', [ClientController::class, 'create']);
-    Route::get('/clients', [ClientController::class, 'index'])->middleware([CheckForAnyPermission::class . ":view clients,manage clients"]);
 
-    // Add routes for client approval - placing it BEFORE the {client} routes to avoid conflicts
-    Route::middleware([CheckForAnyPermission::class . ":approve clients,manage clients"])->group(function () {
-        Route::get('/clients/pending', [ClientController::class, 'pending'])->name('clients.pending');
-        Route::post('/clients/{client}/approve', [ClientController::class, 'approve'])->name('clients.approve');
-    });
+    Route::resource("/clients", ClientController::class) ->only("index","store","create",)->
+    middleware([CheckForAnyPermission::class."create clients,manage clients,view clients"]);
 
-    Route::middleware(EnsureAdminOrOwnerUser::class)->group(function () {
-        Route::get('/clients/{client}/edit', [ClientController::class, 'edit']);
-        Route::put('/clients/{client}', [ClientController::class, 'update']);
-        Route::get('/clients/{client}', [ClientController::class, 'show']);
-        Route::delete('/clients/{client}', [ClientController::class, 'destroy']);
-    });
+    Route::resource("/clients", ClientController::class) ->only("edit","update","show",)->
+    middleware(EnsureAdminOrOwnerUser::class);
+
 });
-
-

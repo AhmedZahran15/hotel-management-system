@@ -17,6 +17,8 @@ class UserResource extends JsonResource
         return [
             "name"=>$this->name,
             "email"=>$this->email,
+            'user_type'=>$this->user_type,
+            'banned'=>$this->banned_at? true : false,
         ];
     }
 }

@@ -19,11 +19,11 @@ class FloorController extends Controller
     // we return back in update ,store and store  if we gonna call update from index page otherwise we will redirect to floor.index;
     public function index(){
         if(Auth::user()->hasRole("manager"))
-            return Inertia::render("",["floors"=> FloorManagerResource::collection(Floor::paginate(10))]);
+            $floors = FloorManagerResource::collection(Floor::with("rooms")->paginate(10));
         else if(Auth::user()->hasRole("admin"))
-            return Inertia::render("",["floors"=> FloorAdminResource::collection(Floor::with('creatorUser')->paginate(10))]);
-        else
-            return response()->json(['message' => 'Unauthorized'], 403);
+            $floors = FloorAdminResource::collection(Floor::with('creatorUser','rooms')->paginate(10));
+
+        return Inertia::render("HotelManagement/ManageFloors",["floors"=> $floors ]);
     }
 
     public function create(){
@@ -80,7 +80,7 @@ class FloorController extends Controller
     public function destroy(Floor $floor){
         //$floor = new FloorManagerResource(Floor::where('number', $floor)->firstOrFail());
         if (!Auth::check() || (!Auth::user()->hasRole("admin") && Auth::id() !== $floor->creator_user_id))
-            return response()->json(['message' => 'Unauthorized'], 403);
+            abort(403);
         if($floor->rooms()->count() > 0){
         return back()->with("error","can't delete floor because it has romms attached to it.");
         }
