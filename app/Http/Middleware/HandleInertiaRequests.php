@@ -42,42 +42,70 @@ class HandleInertiaRequests extends Middleware
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
         $user = $request->user();
-
-        $formattedProfile = null;
-        $permissions = null;
-        if ($user) {
-            // Load the necessary relationships first
-            $user->load('roles:id,name');
-
-            if ($user->user_type == "client" && $user->profile) {
-                // Load phones relationship first, then create the resource
-                $user->profile->load('phones');
-                $formattedProfile = new ClientResource($user->profile);
-            } elseif ($user->profile) {
-                $formattedProfile = $user->profile;
-            }
-            $permissions = $user->getAllPermissions()->pluck('name')->map(fn($permission) => strtolower(str($permission)->title()));
-        }
+        $userData = $user ? $this->formatUserData($user) : null;
 
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $user ? [
-                    ...(new UserResource(resource: $user))->resolve(),
-                    'profile' => $formattedProfile,
-                    'roles' => $user->roles
-                        ->pluck('name')
-                        ->map(fn($role) => strtolower(str($role)->title())),
-                    'avatar' => $user->getAvatarUrl(),
-                    'permissions' => $permissions,
-                ] : null,
+                'user' => $userData,
             ],
             'ziggy' => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],
         ];
+    }
+
+    /**
+     * Format user data for sharing with the frontend
+     */
+    private function formatUserData($user): array
+    {
+        // Load the necessary relationships first
+        $user->load('roles:id,name');
+
+        $formattedProfile = $this->formatUserProfile($user);
+        $permissions = $user->getAllPermissions()->pluck('name')
+            ->map(fn($permission) => strtolower(str($permission)->title()));
+
+        $roles = $user->roles->pluck('name')
+            ->map(fn($role) => strtolower(str($role)->title()));
+
+        $avatar = $user->getAvatarUrl();
+        $userData = (new UserResource($user))->resolve();
+
+        return [
+            ...$userData,
+            'profile' => $formattedProfile,
+            'roles' => $roles,
+            'avatar' => $avatar,
+            'permissions' => $permissions,
+        ];
+    }
+
+    /**
+     * Format the user profile based on user type
+     */
+    private function formatUserProfile($user)
+    {
+        if (!$user->profile) {
+            return null;
+        }
+
+        if ($user->user_type == "client") {
+            // Load phones relationship first, then create the resource
+            $user->profile->load('phones');
+            $formattedProfile = (new ClientResource($user->profile))->resolve();
+
+            // Format phones array
+            $formattedProfile['phones'] = $formattedProfile['phones']
+                ->map(fn($phoneObj) => $phoneObj->resolve()['phone']);
+
+            return $formattedProfile;
+        }
+
+        return $user->profile;
     }
 }
