@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 Route::middleware(['auth'])->prefix("dashboard")->group(function () {
 
     Route::resource("/clients", ClientController::class) ->only("index","store","create",)->
-    middleware([CheckForAnyPermission::class."create clients,manage clients,view clients"]);
+    middleware([CheckForAnyPermission::class.":create clients,manage clients,view clients"]);
 
     Route::resource("/clients", ClientController::class) ->only("edit","update","show",)->
     middleware(EnsureAdminOrOwnerUser::class);
