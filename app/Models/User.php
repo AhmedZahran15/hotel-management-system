@@ -82,7 +82,9 @@ class User extends Authenticatable implements BannableInterface, HasMedia
         $this->clearMediaCollection('avatar_image');
 
         // Then add the new avatar image
-        $this->addMedia($newImage)->toMediaCollection('avatar_image');
+        $extension = $newImage->getClientOriginalExtension();
+        $uniqueFileName = time() . '_' . $this->id . '.' . $extension;
+        $this->addMedia($newImage)->usingFileName($uniqueFileName)->toMediaCollection('avatar_image');
     }
 
     /**
