@@ -81,8 +81,27 @@ const validationSchema = computed(() => {
     }
 });
 
+// Define types for form values
+interface BaseFormValues {
+    name: string;
+    email: string;
+    avatar_image: File | null;
+}
+
+interface ClientFormValues extends BaseFormValues {
+    gender: 'male' | 'female';
+    country: string; // Stores country ID as string
+    phone_number: string;
+}
+
+interface EmployeeFormValues extends BaseFormValues {
+    national_id: string;
+}
+
+type FormValues = BaseFormValues & Partial<ClientFormValues & EmployeeFormValues>;
+
 // Use vee-validate's useForm with computed schema
-const { handleSubmit, isFieldDirty, isSubmitting, setFieldError, setFieldValue, setValues } = useForm({
+const { handleSubmit, isFieldDirty, isSubmitting, setFieldError, setFieldValue, setValues } = useForm<FormValues>({
     validationSchema,
     initialValues: {
         name: '',
@@ -101,22 +120,25 @@ const isProcessing = ref(false);
 // Set initial values after component mounts
 onMounted(() => {
     // Force immediate update of form values
-    const formValues: any = {
+    const formValues: FormValues = {
         name: user.name || '',
         email: user.email || '',
         avatar_image: null,
     };
 
-    if (user_type === 'client') {
-        formValues.gender = user.profile?.gender || 'male';
-        formValues.country = user.profile?.country || '';
+    if (user_type === 'client' && user.profile) {
+        formValues.gender = (user.profile?.gender as 'male' | 'female') || 'male';
+        formValues.country = user.profile?.country?.toString() || '';
         formValues.phone_number = user.profile?.phones?.[0] || '';
-    } else if (user_type === 'employee') {
+    } else if (user_type === 'employee' && user.profile) {
         formValues.national_id = user.profile?.national_id || '';
     }
 
     setValues(formValues);
 });
+
+// Remove console.log for production
+// console.log(user);
 
 // Handle file upload
 const handleFileUpload = (event: Event) => {
@@ -147,8 +169,8 @@ const handleFileUpload = (event: Event) => {
     }
 };
 
-// Submit handler
-const onSubmit = handleSubmit((values) => {
+// Submit handler with proper type annotation
+const onSubmit = handleSubmit((values: FormValues) => {
     isProcessing.value = true;
     // Create form data for file upload
     const formData = new FormData();
@@ -156,7 +178,7 @@ const onSubmit = handleSubmit((values) => {
     formData.append('email', values.email);
 
     // Only append fields based on user type
-    if (user_type === 'client') {
+    if (user_type === 'client' && values.gender && values.country && values.phone_number) {
         formData.append('gender', values.gender);
         formData.append('country', values.country);
         formData.append('phone_number', values.phone_number);
@@ -340,7 +362,7 @@ const onSubmit = handleSubmit((values) => {
                             <FormItem>
                                 <FormLabel for="country">Country</FormLabel>
                                 <FormControl>
-                                    <Select :model-value="field.value" @update:model-value="setFieldValue('country', $event)">
+                                    <Select :model-value="field.value" @update:model-value="setFieldValue('country', String($event))">
                                         <SelectTrigger id="country" class="w-full !text-foreground">
                                             <SelectValue placeholder="Select your country" />
                                         </SelectTrigger>
