@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
@@ -65,9 +66,16 @@ class RegisteredUserController extends Controller
             ->usingFileName($uniqueFileName)
             ->toMediaCollection('avatar_image'); // Use 'avatar_image' as the collection name
 
+            $countryInput = $request->country;
+            if (is_numeric($countryInput)) {
+                $countryData = DB::table('countries')->where('id', $countryInput)->first();
+                $countryName = $countryData->name ?? $countryInput;
+            } else {
+                $countryName = $countryInput;
+            }
         $client = Client::create([
             "name" => $request->name,
-            "country" => $request->country,
+            "country" => $countryName,
             "gender" => $request->gender,
             "user_id" => $user->id,
         ]);
