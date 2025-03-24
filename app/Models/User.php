@@ -82,7 +82,9 @@ class User extends Authenticatable implements BannableInterface, HasMedia
         $this->clearMediaCollection('avatar_image');
 
         // Then add the new avatar image
-        $this->addMedia($newImage)->toMediaCollection('avatar_image');
+        $extension = $newImage->getClientOriginalExtension();
+        $uniqueFileName = time() . '_' . $this->id . '.' . $extension;
+        $this->addMedia($newImage)->usingFileName($uniqueFileName)->toMediaCollection('avatar_image');
     }
 
     /**
@@ -123,6 +125,10 @@ class User extends Authenticatable implements BannableInterface, HasMedia
     {
         return $this->hasMany(Client::class, "approved_by");
     }
-
-
+//ovverride the unban method for testing might delete later
+    public function unban(): void
+    {
+        $this->banned_at = null;
+        $this->save();
+    }
 }

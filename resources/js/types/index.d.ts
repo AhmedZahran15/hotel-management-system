@@ -33,6 +33,18 @@ export interface User {
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
+    avatar: string | null;
+    profile: Profile;
+    user_type: string;
 }
 
+export interface Profile {
+    id: number;
+    name: string;
+    email: string;
+    national_id: string;
+    gender: 'male' | 'female';
+    country: string;
+    phones: string[];
+}
 export type BreadcrumbItemType = BreadcrumbItem;
