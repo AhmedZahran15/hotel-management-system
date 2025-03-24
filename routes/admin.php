@@ -11,9 +11,7 @@ Route::prefix('dashboard')->middleware(['auth','role:admin'])->group(function ()
     
     // Admin-specific receptionist actions
     Route::prefix('receptionists')->name('admin.receptionists.')->group(function () {
-        Route::post('{receptionist}/ban', [AdminUserController::class, 'ban'])
-            ->name('ban');
-        Route::post('{receptionist}/unban', [AdminUserController::class, 'unban'])
-            ->name('unban');
+        Route::post('{receptionist}/ban', [AdminUserController::class, 'ban'])->name('ban');
+        Route::post('{receptionist}/unban', [AdminUserController::class, 'unban'])->name('unban');
     });
 });

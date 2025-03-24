@@ -125,6 +125,10 @@ class User extends Authenticatable implements BannableInterface, HasMedia
     {
         return $this->hasMany(Client::class, "approved_by");
     }
-
-
+//ovverride the unban method for testing might delete later
+    public function unban(): void
+    {
+        $this->banned_at = null;
+        $this->save();
+    }
 }

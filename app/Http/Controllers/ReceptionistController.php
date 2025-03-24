@@ -133,7 +133,11 @@ class ReceptionistController extends Controller
             $storagePath = config('app.emp_avatar_storage_path');
             Storage::disk("local")->delete($storagePath."/".$receptionist->profile->img_name);
         }
-        $receptionist->delete();
+        $profile = $receptionist->profile;
+        if ($profile) {
+            $profile->update(['user_id' => null]);
+            $profile->delete();
+        }        $receptionist->delete();
         return redirect()->route('receptionists.index')
         ->with('success', 'Receptionist deleted successfully.');
     }
