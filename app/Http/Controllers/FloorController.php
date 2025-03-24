@@ -27,7 +27,7 @@ class FloorController extends Controller
     }
 
     public function create(){
-        return Inertia::render("");
+        // return Inertia::render("");
     }
 
     public function store(Request $request){
@@ -44,10 +44,10 @@ class FloorController extends Controller
     public function show($floor){
         $floor = Floor::with(["creatorUser"])->where('number', $floor)->firstOrFail();
         if(Auth::user()->hasRole("manager")){
-            return Inertia::render("",["floor"=> new FloorManagerResource($floor)]);
+            // return Inertia::render("",["floor"=> new FloorManagerResource($floor)]);
         }
         else if(Auth::user()->hasRole("admin")){
-            return Inertia::render("",["floor"=> new FloorAdminResource($floor)]);
+            // return Inertia::render("",["floor"=> new FloorAdminResource($floor)]);
         }
         else
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -58,7 +58,7 @@ class FloorController extends Controller
         if (!Auth::check() || (!Auth::user()->hasRole("admin") && Auth::id() !== $floor->creator_user_id))
             return response()->json(['message' => 'Unauthorized'], 403);
 
-        return Inertia::render("",["floor"=> $floor]);
+        // return Inertia::render("",["floor"=> $floor]);
 
 
     }
@@ -66,7 +66,7 @@ class FloorController extends Controller
     public function update(Request $request, $floor){
         $floor = new FloorManagerResource(Floor::where('number', $floor)->firstOrFail());
         if (!Auth::check() || (!Auth::user()->hasRole("admin") && Auth::id() !== $floor->creator_user_id))
-            return response()->json(['message' => 'Unauthorized'], 403);
+            abort(304);
 
         $request -> validate([
             "name"=> ["required","string","min:3"],
@@ -82,7 +82,10 @@ class FloorController extends Controller
         if (!Auth::check() || (!Auth::user()->hasRole("admin") && Auth::id() !== $floor->creator_user_id))
             abort(403);
         if($floor->rooms()->count() > 0){
-        return back()->with("error","can't delete floor because it has romms attached to it.");
+            //return back()->withErrors(["error" => "Can't delete floor because it has rooms attached to it."]);
+            return to_route("floors.index")->withErrors(["error"=> "Can't delete floor because it has rooms attached to it."]);
+            //return to_route("floors.index")->withErrors(['approval' => 'Your account is pending approval. You will be notified once your account is approved.']);
+
         }
         $floor->delete();
         return back()->with("success","floor deleted");

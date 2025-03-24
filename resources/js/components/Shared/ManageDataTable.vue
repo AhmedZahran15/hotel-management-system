@@ -6,8 +6,7 @@ const props = defineProps<{
     columns: any[],
     data:any[]
 }>();
-console.log(props.columns);
-console.log(props.data[0]);
+
 
 const table = useVueTable({
     data: props.data ,

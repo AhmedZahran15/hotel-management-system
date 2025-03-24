@@ -21,6 +21,7 @@ const props = defineProps({
     open: Boolean, // Controls modal externally
     contentClass: {type: String, default:"max-w-2xl"},
     disableEsc: { type: Boolean, default: true },
+    buttonsVisible:{type:Boolean ,default:true}
 
 });
 
@@ -38,9 +39,6 @@ const preventEscClose = (event:KeyboardEvent) => {
     if (props.disableEsc && event.key === "Escape") {
         event.preventDefault();
         event.stopPropagation();
-    }
-    else{
-        closeModal();
     }
 };
 // Add & remove event listeners
@@ -82,10 +80,13 @@ const confirmAction = () => {
             </AlertDialogHeader>
 
             <AlertDialogFooter>
-                <AlertDialogCancel @click="closeModal">{{ cancelText }}</AlertDialogCancel>
-                <AlertDialogAction :variant="confirmVariant" @click="confirmAction">
-                    <slot name="confirm-text">{{ confirmText }}</slot>
-                </AlertDialogAction>
+                <slot name="footer"/>
+                <div v-if="buttonsVisible">
+                    <AlertDialogCancel @click="closeModal">{{ cancelText }}</AlertDialogCancel>
+                    <AlertDialogAction :variant="confirmVariant" @click="confirmAction">
+                        <slot name="confirm-text">{{ confirmText }}</slot>
+                    </AlertDialogAction>
+                </div>
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
