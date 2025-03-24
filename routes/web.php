@@ -40,17 +40,6 @@ Route::middleware(['auth', 'verified', CheckClientApproval::class])->group(funct
             });
         });
 
-        // Manager-specific routes
-        Route::middleware(['role:manager'])->group(function () {
-            // Client management
-            Route::resource('clients', ClientController::class);
-
-            // Manager specific receptionist actions
-            Route::prefix('receptionists')->name('manager.receptionists.')->group(function () {
-                Route::post('{receptionist}/ban', [ManagerReceptionistController::class, 'ban'])->name('ban');
-                Route::post('{receptionist}/unban', [ManagerReceptionistController::class, 'unban'])->name('unban');
-            });
-        });
 
         // Shared routes for admin, manager and client (most general routes last)
         Route::middleware(['role:admin|manager|client'])->group(function () {
@@ -88,3 +77,4 @@ require __DIR__ . '/floor.php';
 require __DIR__ . '/room.php';
 require __DIR__ . '/client.php';
 require __DIR__ . '/admin.php';
+require __DIR__ . '/manager.php';
