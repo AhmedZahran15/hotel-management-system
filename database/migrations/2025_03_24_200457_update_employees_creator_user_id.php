@@ -12,9 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('employees', function (Blueprint $table) {
-            $table->dropForeign(['creator_user_id']); //drop the foreign key first
-        });
-        Schema::table('employees', function (Blueprint $table) {
             $table->unsignedBigInteger('creator_user_id')->nullable()->change();//set the column to be nullable
             $table->foreign('creator_user_id')->references('id')->on('users')->onDelete('set null');
         });
@@ -25,9 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('employees', function (Blueprint $table) {
-            $table->dropForeign(['creator_user_id']);
-        });
         Schema::table('employees', function (Blueprint $table) {
             $table->unsignedBigInteger('creator_user_id')->nullable(false)->change();
             $table->foreign('creator_user_id')->references('id')->on('users')->onDelete('cascade');
