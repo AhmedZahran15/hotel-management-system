@@ -12,19 +12,31 @@ use Illuminate\Support\Facades\Auth;
 use App\Rules\UserHasRoleOrPermission;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Spatie\QueryBuilder\QueryBuilder;
+use Spatie\QueryBuilder\AllowedFilter;
+
 
 class FloorController extends Controller
 {
-
-    // we return back in update ,store and store  if we gonna call update from index page otherwise we will redirect to floor.index;
     public function index(){
-        if(Auth::user()->hasRole("manager"))
-            $floors = FloorManagerResource::collection(Floor::with("rooms")->paginate(10));
-        else if(Auth::user()->hasRole("admin"))
-            $floors = FloorAdminResource::collection(Floor::with('creatorUser','rooms')->paginate(10));
+        $query = QueryBuilder::for(Floor::class)
+        ->allowedFilters([
+            AllowedFilter::partial('number'),
+            AllowedFilter::partial('name'),
+        ])
+        ->allowedSorts(['number', 'name'])
+        ->with('rooms');
 
-        return Inertia::render("HotelManagement/ManageFloors",["floors"=> $floors ]);
+    if (Auth::user()->hasRole("manager")) {
+        $floors = FloorManagerResource::collection($query->paginate(10));
+    } elseif (Auth::user()->hasRole("admin")) {
+        $floors = FloorAdminResource::collection(
+            $query->with('creatorUser')->paginate(10)
+        );
     }
+
+    return Inertia::render("HotelManagement/ManageFloors", ["floors" => $floors]);
+}
 
     public function create(){
         // return Inertia::render("");
@@ -63,8 +75,9 @@ class FloorController extends Controller
 
     }
 
-    public function update(Request $request, $floor){
-        $floor = new FloorManagerResource(Floor::where('number', $floor)->firstOrFail());
+    public function update(Request $request, $floorNum){
+        $floor = new FloorManagerResource(Floor::where('number', $floorNum)->firstOrFail());
+        //dd($floor->name);
         if (!Auth::check() || (!Auth::user()->hasRole("admin") && Auth::id() !== $floor->creator_user_id))
             abort(304);
 
