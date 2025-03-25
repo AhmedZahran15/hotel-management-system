@@ -15,12 +15,12 @@ return new class extends Migration
             $table->id();
             $table->dateTime('reservation_date');
             $table->unsignedInteger('reservation_price');// will be in cents any way so no need to be double
-            $table->unsignedBigInteger('client_id');
+            $table->unsignedBigInteger('client_id')->nullable();
             $table->unsignedInteger('room_number');
             $table->softDeletes();
             $table->timestamps();
 
-            $table->foreign("client_id")->references("id")->on("clients");
+            $table->foreign("client_id")->references("id")->on("clients")->onDelete("set null");
             $table->foreign("room_number")->references("number")->on("rooms");
 
         });

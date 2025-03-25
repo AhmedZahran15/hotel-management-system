@@ -16,12 +16,13 @@ return new class extends Migration
             $table->string('name');
             $table->string('national_id')->unique();
             $table->unsignedBigInteger('user_id')->nullable();
-            $table->unsignedBigInteger('creator_user_id');
+            $table->unsignedBigInteger('creator_user_id')->nullable();
             $table->unsignedBigInteger('manager_id')->nullable();
             $table->softDeletes();
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade'); // is a
+            $table->foreign('creator_user_id')->references('id')->on('users')->onDelete('set null');
             $table->foreign('manager_id')->references('id')->on('employees')->onDelete('set null');
         });
     }

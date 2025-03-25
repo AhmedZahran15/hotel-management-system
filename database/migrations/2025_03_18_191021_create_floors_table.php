@@ -15,11 +15,11 @@ return new class extends Migration
         Schema::create('floors', function (Blueprint $table) {
             $table->bigIncrements("number");
             $table->string("name");
-            $table->unsignedBigInteger("creator_user_id");
+            $table->unsignedBigInteger("creator_user_id")->nullable();
             $table->softDeletes();
             $table->timestamps();
 
-            $table->foreign("creator_user_id")->references("id")->on("users");
+            $table->foreign("creator_user_id")->references("id")->on("users")->onDelete("set null");
 
 
         });
