@@ -17,7 +17,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class User extends Authenticatable implements BannableInterface, HasMedia // add MustVerifyEmail if you want email verification
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use Bannable, HasFactory, Notifiable, HasRoles, InteractsWithMedia,HasApiTokens;
+    use Bannable, HasFactory, Notifiable, HasRoles, InteractsWithMedia, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -122,10 +122,12 @@ class User extends Authenticatable implements BannableInterface, HasMedia // add
     {
         return $this->hasMany(User::class, "creator_user_id");
     }
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'creator_user_id');
+    }
     public function approvedClients()
     {
         return $this->hasMany(Client::class, "approved_by");
     }
-
-
 }

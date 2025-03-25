@@ -19,15 +19,12 @@ class ReceptionistController extends Controller
         $user = auth()->user();
 
         $query = User::role('receptionist')->with('profile');
-
-        //show the associated receptionists with the manager if logged in as a manager
-        if ($user->hasRole('manager')) {
-            $query->where('creator_user_id', $user->id);
-        }
-
-        //show the manger who created the receptionists logged in as an admin
+        //load the manager name with the receptionist if the user is admin
         if ($user->hasRole('admin')) {
-            $query->with('createdUsers:id,name,email');
+            $query->with('creator:id,name,email');
+            //load all the receptionists 
+        } elseif ($user->hasRole('manager')) {
+            $query->where('creator_user_id', $user->id);
         }
 
         $receptionists = $query->paginate(10);
@@ -121,11 +118,6 @@ class ReceptionistController extends Controller
 
     public function destroy(User $receptionist): RedirectResponse
     {
-        $profile = $receptionist->profile;
-        if ($profile) {
-            $profile->update(['user_id' => null]);
-            $profile->delete();
-        }
         $receptionist->delete();
         return redirect()->route('receptionists.index')
             ->with('success', 'Receptionist deleted successfully.');
