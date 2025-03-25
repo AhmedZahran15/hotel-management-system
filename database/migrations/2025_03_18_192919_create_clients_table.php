@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('img_name')->default("default.jpg");
             $table->string('country');
             $table->enum('gender', ['male','female']);
             $table->unsignedBigInteger('user_id'); //is a
