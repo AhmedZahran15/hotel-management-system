@@ -40,6 +40,8 @@ const preventEscClose = (event:KeyboardEvent) => {
         event.preventDefault();
         event.stopPropagation();
     }
+    else if(event.key === "Escape"){
+        emit("update:open", false);}
 };
 // Add & remove event listeners
 onMounted(() => {
@@ -67,7 +69,6 @@ const confirmAction = () => {
     <AlertDialog v-model:open="showDialog">
         <AlertDialogTrigger as-child>
             <slot name="trigger">
-                <button @click="openModal" class="btn btn-primary">Open Modal</button>
             </slot>
         </AlertDialogTrigger>
 
@@ -81,7 +82,7 @@ const confirmAction = () => {
 
             <AlertDialogFooter>
                 <slot name="footer"/>
-                <div v-if="buttonsVisible">
+                <div v-if="buttonsVisible" class="flex justify-end gap-3">
                     <AlertDialogCancel @click="closeModal">{{ cancelText }}</AlertDialogCancel>
                     <AlertDialogAction :variant="confirmVariant" @click="confirmAction">
                         <slot name="confirm-text">{{ confirmText }}</slot>
