@@ -7,7 +7,6 @@ import {
     FlexRender
 } from '@tanstack/vue-table';
 import { ref, watch, computed } from "vue";
-import { ref, watch, computed } from "vue";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { ArrowUp, ArrowDown } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
