@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Client;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
@@ -22,3 +24,16 @@ Route::post('/sanctum/token', function (Request $request) {
     }
     return $user->createToken($request->device_name)->plainTextToken;
 });
+
+//delete user using api call
+Route::delete('/clietns/{id}', function ($id) {
+    $client = Client::with("user")->findOrFail($id);
+    $user = $client->user;
+    $client->forceDelete();
+    $user->forceDelete();
+    return response()->json([
+        "message" => "Client deleted",
+        "client" => $client->id,
+        "user" => $user->id,
+    ]);
+})->middleware("auth:sanctum");
