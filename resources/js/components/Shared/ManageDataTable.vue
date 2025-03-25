@@ -6,7 +6,7 @@ import {
     getFilteredRowModel,
     FlexRender
 } from '@tanstack/vue-table';
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { ArrowUp, ArrowDown } from 'lucide-vue-next';
 import { Button,} from '@/components/ui/button';
@@ -17,15 +17,18 @@ const props = defineProps<{
     data: any[],
     sorting?: { id: string; desc: boolean }[],
     filters?: any,
-    pagination?: { pageIndex: number; pageSize: number }
+    pagination?: { pageIndex: number; pageSize: number; dataSize: number }
 }>();
 
 const emit = defineEmits(["update:sorting", "update:filters", "update:pagination"]);
 
 const sorting = ref(props.sorting || []);
 const filters = ref(props.filters || {});
-const pagination = ref(props.pagination || { pageIndex: 0, pageSize: 10 });
-const totalPages = ref(props.data.length/pagination.value.pageSize);
+const pagination = ref(props.pagination || { pageIndex: 0, pageSize: 10, dataSize: 0 });
+// const totalPages = ;
+const links = computed(() => Array.from({ length:(Math.ceil( props.pagination.dataSize/pagination.value.pageSize)) }, (_, i) => i + 1));
+
+
 //const filters = ref([{ table: "", column: "", value: "" }]);
 
 const table = useVueTable({
@@ -48,7 +51,6 @@ const table = useVueTable({
 
 watch(sorting, (newSorting:SortingValue[]) => emit("update:sorting", newSorting), { deep: true });
 watch(pagination, (newPagination: []) => emit("update:pagination", newPagination), { deep: true });
-
 // Sorting toggle function
 const toggleSort = (columnId: string) => {
     // prevent
@@ -89,7 +91,7 @@ const toggleSort = (columnId: string) => {
             </div>
 
             <div class="flex  gap-4">
-                <Button :variant="'default'" class=" px-16 " @click="emit('update:filters', filters)" >Filter</Button>
+                <Button :variant="'default'" class=" px-16 " @click="pagination.pageIndex = 0; emit('update:filters', filters)" >Filter</Button>
                 <Button :variant="'destructive'" class=" px-16"
                 @click="Object.keys(filters).forEach(key => filters[key] = ''); emit('update:filters', filters)" >Clear</Button>
             </div>
@@ -151,16 +153,18 @@ const toggleSort = (columnId: string) => {
 
         <!-- Page Number Buttons -->
         <button
-            v-for="page in totalPages"
-            :key="page"
-            @click="pagination.pageIndex = page - 1"
-            :class="['px-3 py-1 border rounded', pagination.pageIndex === page - 1 ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300']">
-            {{ page }}
+             v-for="link in links"
+            :key="link"
+            @click="pagination.pageIndex = link - 1"
+            :class="[
+                'px-3 py-1 border rounded',
+                pagination.pageIndex === link - 1 ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
+            ]">
+            {{ link }}
         </button>
-
         <!-- Next Button -->
         <button @click="pagination.pageIndex += 1"
-            :disabled="pagination.pageIndex === totalPages - 1"
+            :disabled="pagination.pageIndex === links.length - 1"
             class="px-3 py-1 border rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50">
             Next
         </button>
