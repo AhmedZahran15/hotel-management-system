@@ -17,4 +17,6 @@ Route::middleware(['auth'])->prefix("dashboard")->group(function () {
     Route::resource("/clients", ClientController::class)->only("index", "store", "create",)->middleware([CheckForAnyPermission::class . ":create clients,manage clients,view clients"]);
 
     Route::resource("/clients", ClientController::class)->only("edit", "update", "show",)->middleware(EnsureAdminOrOwnerUser::class);
+
+    Route::get("/approved", [ClientController::class, 'approved'])->middleware([CheckForAnyPermission::class .':view clients'])->name("clients.approved");
 });
