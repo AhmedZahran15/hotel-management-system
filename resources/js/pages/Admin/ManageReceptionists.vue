@@ -8,6 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 
+
+const successMessage = ref('');
+const errorMessage = ref('');
+
 const breadcrumbs = [
   { title: 'Dashboard', href: '/dashboard' },
   { title: 'Manage Receptionists', href: '/dashboard/receptionists', active: true }
@@ -40,22 +44,35 @@ const columns = [
       })
   },
   {
-    accessorKey: 'Edit',
-    header: 'Actions',
-    cell: (info) => [
-      h(Button, { variant: 'default', class: 'mx-1', onClick: () => openEditModal(info.row.original) }, () => 'Edit'),
-      h(
-        Button,
-        {
-          variant: 'destructive',
-          class: 'mx-1',
-          onClick: () => openDeleteModal(info.row.original.id),
-        },
-        () => 'Remove',
-      ),
-    ],
-  },
+  accessorKey: 'Actions',
+  header: 'Actions',
+  cell: (info) => [
+    h(Button, { variant: 'default', class: 'mx-1', onClick: () => openEditModal(info.row.original) }, () => 'Edit'),
+    h(
+      Button,
+      {
+        variant: 'destructive',
+        class: 'mx-1',
+        onClick: () => openDeleteModal(info.row.original.id),
+      },
+      () => 'Remove',
+    ),
+    //show Ban/Unban button
+    info.row.original.is_banned
+      ? h(Button, {
+          variant: 'default',
+          class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
+          onClick: () => handleUnban(info.row.original.id),
+        }, () => 'Unban')
+      : h(Button, {
+          variant: 'default',
+          class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
+          onClick: () => handleBan(info.row.original.id),
+        }, () => 'Ban'),
+  ],
+},
 ];
+
 
 const fetchReceptionists = async () => {
   router.get('/dashboard/receptionists', { 
@@ -135,6 +152,66 @@ const confirmDelete = async () => {
   });
   isDeleteModalOpen.value = false;
 };
+const handleBan = async (id) => {
+  try {
+    await router.post(`/dashboard/receptionists/${id}/ban`);
+
+    const updatedReceptionists = receptionists.value.map((receptionist) => {
+      if (receptionist.id === id) {
+        receptionist.is_banned = true;
+      }
+      return receptionist;
+    });
+
+    receptionists.value = updatedReceptionists;
+
+    successMessage.value = 'Receptionist has been banned successfully.';
+    errorMessage.value = '';
+
+    setTimeout(() => {
+      successMessage.value = '';
+    }, 5000);
+  } catch (error) {
+    console.error(error);
+    errorMessage.value = 'Failed to ban receptionist.';
+    successMessage.value = '';
+
+    setTimeout(() => {
+      errorMessage.value = '';
+    }, 5000);
+  }
+};
+
+const handleUnban = async (id) => {
+  try {
+    await router.post(`/dashboard/receptionists/${id}/unban`);
+
+    const updatedReceptionists = receptionists.value.map((receptionist) => {
+      if (receptionist.id === id) {
+        receptionist.is_banned = false;
+      }
+      return receptionist;
+    });
+
+    receptionists.value = updatedReceptionists;
+
+    successMessage.value = 'Receptionist has been unbanned successfully.';
+    errorMessage.value = '';
+
+    setTimeout(() => {
+      successMessage.value = '';
+    }, 5000);
+  } catch (error) {
+    console.error(error);
+    errorMessage.value = 'Failed to unban receptionist.';
+    successMessage.value = '';
+
+    setTimeout(() => {
+      errorMessage.value = '';
+    }, 5000);
+  }
+};
+
 
 onMounted(fetchReceptionists);
 </script>
@@ -143,6 +220,14 @@ onMounted(fetchReceptionists);
     <Head title="Manage Receptionists" />
     <AppLayout :breadcrumbs="breadcrumbs">
       <div class="px-6">
+        <div v-if="successMessage" class="bg-green-500 text-white p-4 rounded">
+          {{ successMessage }}
+        </div>
+
+        <div v-if="errorMessage" class="bg-red-500 text-white p-4 rounded">
+          {{ errorMessage }}
+        </div>
+
         <ManageDataTable
           title="Receptionists"
           :columns="columns"
