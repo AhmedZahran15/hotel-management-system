@@ -14,12 +14,6 @@ Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
 
-// Test UI Routes
-Route::prefix('manage')->group(function () {
-    Route::get('managers', fn() => Inertia::render('Admin/ManageManagers'))->name('manage.managers');
-    Route::get('receptionists', fn() => Inertia::render('Admin/ManageReceptionists'))->name('manage.receptionists');
-    Route::get('clients', fn() => Inertia::render('Admin/ManageClients'))->name('manage.clients');
-});
 
 // Include Additional Route Files
 require __DIR__ . '/admin.php';

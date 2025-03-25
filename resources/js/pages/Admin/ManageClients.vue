@@ -29,13 +29,6 @@ import RegisterClientForm from "@/components/Admin/Clients/CreateClientForm.vue"
 import { router } from '@inertiajs/vue3';
 
 const props = defineProps(["clients"]);
-//Clients Data
-// const clients = ref([
-//   { id: 1, name: "Tom Wilson", email: "tom.wilson@example.com", country: "USA" },
-//   { id: 2, name: "Anna Taylor", email: "anna.taylor@example.com", country: "UK" },
-//   { id: 3, name: "David Lee", email: "david.lee@example.com", country: "Canada" },
-// ]);
-//console.log(props.clients)
 const clients = ref(props.clients?.data??[]);
 
 //Columns for DataTable

@@ -7,11 +7,13 @@ import {
     FlexRender
 } from '@tanstack/vue-table';
 import { ref, watch, computed } from "vue";
+import { ref, watch, computed } from "vue";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { ArrowUp, ArrowDown } from 'lucide-vue-next';
-import { Button,} from '@/components/ui/button';
-import { Input} from '@/components/ui/input';
-import { Label} from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
 const props = defineProps<{
     columns: any[],
     data: any[],
@@ -33,8 +35,8 @@ const links = computed(() => Array.from({ length:(Math.ceil( props.pagination.da
 
 const table = useVueTable({
     get data() {
-    return props.data;
-  },
+        return props.data;
+    },
     columns: props.columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -53,37 +55,27 @@ watch(sorting, (newSorting:SortingValue[]) => emit("update:sorting", newSorting)
 watch(pagination, (newPagination: []) => emit("update:pagination", newPagination), { deep: true });
 // Sorting toggle function
 const toggleSort = (columnId: string) => {
-    // prevent
-    if(!Object.keys(filters.value).find(x=>x==columnId))return;
-    const existingIndex = sorting.value.findIndex((s: SortingValue) => s.id === columnId);
-
+    const existingIndex = sorting.value.findIndex((s) => s.id === columnId);
     if (existingIndex !== -1) {
-        // If column is already sorted, toggle between ascending, descending, and removing sorting
-        if (sorting.value[existingIndex].desc) {
-            sorting.value.splice(existingIndex, 1); // Remove sorting if already descending
-        } else {
-            sorting.value[existingIndex].desc = true; // Switch to descending
-        }
+        sorting.value[existingIndex].desc = !sorting.value[existingIndex].desc;
     } else {
-        sorting.value = [{ id: columnId, desc: false }]; // Default: Ascending
+        sorting.value = [{ id: columnId, desc: false }];
     }
 };
-
-
-
 </script>
 
 <template>
     <div>
-        <div class="flex flex-col py-2 gap-3 ">
-            <div class="flex flex-wrap gap-4  w-full ">
-                <div v-for="(data, columnIndex) in filters" :key="columnIndex" class="flex items-center gap-4 xs:w-1/1 lg:w-1/2 xl:w-1/3 flex-grow">
-                    <Label class="font-bold " >{{columnIndex}}:  </Label>
+        <!-- Filters -->
+        <div class="flex flex-col py-2 gap-3">
+            <div class="flex flex-wrap gap-4 w-full">
+                <div v-for="(value, column) in filters" :key="column" class="flex items-center gap-4 xs:w-full lg:w-1/2 xl:w-1/3 flex-grow">
+                    <Label class="font-bold">{{ column }}:</Label>
                     <div class="flex-grow"></div>
                     <Input
                         type="text"
-                        v-model="filters[columnIndex]"
-                        :placeholder='"Filter " + columnIndex + "..."'
+                        v-model="filters[column]"
+                        :placeholder="'Filter ' + column + '...'"
                         class="max-w-md"
                         @keyup.enter="emit('update:filters', filters)"
                     />
@@ -95,14 +87,15 @@ const toggleSort = (columnId: string) => {
                 <Button :variant="'destructive'" class=" px-16"
                 @click="Object.keys(filters).forEach(key => filters[key] = ''); emit('update:filters', filters)" >Clear</Button>
             </div>
-                <div class="flex  flex-start justify-end ">
-                    <slot  name = "table-action"></slot>
-                </div>
+            <div class="flex justify-end">
+                <slot name="table-action"></slot>
+            </div>
         </div>
 
+        <!-- Table -->
         <div class="border-2 border-gray-500 rounded-lg">
             <Table>
-                <TableHeader class="text-center">
+                <TableHeader>
                     <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
                         <TableHead
                             v-for="header in headerGroup.headers"
@@ -116,7 +109,6 @@ const toggleSort = (columnId: string) => {
                                     :render="header.column.columnDef.header"
                                     :props="header.getContext()"
                                 />
-                                <!-- Sorting Indicators -->
                                 <span v-if="sorting.find(s => s.id === header.column.id)">
                                     <ArrowUp class="h-4 w-4 text-gray-500" v-if="!sorting.find(s => s.id === header.column.id)?.desc" />
                                     <ArrowDown class="h-4 w-4 text-gray-500" v-else />
@@ -127,13 +119,11 @@ const toggleSort = (columnId: string) => {
                 </TableHeader>
                 <TableBody>
                     <template v-if="table.getRowModel().rows?.length">
-                        <template v-for="row in table.getRowModel().rows" :key="row.id">
-                            <TableRow class="text-center">
-                                <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                                    <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-                                </TableCell>
-                            </TableRow>
-                        </template>
+                        <TableRow v-for="row in table.getRowModel().rows" :key="row.id">
+                            <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
+                                <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                            </TableCell>
+                        </TableRow>
                     </template>
                     <TableRow v-else>
                         <TableCell :colspan="columns.length" class="h-24 text-center">

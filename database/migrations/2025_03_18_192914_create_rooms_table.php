@@ -17,14 +17,14 @@ return new class extends Migration
             $table->unsignedInteger('room_price');// will be in cents any way so no need to be double
             $table->enum("state", ["available","occupied","being_reserved","maintenance"]);
             $table->unsignedBigInteger('floor_number');
-            $table->unsignedBigInteger("creator_user_id");
+            $table->unsignedBigInteger("creator_user_id")->nullable();
             $table->softDeletes();
             $table->timestamps();
 
             $table->primary(["number"]);
 
             $table->foreign('floor_number')->references('number')->on('floors')->onDelete('cascade');
-            $table->foreign("creator_user_id")->references("id")->on("users");
+            $table->foreign("creator_user_id")->references("id")->on("users")->onDelete("set null");
 
         });
     }
