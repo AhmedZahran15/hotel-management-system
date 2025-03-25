@@ -30,6 +30,9 @@ const emit = defineEmits(["close", "confirm"]);
 
         <!-- Footer -->
         <div v-if="showFooter" class="flex justify-end border-t px-4 py-2">
+          <button @click="emit('close')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+            Cancel
+          </button>
           <button
             v-if="confirmText"
             @click="emit('confirm')"

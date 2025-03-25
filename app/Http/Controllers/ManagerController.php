@@ -20,8 +20,8 @@ class ManagerController extends Controller
     public function index(): Response
     {
         $managers = User::role('manager')->with('profile')->paginate(10);
-        // return Inertia::render('Managers/Index', ['managers' => $managers]);
-        return $managers;
+        return Inertia::render('Admin/ManageManagers', ['managers' => $managers]);
+        // return $managers;
     }
 
     //will be tested later
@@ -32,6 +32,7 @@ class ManagerController extends Controller
 
     public function store(StoreManagerRequest $request): RedirectResponse
     {
+        dd($request->all());
         $data = $request->validated();
         //create user first
         $user = User::create([
