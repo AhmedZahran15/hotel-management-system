@@ -13,13 +13,18 @@ class Reservation extends Model
         "reservation_date",
         "reservation_price",
         "client_id",
-        "room_number"
+        "room_number",
+        "payment_status",
+        "payment_id",
+        "accompany_number"
     ];
 
-    public function room(){
-        return $this->belongsTo(Room::class,"room_number","number");
+    public function room()
+    {
+        return $this->belongsTo(Room::class, "room_number", "number");
     }
-    public function client(){
-        return $this->belongsTo(Client::class,"client_id","id");
+    public function client()
+    {
+        return $this->belongsTo(Client::class, "client_id", "id");
     }
 }

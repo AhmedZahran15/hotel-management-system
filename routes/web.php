@@ -1,20 +1,20 @@
 <?php
 
-use App\Http\Controllers\AdminUserController;
-use App\Http\Controllers\ClientController;
-use App\Http\Controllers\ManagerController;
-use App\Http\Controllers\ManagerReceptionistController;
-use App\Http\Controllers\ReceptionistController;
-use App\Http\Controllers\ReservationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use App\Http\Middleware\CheckClientApproval;
 
-// Public routes
+Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () {
+    Route::get('/', function () {
+        return Inertia::render('Dashboard');
+    })->name('dashboard');
+});
+
+// Public Routes
 Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
 
+<<<<<<< HEAD
 // Protected routes
 Route::middleware(['auth', 'verified', CheckClientApproval::class])->group(function () {
     Route::prefix('dashboard')->group(function () {
@@ -43,13 +43,22 @@ Route::middleware(['auth', 'verified', CheckClientApproval::class])->group(funct
     });
 });
 
+=======
+// Test UI Routes
+Route::prefix('manage')->group(function () {
+    Route::get('managers', fn() => Inertia::render('Admin/ManageManagers'))->name('manage.managers');
+    Route::get('receptionists', fn() => Inertia::render('Admin/ManageReceptionists'))->name('manage.receptionists');
+    Route::get('clients', fn() => Inertia::render('Admin/ManageClients'))->name('manage.clients');
+});
+>>>>>>> 7fa6cf1b7a1f54f3d3279164aa6172f458428330
 
-// Include other route files
+// Include Additional Route Files
+require __DIR__ . '/admin.php';
+require __DIR__ . '/manager.php';
+require __DIR__ . '/client.php';
+require __DIR__ . '/shared.php';
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/floor.php';
 require __DIR__ . '/room.php';
-require __DIR__ . '/manager.php';
-require __DIR__ . '/shared.php';
-require __DIR__ . '/admin.php';
-require __DIR__ . '/client.php';
+require __DIR__ . '/reservation.php';

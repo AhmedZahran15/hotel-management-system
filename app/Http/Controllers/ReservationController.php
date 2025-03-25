@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+// use Stripe\Session;
+use Stripe\Checkout\Session;
 
 class ReservationController extends Controller
 {
@@ -22,7 +24,7 @@ class ReservationController extends Controller
         $this->reservationService = $reservationService;
     }
 
-    public function index(): Response
+    public function index()
     {
         $user = Auth::user();
         $query = Reservation::with(['room', 'client']);
@@ -62,25 +64,44 @@ class ReservationController extends Controller
         ]);
     }
 
-    public function store(StoreReservationRequest $request): RedirectResponse
+    public function store(StoreReservationRequest $request)
     {
-        $roomId = $request->input('room_id');
-        $room = Room::findOrFail($roomId);
-
         try {
-            DB::beginTransaction();
-            $reservation = $this->reservationService->createReservation($request->validated(), $room);
-            DB::commit();
+            $room = Room::findOrFail($request->room_number);
+            $session = $this->reservationService->createCheckoutSession(
+                $request->validated(), 
+                $room
+            );
+            return response()->json(['sessionId' => $session->id], 200);
         } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Reservation failed: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        return redirect()->route('reservations.show', $reservation->id)
-            ->with('success', 'Reservation created successfully.');
     }
 
-    public function show($id): Response
+    public function handlePaymentSuccess(Request $request)
+    {
+        try {
+            // Verify payment with Stripe
+            $session = Session::retrieve($request->session_id);
+            
+            // Create reservation
+            $reservation = $this->reservationService->createReservation([
+                'reservation_date' => $session->metadata->reservation_date,
+                'payment_id' => $session->payment_intent,
+                'accompany_number' => $session->metadata->accompany_number,
+                'client_id' => $session->metadata->client_id,
+                'room_number' => $session->metadata->room_number,
+            ], Room::findOrFail($session->metadata->room_number));
+
+            return redirect()->route('reservations.show', $reservation->id)
+                ->with('success', 'Reservation confirmed!');
+        } catch (\Exception $e) {
+            return redirect()->route('reservations.index')
+                ->with('error', 'Payment verification failed: ' . $e->getMessage());
+        }
+    }
+
+    public function show($id)
     {
         $user = Auth::user();
         $reservation = Reservation::with(['room', 'client'])->findOrFail($id);
@@ -102,13 +123,14 @@ class ReservationController extends Controller
             }
         }
 
-        return Inertia::render('Reservations/Show', [
-            'reservation' => $reservation,
-        ]);
+        // return Inertia::render('Reservations/Show', [
+        //     'reservation' => $reservation,
+        // ]);
+        return $reservation;
     }
 
     // List available rooms using an Inertia response
-    public function availableRooms(): Response
+    public function availableRooms()
     {
         $rooms = Room::available()->paginate(10);
 
@@ -117,4 +139,20 @@ class ReservationController extends Controller
         // ]);
         return $rooms;
     }
+
+    public function handlePaymentCancel(Request $request)
+{
+    try {
+        if ($request->session_id) {
+            $session = Session::retrieve($request->session_id);
+            $room = Room::findOrFail($session->metadata->room_number);
+            $this->reservationService->handlePaymentCancellation($room);
+        }
+        return redirect()->route('reservations.available')
+            ->with('info', 'Reservation has been cancelled.');
+    } catch (\Exception $e) {
+        return redirect()->route('reservations.available')
+            ->with('error', 'Something went wrong with cancellation.');
+    }
+}
 }

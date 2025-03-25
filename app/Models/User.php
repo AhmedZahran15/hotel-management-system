@@ -13,7 +13,7 @@ use Cog\Laravel\Ban\Traits\Bannable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-class User extends Authenticatable implements BannableInterface, HasMedia
+class User extends Authenticatable implements BannableInterface, HasMedia // add MustVerifyEmail if you want email verification
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use Bannable, HasFactory, Notifiable, HasRoles, InteractsWithMedia;
@@ -125,10 +125,6 @@ class User extends Authenticatable implements BannableInterface, HasMedia
     {
         return $this->hasMany(Client::class, "approved_by");
     }
-//ovverride the unban method for testing might delete later
-    public function unban(): void
-    {
-        $this->banned_at = null;
-        $this->save();
-    }
+
+
 }
