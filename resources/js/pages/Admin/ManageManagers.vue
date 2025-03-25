@@ -9,8 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 
 const breadcrumbs = [
-  { label: 'Dashboard', url: '/dashboard' },
-  { label: 'Manage Managers', url: '/dashboard/managers', active: true }
+  { title: 'Dashboard', href: '/dashboard' },
+  { title: 'Manage Managers', href: '/dashboard/managers', active: true }
 ];
 
 const managers = ref([]);

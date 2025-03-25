@@ -31,8 +31,8 @@ class ReceptionistController extends Controller
         }
 
         $receptionists = $query->paginate(10);
-        // return Inertia::render('Receptionists/Index', ['receptionists' => $receptionists]);
-        return $receptionists;
+        return Inertia::render('Admin/ManageReceptionists', ['receptionists' => $receptionists]);
+        // return $receptionists;
     }
 
 
