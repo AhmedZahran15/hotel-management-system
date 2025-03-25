@@ -9,7 +9,6 @@ use App\Models\User;
 use App\Notifications\ClientApprovedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -66,12 +65,8 @@ class ClientController extends Controller
         $user->assignRole("client");
 
         //handle profile picture
-        $filename = null;
         if ($request->file("avatar_image")) {
-            $storagePath = config('app.client_avatar_storage_path');
-            $extension = $request->file('avatar_image')->getClientOriginalExtension();
-            $filename = "client-{$user->id}.{$extension}";
-            $request->file("avatar_image")->storeAs($storagePath, $filename, "local"); // NeedEdit: add env var
+            $user->updateAvatar($request->file("avatar_image"));
         }
 
         //handle client creation
@@ -80,11 +75,10 @@ class ClientController extends Controller
             "country" => $request->country,
             "gender" => $request->gender,
             "user_id" => $user->id,
-            "img_name" => $filename ?? "default.jpg"
         ]);
         //handle phone;
         if ($request->phone) {
-            $hpone = Phone::create([
+            $phone = Phone::create([
                 "phone" => $request->phone,
                 "client_id" => $client->id
             ]);
@@ -130,9 +124,7 @@ class ClientController extends Controller
         $client->user->update(["email" => $request->email]);
 
         if ($request->hasFile("avatar_image")) {
-            $storagePath = config('app.client_avatar_storage_path');
-            Storage::disk("local")->delete("$storagePath" . "/" . $client->img_name);
-            $request->file("avatar_image")->storeAs($storagePath, $client->img_name, "local"); // NeedEdit: add env var
+            $client->user->updateAvatar($request->file("avatar_image"));
         }
 
         if ($request->filled("password")) {
@@ -152,11 +144,6 @@ class ClientController extends Controller
         $user = $client->user;
         $client->delete();
         $user->delete();
-        if ($client->img_name !== "default.jpg") {
-            $storagePath = config('app.client_avatar_storage_path');
-            Storage::disk("local")->delete($storagePath . "/" . $client->img_name);
-        }
-
         //case the user deleted his own account
         if (Auth::user()->id == $id) {
             Auth::guard('web')->logout();
