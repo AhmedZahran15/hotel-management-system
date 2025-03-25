@@ -1,9 +1,9 @@
 import type { route as routeFn } from 'ziggy-js';
 
-export {};
+export { };
 declare global {
     const route: typeof routeFn;
-    interface Floor  {
+    interface Floor {
         number: number;
         name: string;
         manager?: {
@@ -14,8 +14,15 @@ declare global {
         availavleRoomsCount: number;
     };
     interface SortingValue {
-         id: string;
-         desc: boolean
-        }
+        id: string;
+        desc: boolean
+    }
+    interface Room {
+        number: number;
+        capacity: number;
+        room_price: number;
+        state: string;
+        floor: Floor
+    }
 
 }

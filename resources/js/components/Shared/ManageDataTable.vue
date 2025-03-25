@@ -11,7 +11,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { ArrowUp, ArrowDown } from 'lucide-vue-next';
 import { Button,} from '@/components/ui/button';
 import { Input} from '@/components/ui/input';
-
+import { Label} from '@/components/ui/label';
 const props = defineProps<{
     columns: any[],
     data: any[],
@@ -25,7 +25,7 @@ const emit = defineEmits(["update:sorting", "update:filters", "update:pagination
 const sorting = ref(props.sorting || []);
 const filters = ref(props.filters || {});
 const pagination = ref(props.pagination || { pageIndex: 0, pageSize: 10 });
-const totalPages = ref(props.data.length/pagination.value.pageSize +1);
+const totalPages = ref(props.data.length/pagination.value.pageSize);
 //const filters = ref([{ table: "", column: "", value: "" }]);
 
 const table = useVueTable({
@@ -73,24 +73,29 @@ const toggleSort = (columnId: string) => {
 
 <template>
     <div>
-        <div class="flex flex-col py-2 gap-1 ">
-            <div class="flex flex-wrap gap-4  w-full">
-                <div v-for="(data, columnIndex) in filters" :key="columnIndex" class="w-full sm:w-1/1 lg:w-1/2 xl:w-1/3 flex-grow">
+        <div class="flex flex-col py-2 gap-3 ">
+            <div class="flex flex-wrap gap-4  w-full ">
+                <div v-for="(data, columnIndex) in filters" :key="columnIndex" class="flex items-center gap-4 xs:w-1/1 lg:w-1/2 xl:w-1/3 flex-grow">
+                    <Label class="font-bold " >{{columnIndex}}:  </Label>
+                    <div class="flex-grow"></div>
                     <Input
                         type="text"
                         v-model="filters[columnIndex]"
                         :placeholder='"Filter " + columnIndex + "..."'
-                        class="w-full"
+                        class="max-w-md"
                         @keyup.enter="emit('update:filters', filters)"
                     />
                 </div>
             </div>
-            <div class="flex items-center py-4 gap-4 justify-between">
-            <slot class="flex-grow" name = "table-action"></slot>
-            <Button class="bg-blue-500 hover:bg-blue-600 flex-grow" @click="emit('update:filters', filters)" >Filter</Button>
-            <Button class="bg-red-500 hover:bg-red-600 flex-grow"
-            @click="Object.keys(filters).forEach(key => filters[key] = ''); emit('update:filters', filters)" >Clear</Button>
+
+            <div class="flex  gap-4">
+                <Button :variant="'default'" class=" px-16 " @click="emit('update:filters', filters)" >Filter</Button>
+                <Button :variant="'destructive'" class=" px-16"
+                @click="Object.keys(filters).forEach(key => filters[key] = ''); emit('update:filters', filters)" >Clear</Button>
             </div>
+                <div class="flex  flex-start justify-end ">
+                    <slot  name = "table-action"></slot>
+                </div>
         </div>
 
         <div class="border-2 border-gray-500 rounded-lg">
