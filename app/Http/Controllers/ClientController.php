@@ -141,21 +141,22 @@ class ClientController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id, Request $request)
+    public function destroy(string $id,Request $request)
     {
 
+        $selfdelete=false;
+        if (Auth::user()->id == $id) {$selfdelete = true;}
         $client = Client::with("user")->findOrFail($id);
         $user = $client->user;
-        $client->delete();
-        $user->delete();
+        $client->forceDelete();
+        $user->forceDelete();
         //case the user deleted his own account
-        if (Auth::user()->id == $id) {
-            Auth::guard('web')->logout();
+        if ($selfdelete) {
+            Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
             return redirect('/');
         }
-
         //case an addmin or manager delted it
         return back()->with("success", "Client deleted successfully");
     }
