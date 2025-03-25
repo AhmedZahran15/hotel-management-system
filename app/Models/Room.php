@@ -24,7 +24,7 @@ class Room extends Model
 
     public function creatorUser()
     {
-        return $this->belongsTo(User::class, "creator_user_id");
+        return $this->belongsTo(User::class, "creator_user_id","id");
     }
     public function floor()
     {

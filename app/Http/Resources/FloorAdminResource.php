@@ -22,6 +22,7 @@ class FloorAdminResource extends JsonResource
             "roomsCount" => $this->whenLoaded('rooms', fn() => $this->rooms->count()),
             "reservedRoomsCount" => $this->whenLoaded('rooms', fn() => $this->rooms->where('state', "occupied")->count()),
             "availabledRoomsCount" => $this->whenLoaded('rooms', fn() => $this->rooms->where('state', "available")->count()),
+            "manager_id" => $this->creator_user_id,
         ];
     }
 }
