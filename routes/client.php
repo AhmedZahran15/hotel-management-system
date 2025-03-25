@@ -8,7 +8,6 @@ use App\Http\Middleware\EnsureAdminOrOwnerUser;
 use App\Models\Client;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 //no authentication needed to register or create account

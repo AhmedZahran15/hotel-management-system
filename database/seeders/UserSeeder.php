@@ -32,7 +32,6 @@ class UserSeeder extends Seeder
                 Employee::create([
                     "name"=>$user->name,
                     "national_id"=>  fake()->unique()->numerify(str_repeat('#', 14)),
-                    "img_name"=>"default.jpg",
                     "user_id"=>$user->id,
                     "creator_user_id"=> 1,
                     "manager_id"=> null,
@@ -52,7 +51,6 @@ class UserSeeder extends Seeder
                 Employee::create([
                     "name"=>$user->name,
                     "national_id"=>  fake()->unique()->numerify(str_repeat('#', 14)),
-                    "img_name"=>"default.jpg",
                     "user_id"=>$user->id,
                     "creator_user_id"=> User::role('manager')->inRandomOrder()->value('id'),
                     "manager_id"=> Employee::where("manager_id",null)->inRandomOrder()->first()->id,
@@ -74,7 +72,6 @@ class UserSeeder extends Seeder
                 $user->assignRole("client");
                 Client::create([
                     "name"=>$user->name,
-                    "img_name"=>"default.jpg",
                     "country"=> fake()->country,
                     "gender"=> fake()->randomElement(["male","female"]),
                     "approved_by"=>fake()->randomElement([

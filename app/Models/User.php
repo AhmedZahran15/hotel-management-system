@@ -10,13 +10,14 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Cog\Contracts\Ban\Bannable as BannableInterface;
 use Cog\Laravel\Ban\Traits\Bannable;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 class User extends Authenticatable implements BannableInterface, HasMedia // add MustVerifyEmail if you want email verification
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use Bannable, HasFactory, Notifiable, HasRoles, InteractsWithMedia;
+    use Bannable, HasFactory, Notifiable, HasRoles, InteractsWithMedia,HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
