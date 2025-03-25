@@ -32,7 +32,6 @@ class ManagerController extends Controller
 
     public function store(StoreManagerRequest $request): RedirectResponse
     {
-        dd($request->all());
         $data = $request->validated();
         //create user first
         $user = User::create([
