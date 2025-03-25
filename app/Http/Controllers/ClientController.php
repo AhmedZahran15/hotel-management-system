@@ -21,15 +21,19 @@ class ClientController extends Controller
     public function index()
     {
         if (Auth::user() && Auth::user()->hasAnyRole(["admin", "manager"])) {
-            return Inertia::render("Admin/ManageClients", ["clients" => ClientResource::collection(Client::with("user", 'phones')->paginate(10))]);
+                $clients = ClientResource::collection(Client::with("user", 'phones')->paginate(10));
         } else if (Auth::user()->hasRole("receptionist")) {
-            return Inertia::render("Admin/ManageClients", [
-                "clients" => ClientResource::collection(Client::with("user")->whereNull("approved_by")->paginate(10)),
-                "approved_clients" => ClientResource::collection(Client::with('user', 'phones')->where("approved_by", Auth::id())->get())
-            ]);
-        } else {
-            return response()->json(['message' => 'Unauthorized'], 403);
+                $clients = ClientResource::collection(Client::with("user")->whereNull("approved_by")->paginate(10));
         }
+            return Inertia::render("Admin/ManageClients", ["clients"=>$clients]);
+
+    }
+
+    // return  clietns that are approved by the logged in user
+    public function approved(){
+        return Inertia::render("Admin/ManageClients", [
+            "approved_clients" => ClientResource::collection(Client::with('user', 'phones')->where("approved_by", Auth::id())->get())
+        ]);
     }
 
     /**
@@ -37,7 +41,7 @@ class ClientController extends Controller
      */
     public function create()
     {
-        return Inertia::render("");
+        //return Inertia::render("");
     }
 
     /**
@@ -137,21 +141,22 @@ class ClientController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id, Request $request)
+    public function destroy(string $id,Request $request)
     {
 
+        $selfdelete=false;
+        if (Auth::user()->id == $id) {$selfdelete = true;}
         $client = Client::with("user")->findOrFail($id);
         $user = $client->user;
-        $client->delete();
-        $user->delete();
+        $client->forceDelete();
+        $user->forceDelete();
         //case the user deleted his own account
-        if (Auth::user()->id == $id) {
-            Auth::guard('web')->logout();
+        if ($selfdelete) {
+            Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
             return redirect('/');
         }
-
         //case an addmin or manager delted it
         return back()->with("success", "Client deleted successfully");
     }
@@ -178,22 +183,5 @@ class ClientController extends Controller
         return back()->with('info', 'Client was already approved');
     }
 
-    /**
-     * Display pending clients for approval
-     */
-    public function pending()
-    {
-        // Ensure only authorized users can view pending clients
-        if (!Auth::check() || !Auth::user()->hasAnyPermission(['approve clients', 'manage clients', 'view clients'])) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
 
-        $pendingClients = Client::with('user', 'phones')
-            ->whereNull('approved_by')
-            ->paginate(10);
-
-        return Inertia::render("Admin/PendingClients", [
-            "clients" => ClientResource::collection($pendingClients)
-        ]);
-    }
 }

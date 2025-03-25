@@ -25,7 +25,7 @@ class Client extends Model
         'user_id' => 'integer',
     ];
     public function user(){
-        return $this->belongsTo(User::class)->withTrashed();
+        return $this->belongsTo(User::class);
     }
     public function reservations(){
         return $this->hasMany(Reservation::class);

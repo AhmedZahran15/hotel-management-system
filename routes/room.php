@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth'])-> prefix("dashboard")->group(function () {
 
     Route::resource("/rooms", RoomController::class) ->only("store","create")->
     middleware([CheckForAnyPermission::class.':create rooms,manage rooms']);

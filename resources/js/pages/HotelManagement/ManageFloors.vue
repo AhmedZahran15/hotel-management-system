@@ -37,22 +37,24 @@ const columns = ref<ColumnDef<Floor>[]>([
     {
         accessorKey: 'Edit',
         header: 'Actions',
-        cell: (info: any) => [
+
+        cell: (info: any) =>
+        info.row.original.manager_id == page.props.auth.user.id || page.props.auth.user.roles[0] == "admin" ? [
             h(Button, { variant: 'default', class: 'mx-1', onClick: () => handleEdit(info.row.original) }, () => 'Edit'),
             h(
                 Button,
                 {
                     variant: 'destructive',
-                    class: 'mx-1',
-                    disabled: info.row.original.roomsCount != 0,
+                    class: 'mx-1'
+                    ,disabled: info.row.original.roomsCount != 0,
                     onClick: () => handleDelete(info.row.original),
+                   // if:info.row.original.manager.id  == page.props.auth.user.id || page.props.auth.user.roles[0] == "admin",
                 },
                 () => 'Remove',
             ),
-        ],
+        ]: '',
     },
 ]);
-
 //append Manger column in case of Admin (Depending on the data sent from the backend)
 if (props.floors?.data?.length > 0 && props.floors.data[0]?.manager) {
     columns.value.splice(2, 0, { accessorKey: 'manager.name', header: 'Manager' });
@@ -68,6 +70,7 @@ const sorting = ref<SortingValue[]>([]);
 const pagination = ref({
     pageIndex: props.floors.meta.current_page - 1,
     pageSize: props.floors.meta.per_page,
+    dataSize: props.floors.meta.total,
 });
 
 
@@ -87,8 +90,10 @@ const fetchData = (url?: string) => {
     }
 
     // Apply pagination
-    params.append('page', pagination.value.pageIndex + 1);
     params.append('perPage', pagination.value.pageSize);
+    params.append('dataSize', pagination.value.dataSize);
+    params.append('page', pagination.value.pageIndex +1);
+
 
     // Fetch data with updated parameters
     router.get(url || route('floors.index'), Object.fromEntries(params.entries()), {
@@ -240,7 +245,7 @@ const dismissError = () => {
                     "
                 >
                     <template #table-action>
-                        <Button @click="addModalOpen = true" class="bg-green-500 hover:bg-green-600">Add Floor</Button>
+                        <Button @click="addModalOpen = true" class="px-16 ">Add Floor</Button>
                     </template>
                 </DataTable>
             </div>
