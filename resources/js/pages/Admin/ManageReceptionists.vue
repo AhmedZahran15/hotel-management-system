@@ -33,6 +33,7 @@ const columns = [
   { accessorKey: 'name', header: 'Name' },
   { accessorKey: 'email', header: 'Email' },
   { accessorKey: 'profile.national_id', header: 'National ID' },
+  { accessorKey: 'creator.name', header: 'Manager Creator' },
   { 
     accessorKey: 'avatar_image', 
     header: 'Avatar', 
@@ -44,34 +45,27 @@ const columns = [
       })
   },
   {
-  accessorKey: 'Actions',
-  header: 'Actions',
-  cell: (info) => [
-    h(Button, { variant: 'default', class: 'mx-1', onClick: () => openEditModal(info.row.original) }, () => 'Edit'),
-    h(
-      Button,
-      {
-        variant: 'destructive',
-        class: 'mx-1',
-        onClick: () => openDeleteModal(info.row.original.id),
-      },
-      () => 'Remove',
-    ),
-    //show Ban/Unban button
-    info.row.original.is_banned
-      ? h(Button, {
-          variant: 'default',
-          class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
-          onClick: () => handleUnban(info.row.original.id),
-        }, () => 'Unban')
-      : h(Button, {
-          variant: 'default',
-          class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
-          onClick: () => handleBan(info.row.original.id),
-        }, () => 'Ban'),
-  ],
-},
+    accessorKey: 'Actions',
+    header: 'Actions',
+    cell: (info) => [
+      h(Button, { variant: 'default', class: 'mx-1', onClick: () => openEditModal(info.row.original) }, () => 'Edit'),
+      h(Button, { variant: 'destructive', class: 'mx-1', onClick: () => openDeleteModal(info.row.original.id) }, () => 'Remove'),
+      // Show Ban/Unban button
+      info.row.original.banned_at
+        ? h(Button, {
+            variant: 'default',
+            class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
+            onClick: () => handleUnban(info.row.original.id),
+          }, () => 'Unban')
+        : h(Button, {
+            variant: 'default',
+            class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
+            onClick: () => handleBan(info.row.original.id),
+          }, () => 'Ban'),
+    ],
+  },
 ];
+
 
 
 const fetchReceptionists = async () => {
@@ -83,6 +77,7 @@ const fetchReceptionists = async () => {
   }, {
     preserveState: true,
     onSuccess: (page) => {
+      console.log(page.props.receptionists.data);
       receptionists.value = page.props.receptionists.data;
       pagination.value.total = page.props.receptionists.total;
     }
@@ -158,6 +153,7 @@ const handleBan = async (id) => {
 
     const updatedReceptionists = receptionists.value.map((receptionist) => {
       if (receptionist.id === id) {
+        receptionist.banned_at = new Date();
         receptionist.is_banned = true;
       }
       return receptionist;
@@ -188,6 +184,7 @@ const handleUnban = async (id) => {
 
     const updatedReceptionists = receptionists.value.map((receptionist) => {
       if (receptionist.id === id) {
+        receptionist.banned_at = null;
         receptionist.is_banned = false;
       }
       return receptionist;
@@ -211,6 +208,7 @@ const handleUnban = async (id) => {
     }, 5000);
   }
 };
+
 
 
 onMounted(fetchReceptionists);
