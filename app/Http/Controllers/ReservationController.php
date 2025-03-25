@@ -78,7 +78,7 @@ class ReservationController extends Controller
         }
     }
 
-    public function handlePaymentSuccess(Request $request)
+    public function paymentSuccess(Request $request)
     {
         try {
             // Verify payment with Stripe
@@ -140,7 +140,7 @@ class ReservationController extends Controller
         return $rooms;
     }
 
-    public function handlePaymentCancel(Request $request)
+    public function paymentCancel(Request $request)
 {
     try {
         if ($request->session_id) {
