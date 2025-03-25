@@ -58,12 +58,8 @@ class RegisteredUserController extends Controller
 
         $user->assignRole('client');
 
-        // Handle profile picture upload using Spatie Media Library with unique name
-        $extension = $request->file('avatar_image')->getClientOriginalExtension();
-        $uniqueFileName = time() . '_' . $user->id . '.' . $extension;
-        $user->addMediaFromRequest('avatar_image')
-            ->usingFileName($uniqueFileName)
-            ->toMediaCollection('avatar_image'); // Use 'avatar_image' as the collection name
+        // Handle profile picture upload using Spatie Media Library
+        $user->updateAvatar($request->file('avatar_image'));
 
         $client = Client::create([
             "name" => $request->name,
