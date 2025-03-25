@@ -26,7 +26,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 const page = usePage();
 const props = defineProps(['floors']);
 const errors = computed(() => page.props.errors);
-console.log(props.floors)
+
 //Columns for DataTable
 const columns = ref<ColumnDef<Floor>[]>([
     { accessorKey: 'number', header: 'Floor Number' },
@@ -70,7 +70,7 @@ const pagination = ref({
     pageSize: props.floors.meta.per_page,
 });
 
-//hand
+
 const fetchData = (url?: string) => {
     const params = new URLSearchParams();
     // Apply filtering
@@ -98,12 +98,6 @@ const fetchData = (url?: string) => {
     });
 };
 
-// paginate
-// const fetchPage = (url: string) => {
-//     if (url) {
-//         router.get(url);
-//     }
-// };
 // Delete
 const selectedFloor = ref<Floor | null>(null);
 
@@ -246,7 +240,7 @@ const dismissError = () => {
                     "
                 >
                     <template #table-action>
-                        <Button @click="addModalOpen = true" class="flex-grow bg-green-500 hover:bg-green-600">Add Floor</Button>
+                        <Button @click="addModalOpen = true" class="bg-green-500 hover:bg-green-600">Add Floor</Button>
                     </template>
                 </DataTable>
             </div>

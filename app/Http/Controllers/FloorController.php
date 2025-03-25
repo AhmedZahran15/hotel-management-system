@@ -61,8 +61,6 @@ class FloorController extends Controller
         else if(Auth::user()->hasRole("admin")){
             // return Inertia::render("",["floor"=> new FloorAdminResource($floor)]);
         }
-        else
-            return response()->json(['message' => 'Unauthorized'], 403);
     }
 
     public function edit($id){
@@ -91,7 +89,7 @@ class FloorController extends Controller
     }
 
     public function destroy(Floor $floor){
-        //$floor = new FloorManagerResource(Floor::where('number', $floor)->firstOrFail());
+
         if (!Auth::check() || (!Auth::user()->hasRole("admin") && Auth::id() !== $floor->creator_user_id))
             abort(403);
         if($floor->rooms()->count() > 0){
