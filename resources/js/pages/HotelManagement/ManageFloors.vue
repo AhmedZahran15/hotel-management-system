@@ -3,18 +3,14 @@ import Alert from '@/components/Shared/Alert.vue';
 import DataTable from '@/components/Shared/ManageDataTable.vue';
 import Modal from '@/components/Shared/ManageModal.vue';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/toast/use-toast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
-import { toTypedSchema } from '@vee-validate/zod';
 import { AlertCircle } from 'lucide-vue-next';
-import { useForm } from 'vee-validate';
-import { computed, defineProps, h, ref, watch } from 'vue';
-import * as z from 'zod';
+import { computed, defineProps, h, ref } from 'vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -122,44 +118,55 @@ const deleteConfirmed = () => {
     selectedFloor.value = null;
 };
 
-//Edit
-const editModalOpen = ref<boolean>(false);
-const handleEdit = (floor: Floor) => {
-    selectedFloor.value = floor;
-    editModalOpen.value = true;
+// Form data objects
+const editForm = ref({
+    floorName: '',
+});
+
+const addForm = ref({
+    addFloorName: '',
+});
+
+// Create reset functions for forms
+const resetAddForm = () => {
+    addForm.value = {
+        addFloorName: '',
+    };
+    // Clear any validation errors
+    page.props.errors = {};
 };
 
-// Watch for when edit modal opens to initialize form
-watch(editModalOpen, (newVal) => {
-    console.log('edit modal open:', newVal);
-    if (newVal && selectedFloor.value) {
-        editForm.resetForm({
-            values: {
-                floorName: selectedFloor.value.name || '',
-            },
-        });
-    }
-});
+const resetEditForm = () => {
+    // Clear any validation errors
+    page.props.errors = {};
+};
 
-const editFormSchema = toTypedSchema(
-    z.object({
-        floorName: z.string().min(2, 'Floor name is required').max(50, 'Too long'),
-    }),
-);
+// Edit functionality
+const editModalOpen = ref<boolean>(false);
+const handleEdit = (floor: Floor) => {
+    resetEditForm(); // Clear previous errors
+    selectedFloor.value = floor;
+    editModalOpen.value = true;
 
-const editForm = useForm({
-    validationSchema: editFormSchema,
-    initialValues: {
-        floorName: '',
-    },
-});
+    // Set the form values
+    editForm.value = {
+        floorName: floor.name || '',
+    };
+};
 
-const onEditSubmit = editForm.handleSubmit((values: any) => {
+// Add functionality
+const addModalOpen = ref<boolean>(false);
+const openAddModal = () => {
+    resetAddForm(); // Reset form and clear errors
+    addModalOpen.value = true;
+};
+
+const onEditSubmit = () => {
     if (selectedFloor.value) {
         router.put(
             route('floors.update', selectedFloor.value.number),
             {
-                name: values.floorName,
+                name: editForm.value.floorName,
             },
             {
                 preserveScroll: true,
@@ -171,37 +178,13 @@ const onEditSubmit = editForm.handleSubmit((values: any) => {
             },
         );
     }
-});
+};
 
-//Add
-const addModalOpen = ref<boolean>(false);
-
-// Reset add form when modal opens
-watch(addModalOpen, (newVal) => {
-    if (newVal) {
-        addForm.resetForm();
-    }
-});
-
-const addFormSchema = toTypedSchema(
-    z.object({
-        addFloorName: z.string().min(2, 'Floor name is required').max(50, 'Too long'),
-    }),
-);
-
-const addForm = useForm({
-    validationSchema: addFormSchema,
-    initialValues: {
-        addFloorName: '',
-    },
-});
-
-// Add onAddSubmit function that is missing
-const onAddSubmit = addForm.handleSubmit((values: any) => {
+const onAddSubmit = () => {
     router.post(
         route('floors.store'),
         {
-            name: values.addFloorName,
+            name: addForm.value.addFloorName,
         },
         {
             preserveScroll: true,
@@ -212,7 +195,18 @@ const onAddSubmit = addForm.handleSubmit((values: any) => {
             },
         },
     );
-});
+};
+
+// Close modal functions
+const closeEditModal = () => {
+    editModalOpen.value = false;
+    resetEditForm();
+};
+
+const closeAddModal = () => {
+    addModalOpen.value = false;
+    resetAddForm();
+};
 
 //AlertDismiss
 const dismissError = () => {
@@ -271,7 +265,7 @@ const dismissError = () => {
                     "
                 >
                     <template #table-action>
-                        <Button @click="addModalOpen = true" class="px-16">Add Floor</Button>
+                        <Button @click="openAddModal" class="px-16">Add Floor</Button>
                     </template>
                 </DataTable>
             </div>
@@ -297,43 +291,52 @@ const dismissError = () => {
                 v-model:open="editModalOpen"
                 :buttonsVisible="false"
                 :disableEsc="false"
+                @update:open="
+                    (val) => {
+                        if (!val) resetEditForm();
+                    }
+                "
             >
                 <template #description>
-                    <Form id="edit-floor-form" :validation-schema="editFormSchema" as="div">
-                        <form class="flex flex-col justify-center gap-4 p-6" @submit.prevent="onEditSubmit">
-                            <FormField v-slot="{ componentField }" name="floorName" :validate-on-blur="false">
-                                <FormItem>
-                                    <FormLabel>Floor Name</FormLabel>
-                                    <FormControl>
-                                        <Input type="text" placeholder="Enter floor name" v-bind="componentField" />
-                                    </FormControl>
-                                    <FormDescription> This is the name that will be displayed for the floor. </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-                            <Button class="self-end px-6" type="submit">Update</Button>
-                        </form>
-                    </Form>
+                    <div class="flex flex-col justify-center gap-4 p-6">
+                        <div>
+                            <label class="text-sm font-medium">Floor Name</label>
+                            <Input type="text" placeholder="Enter floor name" v-model="editForm.floorName" />
+                            <p v-if="errors.name" class="text-sm text-red-500">{{ errors.name }}</p>
+                        </div>
+                        <div class="flex justify-end gap-2">
+                            <Button variant="outline" @click="closeEditModal">Cancel</Button>
+                            <Button @click="onEditSubmit">Update</Button>
+                        </div>
+                    </div>
                 </template>
             </Modal>
 
             <!-- Add Modal -->
-            <Modal v-if="addModalOpen" :title="'Enter the floor name:'" v-model:open="addModalOpen" :buttonsVisible="false" :disableEsc="false">
+            <Modal
+                v-if="addModalOpen"
+                :title="'Enter the floor name:'"
+                v-model:open="addModalOpen"
+                :buttonsVisible="false"
+                :disableEsc="false"
+                @update:open="
+                    (val) => {
+                        if (!val) resetAddForm();
+                    }
+                "
+            >
                 <template #description>
-                    <Form id="add-floor-form" :validation-schema="addFormSchema" as="div">
-                        <form class="flex flex-col justify-center gap-4 p-6" @submit.prevent="onAddSubmit">
-                            <FormField v-slot="{ componentField }" name="addFloorName" :validate-on-blur="false">
-                                <FormItem>
-                                    <FormControl>
-                                        <Input type="text" placeholder="please write a descriptive name" v-bind="componentField" />
-                                    </FormControl>
-                                    <FormDescription> This is the name that will be displayed for the floor. </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-                            <Button class="self-end" type="submit">Add</Button>
-                        </form>
-                    </Form>
+                    <div class="flex flex-col justify-center gap-4 p-6">
+                        <div>
+                            <label class="text-sm font-medium">Floor Name</label>
+                            <Input type="text" placeholder="Please write a descriptive name" v-model="addForm.addFloorName" />
+                            <p v-if="errors.name" class="text-sm text-red-500">{{ errors.name }}</p>
+                        </div>
+                        <div class="flex justify-end gap-2">
+                            <Button variant="outline" @click="closeAddModal">Cancel</Button>
+                            <Button @click="onAddSubmit">Add</Button>
+                        </div>
+                    </div>
                 </template>
             </Modal>
         </div>

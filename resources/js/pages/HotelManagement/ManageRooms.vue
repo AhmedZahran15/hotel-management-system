@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import Alert from '@/components/Shared/Alert.vue';
 import DataTable from '@/components/Shared/ManageDataTable.vue';
 import Modal from '@/components/Shared/ManageModal.vue';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/toast/use-toast';
@@ -11,15 +9,25 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
-import { toTypedSchema } from '@vee-validate/zod';
-import { AlertCircle } from 'lucide-vue-next';
-import { useForm } from 'vee-validate';
 import { computed, defineProps, h, ref } from 'vue';
-import * as z from 'zod';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Manage Rooms', href: route('rooms.index') },
-];
+// Define missing types
+interface SortingValue {
+    id: string;
+    desc: boolean;
+}
+
+interface Room {
+    number: number;
+    capacity: number;
+    room_price: number;
+    state: 'available' | 'maintenance' | 'occupied';
+    floor: { number: number };
+    manager_id?: number;
+    manager?: { name: string };
+}
+
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Manage Rooms', href: route('rooms.index') }];
 
 const page = usePage();
 const props = defineProps(['rooms']);
@@ -56,14 +64,18 @@ const columns = ref<ColumnDef<Room>[]>([
         cell: (info: any) =>
             info.row.original.manager_id == page.props.auth.user.id || page.props.auth.user.roles.includes('admin')
                 ? [
-                    h(Button, { variant: 'default', class: 'mx-1', onClick: () => handleEdit(info.row.original) }, () => 'Edit'),
-                    h(Button, {
-                        variant: 'destructive',
-                        class: 'mx-1',
-                        disabled: info.row.original.state == 'occupied',
-                        onClick: () => handleDelete(info.row.original),
-                    }, () => 'Remove'),
-                ]
+                      h(Button, { variant: 'default', class: 'mx-1', onClick: () => handleEdit(info.row.original) }, () => 'Edit'),
+                      h(
+                          Button,
+                          {
+                              variant: 'destructive',
+                              class: 'mx-1',
+                              disabled: info.row.original.state == 'occupied',
+                              onClick: () => handleDelete(info.row.original),
+                          },
+                          () => 'Remove',
+                      ),
+                  ]
                 : '',
     },
 ]);
@@ -114,89 +126,113 @@ const deleteConfirmed = () => {
     selectedRoom.value = null;
 };
 
-const editModalOpen = ref<boolean>(false);
-const handleEdit = (room: Room) => {
-    selectedRoom.value = room;
-    editModalOpen.value = true;
-};
-
-const editFormSchema = toTypedSchema(z.object({
-    editRoomFloorNumber: z.string().min(4).max(50).regex(/^[0-9]+$/),
-    editRoomCapacity: z.string().refine(value => !isNaN(Number(value)) && Number(value) > 0 && Number(value) <= 5),
-    editRoomPrice: z.string().refine(value => !isNaN(Number(value)) && Number(value) >= 10),
-    editRoomState: z.enum(['available', 'maintenance']),
-}));
-
-const editForm = useForm({ validationSchema: editFormSchema, initialValues: {} });
-const onEditSubmit = editForm.handleSubmit(editValues => {
-    router.put(route('rooms.update', selectedRoom.value?.number), editValues, {
-        preserveScroll: true,
-        onSuccess: () => {
-            editModalOpen.value = false;
-            toast({ title: 'Room updated successfully!' });
-        },
-    });
+// Form data objects
+const editForm = ref({
+    editRoomFloorNumber: '',
+    editRoomCapacity: '',
+    editRoomPrice: '',
+    editRoomState: 'available',
 });
 
-const addModalOpen = ref<boolean>(false);
-const addFormSchema = toTypedSchema(
-    z.object({
-        addRoomNumber: z
-            .string()
-            .min(4, 'Room Number should exceed 4 digits')
-            .max(50, 'Too long')
-            .regex(/^[0-9]+$/, 'Must be a number'),
-        addRoomFloorNumber: z
-            .string()
-            .min(4, 'Floor number should exceed 4 digits')
-            .max(50, 'Too long')
-            .regex(/^[0-9]+$/, 'Must be a number'),
-        addRoomCapacity: z
-            .string()
-            .refine((value: string) => !isNaN(Number(value)) && Number(value) <= 5 && Number(value) > 0, 'Min:1 - Max:5'),
-        addRoomPrice: z
-            .string()
-            .refine((value: string) => !isNaN(Number(value)) && Number(value) >= 10, 'Minimum is 10$'),
-        addRoomState: z.enum(['available', 'maintenance']),
-    })
-);
+const addForm = ref({
+    addRoomNumber: '',
+    addRoomFloorNumber: '',
+    addRoomCapacity: '',
+    addRoomPrice: '',
+    addRoomState: 'available',
+});
 
-const addForm = useForm({
-    validationSchema: addFormSchema,
-    initialValues: {
+// Create reset functions for forms
+const resetAddForm = () => {
+    addForm.value = {
         addRoomNumber: '',
         addRoomFloorNumber: '',
         addRoomCapacity: '',
         addRoomPrice: '',
-        addRoomState: '',
-    },
-});
+        addRoomState: 'available',
+    };
+    // Clear any validation errors
+    page.props.errors = {};
+};
 
-const onAddSubmit = addForm.handleSubmit((addValues: any) => {
-    console.log(addValues);
+const resetEditForm = () => {
+    // Clear any validation errors
+    page.props.errors = {};
+};
+
+// Update modal open handlers to clear errors
+const editModalOpen = ref<boolean>(false);
+const handleEdit = (room: Room) => {
+    resetEditForm(); // Clear previous errors
+    selectedRoom.value = room;
+    editModalOpen.value = true;
+
+    // Set the form values
+    editForm.value = {
+        editRoomFloorNumber: room.floor.number.toString(),
+        editRoomCapacity: room.capacity.toString(),
+        editRoomPrice: (room.room_price / 100).toString(), // Convert from cents to dollars
+        editRoomState: room.state !== 'occupied' ? room.state : 'available',
+    };
+};
+
+const addModalOpen = ref<boolean>(false);
+const openAddModal = () => {
+    resetAddForm(); // Reset form and clear errors
+    addModalOpen.value = true;
+};
+
+// Update successful submission to use the reset function
+const onAddSubmit = () => {
     router.post(
         route('rooms.store'),
         {
-            number: addValues.addRoomNumber,
-            floor_number: addValues.addRoomFloorNumber,
-            capacity: addValues.addRoomCapacity,
-            room_price: Number(addValues.addRoomPrice) * 100,
-            state: addValues.addRoomState,
+            number: addForm.value.addRoomNumber,
+            floor_number: addForm.value.addRoomFloorNumber,
+            capacity: addForm.value.addRoomCapacity,
+            room_price: Number(addForm.value.addRoomPrice) * 100,
+            state: addForm.value.addRoomState,
         },
         {
             preserveScroll: true,
             onSuccess: () => {
                 addModalOpen.value = false;
                 toast({ title: 'Room added successfully!' });
+                resetAddForm(); // Reset the form
                 router.get(page.url);
             },
-        }
+        },
     );
-});
+};
 
+const onEditSubmit = () => {
+    router.put(
+        route('rooms.update', selectedRoom.value?.number),
+        {
+            floor_number: editForm.value.editRoomFloorNumber,
+            capacity: editForm.value.editRoomCapacity,
+            room_price: Number(editForm.value.editRoomPrice) * 100, // Convert to cents
+            state: editForm.value.editRoomState,
+        },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                editModalOpen.value = false;
+                toast({ title: 'Room updated successfully!' });
+            },
+        },
+    );
+};
 
-const dismissError = () => {
-    page.props.errors = {};
+// We'll also clear errors when modals are closed
+const closeEditModal = () => {
+    editModalOpen.value = false;
+    resetEditForm();
+};
+
+const closeAddModal = () => {
+    addModalOpen.value = false;
+    resetAddForm();
 };
 </script>
 
@@ -205,22 +241,6 @@ const dismissError = () => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 rounded-xl px-4 py-4">
-            <!-- Errors -->
-            <Alert
-                class="fixed left-1/2 top-4 z-[9999] mx-auto mt-4 w-10/12 -translate-x-1/2 bg-red-500 text-white"
-                v-for="(value, index) of errors"
-                :key="index"
-                :show="true"
-                :variant="'destructive'"
-                :title="index"
-                :message="value"
-            >
-                <template v-slot:icon><AlertCircle class="h-4 w-4" /></template>
-                <template v-slot:dismissBtn>
-                    <Button class="bg-white text-black" @click="dismissError">Dismiss</Button>
-                </template>
-            </Alert>
-
             <!-- DataTable -->
             <div class="px-6">
                 <DataTable
@@ -233,12 +253,27 @@ const dismissError = () => {
                     :manual-sorting="true"
                     :manual-filtering="true"
                     :sorting="sorting"
-                    @update:sorting="(newSorting) => { sorting = newSorting; fetchData(); }"
-                    @update:filters="(newFilters) => { filters = newFilters; fetchData(); }"
-                    @update:pagination="(newPagination) => { pagination = newPagination; fetchData(); }"
+                    @update:sorting="
+                        (newSorting) => {
+                            sorting = newSorting;
+                            fetchData();
+                        }
+                    "
+                    @update:filters="
+                        (newFilters) => {
+                            filters = newFilters;
+                            fetchData();
+                        }
+                    "
+                    @update:pagination="
+                        (newPagination) => {
+                            pagination = newPagination;
+                            fetchData();
+                        }
+                    "
                 >
                     <template #table-action>
-                        <Button @click="addModalOpen = true" class="px-16">Add Room</Button>
+                        <Button @click="openAddModal" class="px-16">Add Room</Button>
                     </template>
                 </DataTable>
             </div>
@@ -265,116 +300,107 @@ const dismissError = () => {
                 v-model:open="editModalOpen"
                 :buttonsVisible="false"
                 :disableEsc="false"
+                @update:open="
+                    (val) => {
+                        if (!val) resetEditForm();
+                    }
+                "
             >
                 <template #description>
-                    <Form id="edit-floor-form" :validation-schema="editFormSchema" @submit.prevent="onEditSubmit" as="div">
-                        <form class="flex flex-col justify-center gap-4 p-6" @submit.prevent="onEditSubmit">
-                            <FormField v-slot="{ componentField }" name="editRoomFloorNumber">
-                                <FormItem>
-                                    <FormControl>
-                                        <Input type="text" placeholder="4 digits floor number" v-bind="componentField" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-                            <FormField v-slot="{ componentField }" name="editRoomCapacity">
-                                <FormItem>
-                                    <FormControl>
-                                        <Input type="text" placeholder="Capacity: Maximum is 5" v-bind="componentField" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-                            <FormField v-slot="{ componentField }" name="editRoomPrice">
-                                <FormItem>
-                                    <FormControl>
-                                        <Input type="text" placeholder="price in $" v-bind="componentField" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-                            <FormField v-slot="{ componentField }" name="editRoomState">
-                                <FormItem>
-                                    <FormControl>
-                                        <Select v-bind="componentField">
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select current room state" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectItem value="available">available</SelectItem>
-                                                    <SelectItem value="maintenance">maintenance</SelectItem>
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-                            <Button type="submit" class="self-end">Update</Button>
-                        </form>
-                    </Form>
+                    <div class="flex flex-col justify-center gap-4 p-6">
+                        <div>
+                            <label class="text-sm font-medium">Floor Number</label>
+                            <Input type="text" placeholder="4 digits floor number" v-model="editForm.editRoomFloorNumber" />
+                            <p v-if="errors.floor_number" class="text-sm text-red-500">{{ errors.floor_number }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium">Room Capacity</label>
+                            <Input type="text" placeholder="Capacity: Maximum is 5" v-model="editForm.editRoomCapacity" />
+                            <p v-if="errors.capacity" class="text-sm text-red-500">{{ errors.capacity }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium">Room Price</label>
+                            <Input type="text" placeholder="price in $" v-model="editForm.editRoomPrice" />
+                            <p v-if="errors.room_price" class="text-sm text-red-500">{{ errors.room_price }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium">Room State</label>
+                            <Select v-model="editForm.editRoomState">
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select current room state" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        <SelectItem value="available">available</SelectItem>
+                                        <SelectItem value="maintenance">maintenance</SelectItem>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
+                            <p v-if="errors.state" class="text-sm text-red-500">{{ errors.state }}</p>
+                        </div>
+                        <div class="flex justify-end gap-2">
+                            <Button variant="outline" @click="closeEditModal">Cancel</Button>
+                            <Button @click="() => onEditSubmit()">Update</Button>
+                        </div>
+                    </div>
                 </template>
             </Modal>
 
             <!-- Add Modal -->
-            <Modal v-if="addModalOpen" title="Enter the new room data:" v-model:open="addModalOpen" :buttonsVisible="false" :disableEsc="false">
+            <Modal
+                v-if="addModalOpen"
+                title="Enter the new room data:"
+                v-model:open="addModalOpen"
+                :buttonsVisible="false"
+                :disableEsc="false"
+                @update:open="
+                    (val) => {
+                        if (!val) resetAddForm();
+                    }
+                "
+            >
                 <template #description>
-                    <Form id="add-floor-form" :validation-schema="addFormSchema" as="div">
-                        <form class="flex flex-col justify-center gap-4 p-6" >
-                            <FormField v-slot="{ componentField }" name="addRoomNumber">
-                                <FormItem>
-                                    <FormControl>
-                                        <Input type="text" placeholder="4 digits room number" v-bind="componentField" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-                            <FormField v-slot="{ componentField }" name="addRoomFloorNumber">
-                                <FormItem>
-                                    <FormControl>
-                                        <Input type="text" placeholder="4 digits floor number" v-bind="componentField" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-                            <FormField v-slot="{ componentField }" name="addRoomCapacity">
-                                <FormItem>
-                                    <FormControl>
-                                        <Input type="text" placeholder="Capacity: Maximum is 5" v-bind="componentField" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-                            <FormField v-slot="{ componentField }" name="addRoomPrice">
-                                <FormItem>
-                                    <FormControl>
-                                        <Input type="text" placeholder="price in $" v-bind="componentField" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-                            <FormField v-slot="{ componentField }" name="addRoomState">
-                                <FormItem>
-                                    <FormControl>
-                                        <Select v-bind="componentField">
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select current room state" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectItem value="available">available</SelectItem>
-                                                    <SelectItem value="maintenance">maintenance</SelectItem>
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-                            <Button class="self-end" type="submit">Add</Button>
-                        </form>
-                    </Form>
+                    <div class="flex flex-col justify-center gap-4 p-6">
+                        <div>
+                            <label class="text-sm font-medium">Room Number</label>
+                            <Input type="text" placeholder="4 digits room number" v-model="addForm.addRoomNumber" />
+                            <p v-if="errors.number" class="text-sm text-red-500">{{ errors.number }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium">Floor Number</label>
+                            <Input type="text" placeholder="4 digits floor number" v-model="addForm.addRoomFloorNumber" />
+                            <p v-if="errors.floor_number" class="text-sm text-red-500">{{ errors.floor_number }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium">Room Capacity</label>
+                            <Input type="text" placeholder="Capacity: Maximum is 5" v-model="addForm.addRoomCapacity" />
+                            <p v-if="errors.capacity" class="text-sm text-red-500">{{ errors.capacity }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium">Room Price</label>
+                            <Input type="text" placeholder="price in $" v-model="addForm.addRoomPrice" />
+                            <p v-if="errors.room_price" class="text-sm text-red-500">{{ errors.room_price }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium">Room State</label>
+                            <Select v-model="addForm.addRoomState">
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select current room state" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        <SelectItem value="available">available</SelectItem>
+                                        <SelectItem value="maintenance">maintenance</SelectItem>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
+                            <p v-if="errors.state" class="text-sm text-red-500">{{ errors.state }}</p>
+                        </div>
+                        <div class="flex justify-end gap-2">
+                            <Button variant="outline" @click="closeAddModal">Cancel</Button>
+                            <Button @click="onAddSubmit">Add</Button>
+                        </div>
+                    </div>
                 </template>
             </Modal>
         </div>
