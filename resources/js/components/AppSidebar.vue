@@ -3,9 +3,9 @@ import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import {type NavItem } from '@/types';
-import { Link ,usePage} from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid , CableCar, School ,UserRoundPlus ,CircleUser,Users,CalendarCheck,Calendar} from 'lucide-vue-next';
+import { type NavItem } from '@/types';
+import { Link, usePage } from '@inertiajs/vue3';
+import { BookOpen, CableCar, Calendar, CalendarCheck, CircleUser, Folder, LayoutGrid, School, UserRoundPlus, Users } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const page = usePage();
@@ -17,85 +17,52 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-// Accessible pages based on role and permissions
-// if (page.props.auth.user.permissions.find(x => x === 'manage floors')) {
-//     mainNavItems.push({
-//         title: 'Manage Floors',
-//         href: route("floors.index"),
-//         icon: CableCar,
-//     });
-// }
+// Common menu items definitions
+const manageFloorsItem = {
+    title: 'Manage Floors',
+    href: route('floors.index'),
+    icon: CableCar,
+};
 
-// if (page.props.auth.user.permissions.find(x => x === 'manage rooms')) {
-//     mainNavItems.push({
-//         title: 'Manage Rooms',
-//         href: route("rooms.index"),
-//         icon: School,
-//     });
-// }
+const manageRoomsItem = {
+    title: 'Manage Rooms',
+    href: route('rooms.index'),
+    icon: School,
+};
 
+const manageReceptionistsItem = {
+    title: 'Manage Receptionists',
+    href: '/dashboard/receptionists',
+    icon: Users,
+};
+
+const manageClientsItem = {
+    title: 'Manage Clients',
+    href: '/dashboard/clients',
+    icon: UserRoundPlus,
+};
+
+// Add items based on user role
 if (page.props.auth.user.roles.includes('admin')) {
     mainNavItems.push(
         {
-        title: 'Manage Managers',
-        href: '/dashboard/managers',
-        icon: CircleUser,
-    },
-    {
-        title: 'Manage Receptionists',
-        href: '/dashboard/receptionists',
-        icon: Users,
-    },
-    {
-        title: 'Manage Clients',
-        href: '/dashboard/clients',
-        icon: UserRoundPlus,
-    },
-        {
-            title: 'Manage Floors',
-            href: route("floors.index"),
-            icon: CableCar,
+            title: 'Manage Managers',
+            href: '/dashboard/managers',
+            icon: CircleUser,
         },
-        {
-            title: 'Manage Rooms',
-            href: route("rooms.index"),
-            icon: School,
-        }
+        manageReceptionistsItem,
+        manageClientsItem,
+        manageFloorsItem,
+        manageRoomsItem,
     );
-};
+}
 
 if (page.props.auth.user.roles.includes('manager')) {
-    mainNavItems.push(
-        {
-            title: 'Manage Receptionists',
-            href: '/dashboard/receptionists',
-            icon: Users,
-        },
-        {
-        title: 'Manage Clients',
-        href: '/dashboard/clients',
-        icon: UserRoundPlus,
-        },
-        {
-            title: 'Manage Floors',
-            href: route("floors.index"),
-            icon: CableCar,
-        },
-        {
-            title: 'Manage Rooms',
-            href: route("rooms.index"),
-            icon: School,
-        }
-    );
-};
+    mainNavItems.push(manageReceptionistsItem, manageClientsItem, manageFloorsItem, manageRoomsItem);
+}
 
 if (page.props.auth.user.roles.includes('receptionist')) {
     mainNavItems.push(
-        // {
-        //     title: 'Manage Clients',
-        //     href: '/dashboard/clients',
-        //     icon: UserRoundPlus,
-        // },
         {
             title: 'My Approved Clients',
             href: '/dashboard/approved',
@@ -105,9 +72,9 @@ if (page.props.auth.user.roles.includes('receptionist')) {
             title: 'Clients Reservations',
             href: '/dashboard/reservations',
             icon: Calendar,
-        }
+        },
     );
-};
+}
 
 if (page.props.auth.user.roles.includes('client')) {
     mainNavItems.push(
@@ -120,10 +87,9 @@ if (page.props.auth.user.roles.includes('client')) {
             title: 'Make Reservation',
             href: '/dashboard/make-reservation',
             icon: CalendarCheck,
-        }
+        },
     );
-};
-
+}
 
 const footerNavItems: NavItem[] = [
     {
