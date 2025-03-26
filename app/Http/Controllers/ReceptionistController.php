@@ -24,7 +24,7 @@ class ReceptionistController extends Controller
             $query->with('creator:id,name,email');
             //load all the receptionists 
         } elseif ($user->hasRole('manager')) {
-            $query->where('creator_user_id', $user->id);
+            $query->with('creator:id,name,email');
         }
 
         $receptionists = $query->paginate(10);
