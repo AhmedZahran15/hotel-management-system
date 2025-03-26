@@ -28,14 +28,14 @@ const columns = [
   { accessorKey: 'name', header: 'Name' },
   { accessorKey: 'email', header: 'Email' },
   { accessorKey: 'profile.national_id', header: 'National ID' },
-  { 
-    accessorKey: 'avatar_image', 
-    header: 'Avatar', 
-    cell: ({ row }) =>  
-      h('img', { 
-        src: row.original.profile?.img_name ? `/storage/${row.original.profile.img_name}` : '/default-avatar.jpg', 
-        alt: 'Avatar', 
-        class: 'w-12 h-12 rounded-full object-cover' 
+  {
+    accessorKey: 'avatar_image',
+    header: 'Avatar',
+    cell: ({ row }) =>
+      h('img', {
+        src: row.getValue('avatar_image'),
+        alt: 'Avatar',
+        class: 'w-12 h-12 rounded-full object-cover'
       })
   },
   {
@@ -57,7 +57,7 @@ const columns = [
 ];
 
 const fetchManagers = async () => {
-  router.get('/dashboard/managers', { 
+  router.get('/dashboard/managers', {
     page: pagination.value.pageIndex + 1,
     perPage: pagination.value.pageSize,
     sorting: sorting.value,
@@ -154,25 +154,25 @@ onMounted(fetchManagers);
             <Button variant="default" @click="isAddModalOpen = true">Add Manager</Button>
           </template>
         </ManageDataTable>
-  
+
         <!-- Delete Modal -->
-        <ManageModal 
-        v-if="isDeleteModalOpen" 
-        title="Deleting Manager" 
-        v-model:open="isDeleteModalOpen" 
+        <ManageModal
+        v-if="isDeleteModalOpen"
+        title="Deleting Manager"
+        v-model:open="isDeleteModalOpen"
         :buttonsVisible="false"
         >
         <template #description>
             <p class="text-lg">Are you sure you want to delete this manager?</p>
         </template>
-        
+
         <template #footer>
             <Button variant="secondary" @click="isDeleteModalOpen = false">Cancel</Button>
             <Button variant="destructive" @click="confirmDelete">Delete</Button>
         </template>
         </ManageModal>
 
-  
+
         <!-- Edit Modal -->
         <ManageModal v-if="isEditModalOpen" title="Edit Manager" v-model:open="isEditModalOpen" :buttonsVisible="false">
           <template #description>
@@ -204,7 +204,7 @@ onMounted(fetchManagers);
             </form>
           </template>
         </ManageModal>
-  
+
         <!-- Add Modal -->
         <ManageModal v-if="isAddModalOpen" title="Add Manager" v-model:open="isAddModalOpen" :buttonsVisible="false">
           <template #description>
@@ -213,33 +213,33 @@ onMounted(fetchManagers);
                 <Label for="name">Name</Label>
                 <Input id="name" v-model="form.name" required />
               </div>
-  
+
               <div class="flex flex-col gap-1">
                 <Label for="email">Email</Label>
                 <Input id="email" v-model="form.email" type="email" required />
               </div>
-  
-              
+
+
               <div class="flex flex-col gap-1">
                 <Label for="national_id">National ID</Label>
                 <Input id="national_id" v-model="form.national_id" required />
               </div>
-              
+
               <div class="flex flex-col gap-1">
                 <Label for="avatar">Avatar</Label>
                 <Input id="avatar" type="file" @change="handleFileUpload" />
               </div>
-              
+
               <div class="flex flex-col gap-1">
                 <Label for="password">Password</Label>
                 <Input id="password" v-model="form.password" type="password" required />
               </div>
-  
+
               <div class="flex flex-col gap-1">
                 <Label for="password_confirmation">Confirm Password</Label>
                 <Input id="password_confirmation" v-model="form.password_confirmation" type="password" required />
               </div>
-              
+
               <div class="flex justify-end gap-2">
                 <Button variant="secondary" @click="isAddModalOpen = false">Close</Button>
                 <Button type="submit">Add</Button>
