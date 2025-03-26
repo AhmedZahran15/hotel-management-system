@@ -9,7 +9,7 @@ class UpdateReceptionistRequest extends FormRequest
     public function authorize(): bool
     {
         // Only an admin should be allowed to update a receptionist
-        return auth()->user()->hasRole('admin');
+        return auth()->user()->hasRole(['admin', 'manager']);
     }
 
     public function rules(): array
