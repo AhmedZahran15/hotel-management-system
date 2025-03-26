@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, h } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ManageDataTable from '@/components/Shared/ManageDataTable.vue';
 import ManageModal from '@/components/Shared/ManageModal.vue';
@@ -22,31 +22,22 @@ const selectedClientId = ref(null);
 const pagination = ref({ pageIndex: 0, pageSize: 10, total: 0 });
 const sorting = ref([]);
 const filters = ref({});
-const form = ref({
-  id: null,
-  name: '',
-  email: '',
-  country: '',
-  gender: '',
-  avatar_image: null,
-  password: '',
-  password_confirmation: '',
-});
-
+const form = ref({ id: null, name: '', email: '', country: '', gender: '', avatar_image: null });
+const page = usePage();
 const columns = [
   { accessorKey: 'id', header: 'ID' },
   { accessorKey: 'name', header: 'Name' },
   { accessorKey: 'email', header: 'Email' },
   { accessorKey: 'country', header: 'Country' },
   { accessorKey: 'gender', header: 'Gender' },
-  { 
-    accessorKey: 'avatar_image', 
-    header: 'Avatar', 
-    cell: ({ row }) =>  
-      h('img', { 
-        src: row.original.avatar_image ? `/storage/${row.original.avatar_image}` : '/default-avatar.jpg', 
-        alt: 'Avatar', 
-        class: 'w-12 h-12 rounded-full object-cover' 
+  {
+    accessorKey: 'avatar_image',
+    header: 'Avatar',
+    cell: ({ row }) =>
+      h('img', {
+        src: row.original.avatar_image ? `/storage/${row.original.avatar_image}` : '/default-avatar.jpg',
+        alt: 'Avatar',
+        class: 'w-12 h-12 rounded-full object-cover'
       })
   },
   {
@@ -60,7 +51,7 @@ const columns = [
 ];
 
 const fetchClients = async () => {
-  router.get('/dashboard/clients', { 
+  router.get('/dashboard/clients', {
     page: pagination.value.pageIndex + 1,
     perPage: pagination.value.pageSize,
     sorting: sorting.value,
@@ -126,6 +117,7 @@ const handleAdd = async () => {
       };
     },
   });
+  console.log(page.props.errors);
 };
 
 const handleEdit = async () => {
@@ -183,10 +175,11 @@ onMounted(fetchClients);
         </template>
       </ManageDataTable>
 
-      <ManageModal 
-        v-if="isDeleteModalOpen" 
-        title="Deleting Client" 
-        v-model:open="isDeleteModalOpen" 
+      <!-- Delete Modal -->
+      <ManageModal
+        v-if="isDeleteModalOpen"
+        title="Deleting Client"
+        v-model:open="isDeleteModalOpen"
         :buttonsVisible="false"
       >
         <template #description>

@@ -75,9 +75,8 @@ class FloorController extends Controller
 
     public function update(Request $request, $floorNum){
         $floor = new FloorManagerResource(Floor::where('number', $floorNum)->firstOrFail());
-        //dd($floor->name);
-        if (!Auth::check() || (!Auth::user()->hasRole("admin") && Auth::id() !== $floor->creator_user_id))
-            abort(304);
+        // if (!Auth::check() || (!Auth::user()->hasRole("admin") && Auth::id() !== $floor->creator_user_id))
+        //     abort(304);
 
         $request -> validate([
             "name"=> ["required","string","min:3"],
@@ -93,9 +92,7 @@ class FloorController extends Controller
         if (!Auth::check() || (!Auth::user()->hasRole("admin") && Auth::id() !== $floor->creator_user_id))
             abort(403);
         if($floor->rooms()->count() > 0){
-            //return back()->withErrors(["error" => "Can't delete floor because it has rooms attached to it."]);
             return to_route("floors.index")->withErrors(["error"=> "Can't delete floor because it has rooms attached to it."]);
-            //return to_route("floors.index")->withErrors(['approval' => 'Your account is pending approval. You will be notified once your account is approved.']);
 
         }
         $floor->delete();

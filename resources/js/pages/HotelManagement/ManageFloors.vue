@@ -3,7 +3,7 @@ import Alert from '@/components/Shared/Alert.vue';
 import DataTable from '@/components/Shared/ManageDataTable.vue';
 import Modal from '@/components/Shared/ManageModal.vue';
 import { Button } from '@/components/ui/button';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/toast/use-toast';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -13,20 +13,36 @@ import type { ColumnDef } from '@tanstack/vue-table';
 import { toTypedSchema } from '@vee-validate/zod';
 import { AlertCircle } from 'lucide-vue-next';
 import { useForm } from 'vee-validate';
-import { computed, defineProps, h, ref } from 'vue';
+import { computed, defineProps, h, ref, watch } from 'vue';
 import * as z from 'zod';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Manage Floors',
         href: route('floors.index'),
-    }
+    },
 ];
 
 const page = usePage();
 const props = defineProps(['floors']);
 const errors = computed(() => page.props.errors);
-
+const params = new URLSearchParams(window.location.search);
+const filters = ref({
+    number: params.get('filter[number]') || '',
+    name: params.get('filter[name]') || '',
+});
+const sorting = ref<SortingValue[]>([]);
+sorting.value = [
+    {
+        id: params.get('sort')?.replace('-', '') || '',
+        desc: params.get('sort')?.includes('-') || false,
+    },
+];
+const pagination = ref({
+    pageIndex: props.floors.meta.current_page - 1,
+    pageSize: props.floors.meta.per_page,
+    dataSize: props.floors.meta.total,
+});
 //Columns for DataTable
 const columns = ref<ColumnDef<Floor>[]>([
     { accessorKey: 'number', header: 'Floor Number' },
@@ -39,40 +55,28 @@ const columns = ref<ColumnDef<Floor>[]>([
         header: 'Actions',
 
         cell: (info: any) =>
-        info.row.original.manager_id == page.props.auth.user.id || page.props.auth.user.roles[0] == "admin" ? [
-            h(Button, { variant: 'default', class: 'mx-1', onClick: () => handleEdit(info.row.original) }, () => 'Edit'),
-            h(
-                Button,
-                {
-                    variant: 'destructive',
-                    class: 'mx-1'
-                    ,disabled: info.row.original.roomsCount != 0,
-                    onClick: () => handleDelete(info.row.original),
-                   // if:info.row.original.manager.id  == page.props.auth.user.id || page.props.auth.user.roles[0] == "admin",
-                },
-                () => 'Remove',
-            ),
-        ]: '',
+            info.row.original.manager_id == page.props.auth.user.id || page.props.auth.user.roles[0] == 'admin'
+                ? [
+                      h(Button, { variant: 'default', class: 'mx-1', onClick: () => handleEdit(info.row.original) }, () => 'Edit'),
+                      h(
+                          Button,
+                          {
+                              variant: 'destructive',
+                              class: 'mx-1',
+                              disabled: info.row.original.roomsCount != 0,
+                              onClick: () => handleDelete(info.row.original),
+                              // if:info.row.original.manager.id  == page.props.auth.user.id || page.props.auth.user.roles[0] == "admin",
+                          },
+                          () => 'Remove',
+                      ),
+                  ]
+                : '',
     },
 ]);
 //append Manger column in case of Admin (Depending on the data sent from the backend)
 if (props.floors?.data?.length > 0 && props.floors.data[0]?.manager) {
     columns.value.splice(2, 0, { accessorKey: 'manager.name', header: 'Manager' });
 }
-
-//filterng and sorting
-const filters = ref({
-    number: '',
-    name: '',
-});
-const sorting = ref<SortingValue[]>([]);
-
-const pagination = ref({
-    pageIndex: props.floors.meta.current_page - 1,
-    pageSize: props.floors.meta.per_page,
-    dataSize: props.floors.meta.total,
-});
-
 
 const fetchData = (url?: string) => {
     const params = new URLSearchParams();
@@ -92,8 +96,7 @@ const fetchData = (url?: string) => {
     // Apply pagination
     params.append('perPage', pagination.value.pageSize);
     params.append('dataSize', pagination.value.dataSize);
-    params.append('page', pagination.value.pageIndex +1);
-
+    params.append('page', pagination.value.pageIndex + 1);
 
     // Fetch data with updated parameters
     router.get(url || route('floors.index'), Object.fromEntries(params.entries()), {
@@ -125,6 +128,19 @@ const handleEdit = (floor: Floor) => {
     selectedFloor.value = floor;
     editModalOpen.value = true;
 };
+
+// Watch for when edit modal opens to initialize form
+watch(editModalOpen, (newVal) => {
+    console.log('edit modal open:', newVal);
+    if (newVal && selectedFloor.value) {
+        editForm.resetForm({
+            values: {
+                floorName: selectedFloor.value.name || '',
+            },
+        });
+    }
+});
+
 const editFormSchema = toTypedSchema(
     z.object({
         floorName: z.string().min(2, 'Floor name is required').max(50, 'Too long'),
@@ -134,7 +150,7 @@ const editFormSchema = toTypedSchema(
 const editForm = useForm({
     validationSchema: editFormSchema,
     initialValues: {
-        floorName: selectedFloor.value?.name ?? '',
+        floorName: '',
     },
 });
 
@@ -160,6 +176,13 @@ const onEditSubmit = editForm.handleSubmit((values: any) => {
 //Add
 const addModalOpen = ref<boolean>(false);
 
+// Reset add form when modal opens
+watch(addModalOpen, (newVal) => {
+    if (newVal) {
+        addForm.resetForm();
+    }
+});
+
 const addFormSchema = toTypedSchema(
     z.object({
         addFloorName: z.string().min(2, 'Floor name is required').max(50, 'Too long'),
@@ -173,11 +196,12 @@ const addForm = useForm({
     },
 });
 
-const onAddSubmit = addForm.handleSubmit((addValues: any) => {
+// Add onAddSubmit function that is missing
+const onAddSubmit = addForm.handleSubmit((values: any) => {
     router.post(
         route('floors.store'),
         {
-            name: addValues.addFloorName,
+            name: values.addFloorName,
         },
         {
             preserveScroll: true,
@@ -210,7 +234,9 @@ const dismissError = () => {
                 :title="index"
                 :message="value"
             >
-                <template v-slot:icon><AlertCircle class="h-4 w-4" /></template>
+                <template v-slot:icon>
+                    <AlertCircle class="h-4 w-4" />
+                </template>
                 <template v-slot:dismissBtn><Button :variant="'destructive'" @click="dismissError">dismiss</Button></template>
             </Alert>
 
@@ -245,7 +271,7 @@ const dismissError = () => {
                     "
                 >
                     <template #table-action>
-                        <Button @click="addModalOpen = true" class="px-16 ">Add Floor</Button>
+                        <Button @click="addModalOpen = true" class="px-16">Add Floor</Button>
                     </template>
                 </DataTable>
             </div>
@@ -273,37 +299,41 @@ const dismissError = () => {
                 :disableEsc="false"
             >
                 <template #description>
-                    <form class="flex flex-col justify-center gap-4 p-6" @submit.prevent="onEditSubmit">
-                        <FormField v-slot="{ componentField }" name="floorName" :validate-on-blur="!isFieldDirty">
-                            <FormItem>
-                                <FormLabel>Floor Name</FormLabel>
-                                <FormControl>
-                                    <Input type="text" placeholder="Enter floor name" v-bind="componentField" />
-                                </FormControl>
-                                <FormDescription> This is the name that will be displayed for the floor. </FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        </FormField>
-                        <Button class="self-end px-6" type="submit">Update</Button>
-                    </form>
+                    <Form id="edit-floor-form" :validation-schema="editFormSchema" as="div">
+                        <form class="flex flex-col justify-center gap-4 p-6" @submit.prevent="onEditSubmit">
+                            <FormField v-slot="{ componentField }" name="floorName" :validate-on-blur="false">
+                                <FormItem>
+                                    <FormLabel>Floor Name</FormLabel>
+                                    <FormControl>
+                                        <Input type="text" placeholder="Enter floor name" v-bind="componentField" />
+                                    </FormControl>
+                                    <FormDescription> This is the name that will be displayed for the floor. </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            </FormField>
+                            <Button class="self-end px-6" type="submit">Update</Button>
+                        </form>
+                    </Form>
                 </template>
             </Modal>
 
             <!-- Add Modal -->
             <Modal v-if="addModalOpen" :title="'Enter the floor name:'" v-model:open="addModalOpen" :buttonsVisible="false" :disableEsc="false">
                 <template #description>
-                    <form class="flex flex-col justify-center gap-4 p-6" @submit.prevent="onAddSubmit">
-                        <FormField v-slot="{ componentField }" name="addFloorName" :validate-on-blur="!addForm.isFieldDirty">
-                            <FormItem>
-                                <FormControl>
-                                    <Input type="text" placeholder="please write a descriptive name" v-bind="componentField" />
-                                </FormControl>
-                                <FormDescription> This is the name that will be displayed for the floor. </FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        </FormField>
-                        <Button class="self-end" type="submit">Add</Button>
-                    </form>
+                    <Form id="add-floor-form" :validation-schema="addFormSchema" as="div">
+                        <form class="flex flex-col justify-center gap-4 p-6" @submit.prevent="onAddSubmit">
+                            <FormField v-slot="{ componentField }" name="addFloorName" :validate-on-blur="false">
+                                <FormItem>
+                                    <FormControl>
+                                        <Input type="text" placeholder="please write a descriptive name" v-bind="componentField" />
+                                    </FormControl>
+                                    <FormDescription> This is the name that will be displayed for the floor. </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            </FormField>
+                            <Button class="self-end" type="submit">Add</Button>
+                        </form>
+                    </Form>
                 </template>
             </Modal>
         </div>
