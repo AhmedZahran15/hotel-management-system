@@ -1,42 +1,50 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
-import ManageDataTable from '@/components/Shared/ManageDataTable.vue';
+import { ref, onMounted } from 'vue'
+import { Head, router, usePage } from '@inertiajs/vue3'
+import AppLayout from '@/Layouts/AppLayout.vue'
+import ManageDataTable from '@/components/Shared/ManageDataTable.vue'
 
 const breadcrumbs = [
   { title: 'Dashboard', href: '/dashboard' },
-  { title: 'My Approved Clients', href: '/dashboard/approved', active: true },
-];
+  { title: 'My Approved Clients', href: '/dashboard/approved', active: true }
+]
 
-const approvedClients = ref([]);
-const pagination = ref({ pageIndex: 0, pageSize: 10, total: 0 });
-const sorting = ref([]);
-const filters = ref({ approved: true });
+const page = usePage()
+const approvedClients = ref(page.props.approved_clients || [])
+const pagination = ref({ pageIndex: 0, pageSize: 10, total: 0 })
+const sorting = ref([])
+const filters = ref({})
+
 const columns = [
+  { accessorKey: 'id', header: 'ID' },
   { accessorKey: 'name', header: 'Client Name' },
   { accessorKey: 'email', header: 'Email' },
-  { accessorKey: 'mobile', header: 'Mobile' },
-  { accessorKey: 'country', header: 'Country' },
-  { accessorKey: 'gender', header: 'Gender' },
-];
+  {
+    accessorKey: 'phones.0.phone',
+    header: 'Mobile',
+    cell: ({ row }) => row.original.phones && row.original.phones.length > 0 ? row.original.phones[0].phone : 'N/A'
+  },
+  { accessorKey: 'country.name', header: 'Country' },
+  { accessorKey: 'gender', header: 'Gender' }
+]
 
-const fetchApprovedClients = async () => {
+const fetchApprovedClients = () => {
   router.get('/dashboard/approved', {
-    page: pagination.value.pageIndex + 1,
-    perPage: pagination.value.pageSize,
+    page: 1,
+    perPage: 100,
     sorting: sorting.value,
-    filters: filters.value,
+    filters: filters.value
   }, {
     preserveState: true,
     onSuccess: (page) => {
-      approvedClients.value = page.props.approvedClients.data;
-      pagination.value.total = page.props.approvedClients.total;
-    },
-  });
-};
+      approvedClients.value = page.props.approved_clients
+    }
+  })
+}
 
-onMounted(fetchApprovedClients);
+onMounted(() => {
+  fetchApprovedClients()
+})
 </script>
 
 <template>
@@ -52,8 +60,9 @@ onMounted(fetchApprovedClients);
         :manual-sorting="true"
         :manual-filtering="true"
         :sorting="sorting"
-        @update:sorting="(newSorting) => { sorting = newSorting; fetchApprovedClients(); }"
-        @update:pagination="(newPagination) => { pagination = newPagination; fetchApprovedClients(); }"
+        @update:sorting="newSorting => { sorting = newSorting; fetchApprovedClients() }"
+        @update:filters="newFilters => { filters = newFilters; fetchApprovedClients() }"
+        @update:pagination="newPagination => { pagination = newPagination; fetchApprovedClients() }"
       />
     </div>
   </AppLayout>

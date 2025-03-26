@@ -52,6 +52,16 @@ if (page.props.auth.user.roles.includes('admin')) {
         },
         manageReceptionistsItem,
         manageClientsItem,
+        {
+            title: 'Clients Reservations',
+            href: '/dashboard/reservations',
+            icon: Calendar,
+        },
+        {
+            title: 'My Approved Clients',
+            href: route('clients.approved'),
+            icon: UserRoundPlus,
+        },
         manageFloorsItem,
         manageRoomsItem,
     );
@@ -70,7 +80,7 @@ if (page.props.auth.user.roles.includes('receptionist')) {
         },
         {
             title: 'My Approved Clients',
-            href: '/dashboard/approved',
+            href: route('clients.approved'),
             icon: UserRoundPlus,
         },
         {

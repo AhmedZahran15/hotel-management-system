@@ -65,7 +65,7 @@ class ClientController extends Controller
             "name" => ["required", "string", "min:3"],
             "avatar_image" => ["image", "mimes:jpg,jpeg", "max:2048"],
             "country" => ["required", "string"],
-            "gender" => ["required", "string", "in:Male,Female"],
+            "gender" => ["required", "string", "in:male,female"],
             "email" => ["required", "string", "email", "unique:users",],
             "password" => ["required", "string", "min:8", "confirmed"],
             'phone' => ['sometimes', 'string', 'regex:/^\+?[0-9]{7,}$/'],

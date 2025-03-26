@@ -56,9 +56,6 @@ onMounted(fetchReservations);
         @update:filters="(newFilters) => { filters = newFilters; fetchReservations(); }"
         @update:pagination="(newPagination) => { pagination = newPagination; fetchReservations(); }"
       >
-        <template #table-action>
-          <Button variant="default" @click="isAddModalOpen = true">Add Reservation</Button>
-        </template>
       </ManageDataTable>
     </div>
   </AppLayout>
