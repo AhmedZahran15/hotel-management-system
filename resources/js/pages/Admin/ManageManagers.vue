@@ -5,8 +5,10 @@ import ManageModal from '@/components/Shared/ManageModal.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Head, router } from '@inertiajs/vue3';
-import { h, onMounted, ref } from 'vue';
+import { Head, router, usePage } from '@inertiajs/vue3';
+import { h, onMounted, ref, computed} from 'vue';
+import Alert from '@/components/Shared/Alert.vue';
+import { AlertCircle } from 'lucide-vue-next';
 
 // Breadcrumbs for navigation
 const breadcrumbs = [
@@ -15,6 +17,7 @@ const breadcrumbs = [
 ];
 
 // State Variables
+const page = usePage();
 const managers = ref([]);
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
@@ -24,6 +27,7 @@ const pagination = ref({ pageIndex: 0, pageSize: 10, total: 0 });
 const sorting = ref([]);
 const filters = ref({});
 const form = ref({name: '', email: '', password: '', password_confirmation: '', national_id: '', avatar_image: null });
+const errors = computed(() => page.props.errors);
 
 // Table Columns
 const columns = [
@@ -133,12 +137,34 @@ const confirmDelete = async () => {
 };
 
 onMounted(fetchManagers);
+
+//AlertDismiss
+const dismissError = () => {
+    page.props.errors = {};
+};
 </script>
 
 <template>
     <Head title="Manage Managers" />
+      <!-- Errors -->
+            <Alert
+                class="fixed left-1/2 top-4 z-[9999] mx-auto mt-4 w-10/12 -translate-x-1/2 bg-red-500 text-white"
+                v-for="(value, index) of errors"
+                :key="index"
+                :show="true"
+                :variant="'destructive'"
+                :title="index"
+                :message="value"
+            >
+                <template v-slot:icon><AlertCircle class="h-4 w-4" /></template>
+                <template v-slot:dismissBtn>
+                    <Button class="bg-white text-black" @click="dismissError">Dismiss</Button>
+                </template>
+            </Alert>
     <AppLayout :breadcrumbs="breadcrumbs">
+
       <div class="px-6">
+
         <ManageDataTable
           title="Managers"
           :columns="columns"
