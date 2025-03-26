@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, h } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
+import { usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ManageDataTable from '@/components/Shared/ManageDataTable.vue';
 import ManageModal from '@/components/Shared/ManageModal.vue';
@@ -28,6 +29,11 @@ const sorting = ref([]);
 const filters = ref({});
 const form = ref({ id: null, name: '', email: '', password: '', password_confirmation: '', national_id: '', avatar_image: null });
 
+
+const { props } = usePage();
+const user = props.auth.user;
+const isAdmin = user?.roles.includes('admin');
+
 const columns = [
   { accessorKey: 'id', header: 'ID' },
   { accessorKey: 'name', header: 'Name' },
@@ -37,24 +43,24 @@ const columns = [
     header: 'Created At',
     cell: (info) => new Date(info.getValue()).toLocaleString(),
   },
-  ...(loggedInUserRole.value === 'admin'
-        ? [
-            {
-                accessorKey: 'creator',
-                header: 'Manager Creator',
-                cell: (info) => {
-                    const creator = info.getValue();
-                    return creator && creator.name ? creator.name : 'Unknown';
-                },
-            },
-        ]
-        : []),
+  ...(isAdmin
+    ? [
         {
+          accessorKey: 'creator',
+          header: 'Manager Creator',
+          cell: (info) => {
+            const creator = info.getValue();
+            return creator && creator.name ? creator.name : 'Unknown';
+          },
+        },
+      ]
+    : []),
+  {
     accessorKey: 'Actions',
     header: 'Actions',
     cell: (info) => {
-      const isAdmin = loggedInUserRole.value === 'admin';
-      const isManagerAndCreator = loggedInUserRole.value === 'manager' && loggedInUserId.value === info.row.original.creator_user_id;
+      const isAdmin = user?.roles.includes('admin');
+      const isManagerAndCreator = user?.roles.includes('manager') && user.id === info.row.original.creator_user_id;
 
       return [
         h(Button, { 
@@ -87,7 +93,6 @@ const columns = [
   },
 ];
 
-
 const fetchReceptionists = async () => {
   router.get('/dashboard/receptionists', { 
     page: pagination.value.pageIndex + 1,
@@ -101,8 +106,7 @@ const fetchReceptionists = async () => {
       loggedInUserRole.value = page.props.auth.user.roles[0]; 
       receptionists.value = page.props.receptionists.data;
       pagination.value.total = page.props.receptionists.total;
-      console.log(page.props.auth.user);
-    }
+      console.log(page.props.auth.user);    }
   });
 };
 
@@ -288,7 +292,7 @@ onMounted(fetchReceptionists);
                 <Label for="password_confirmation">Confirm Password</Label>
                 <Input id="password_confirmation" v-model="form.password_confirmation" type="password" required />
               </div>
-              
+
               <div class="flex justify-end gap-2">
                 <Button variant="secondary" @click="isAddModalOpen = false">Close</Button>
                 <Button type="submit">Add</Button>
