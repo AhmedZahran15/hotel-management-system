@@ -24,6 +24,7 @@ class UserResource extends JsonResource
             'user_type'=>$this->user_type,
             'banned'=>$this->banned_at? true : false,
             'avatar_image'=>$this->getAvatarUrl()
+            ,'profile'=> $this->whenLoaded('profile'),
         ];
     }
 }

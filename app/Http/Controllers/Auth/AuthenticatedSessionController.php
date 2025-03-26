@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -45,7 +46,9 @@ class AuthenticatedSessionController extends Controller
                     ->withErrors(['approval' => 'Your account is pending approval. You will be notified once your account is approved.']);
             }
         }
-
+        $user = Auth::user();
+        $user->last_login_at = Carbon::now();
+        $user->save();
         $request->session()->regenerate();
         // Use the route name directly instead of RouteServiceProvider::HOME
         return redirect()->intended(default: route('dashboard'));

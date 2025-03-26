@@ -30,16 +30,16 @@ const columns = [
   { accessorKey: 'id', header: 'ID' },
   { accessorKey: 'name', header: 'Name' },
   { accessorKey: 'email', header: 'Email' },
-  { accessorKey: 'national_id', header: 'National ID' },
+  { accessorKey: 'profile.national_id', header: 'National ID' },
   {
     accessorKey: 'avatar_image',
     header: 'Avatar',
     cell: ({ row }) =>
       h('img', {
-        src: row.original.avatar_image || '/default-avatar.jpg',
+        src: row.getValue('avatar_image'),
         alt: 'Avatar',
-        class: 'w-12 h-12 rounded-full object-cover',
-      }),
+        class: 'w-12 h-12 rounded-full object-cover'
+      })
   },
   {
     accessorKey: 'actions',
@@ -57,20 +57,16 @@ const columns = [
 
 // Fetch Managers
 const fetchManagers = async () => {
-  router.get(
-    '/dashboard/managers',
-    {
-      page: pagination.value.pageIndex + 1,
-      perPage: pagination.value.pageSize,
-      sorting: sorting.value,
-      filters: filters.value,
-    },
-    {
-      preserveState: true,
-      onSuccess: (page) => {
-        managers.value = page.props.managers.data;
-        pagination.value.total = page.props.managers.total;
-      },
+  router.get('/dashboard/managers', {
+    page: pagination.value.pageIndex + 1,
+    perPage: pagination.value.pageSize,
+    sorting: sorting.value,
+    filters: filters.value
+  }, {
+    preserveState: true,
+    onSuccess: (page) => {
+      managers.value = page.props.managers.data;
+      pagination.value.total = page.props.managers.total;
     }
   );
 };
@@ -135,30 +131,34 @@ onMounted(fetchManagers);
 </script>
 
 <template>
-  <Head title="Manage Managers" />
+    <Head title="Manage Managers" />
+    <AppLayout :breadcrumbs="breadcrumbs">
+      <div class="px-6">
+        <ManageDataTable
+          title="Managers"
+          :columns="columns"
+          :data="managers"
+          :pagination="pagination"
+          :manual-pagination="true"
+          :manual-sorting="true"
+          :manual-filtering="true"
+          :sorting="sorting"
+          @update:sorting="(newSorting) => { sorting = newSorting; fetchManagers(); }"
+          @update:filters="(newFilters) => { filters = newFilters; fetchManagers(); }"
+          @update:pagination="(newPagination) => { pagination = newPagination; fetchManagers(); }"
+        >
+          <template #table-action>
+            <Button variant="default" @click="isAddModalOpen = true">Add Manager</Button>
+          </template>
+        </ManageDataTable>
 
-  <AppLayout :breadcrumbs="breadcrumbs">
-    <div class="px-6">
-      <ManageDataTable
-        title="Managers"
-        :columns="columns"
-        :data="managers"
-        :pagination="pagination"
-        :manual-pagination="true"
-        :manual-sorting="true"
-        :manual-filtering="true"
-        :sorting="sorting"
-        @update:sorting="(newSorting) => { sorting = newSorting; fetchManagers(); }"
-        @update:filters="(newFilters) => { filters = newFilters; fetchManagers(); }"
-        @update:pagination="(newPagination) => { pagination = newPagination; fetchManagers(); }"
-      >
-        <template #table-action>
-          <Button variant="default" @click="isAddModalOpen = true">Add Manager</Button>
-        </template>
-      </ManageDataTable>
-
-      <!-- Delete Modal -->
-      <ManageModal v-if="isDeleteModalOpen" title="Deleting Manager" v-model:open="isDeleteModalOpen" :buttonsVisible="false">
+        <!-- Delete Modal -->
+        <ManageModal
+        v-if="isDeleteModalOpen"
+        title="Deleting Manager"
+        v-model:open="isDeleteModalOpen"
+        :buttonsVisible="false"
+        >
         <template #description>
           <p class="text-lg">Are you sure you want to delete this manager?</p>
         </template>
@@ -168,12 +168,15 @@ onMounted(fetchManagers);
         </template>
       </ManageModal>
 
-      <!-- Edit Modal -->
-      <ManageModal v-if="isEditModalOpen" title="Edit Manager" v-model:open="isEditModalOpen" :buttonsVisible="false">
-        <template #description>
-          <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
-            <Label for="name">Name</Label>
-            <Input id="name" v-model="form.name" required />
+
+        <!-- Edit Modal -->
+        <ManageModal v-if="isEditModalOpen" title="Edit Manager" v-model:open="isEditModalOpen" :buttonsVisible="false">
+          <template #description>
+            <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
+              <div class="flex flex-col gap-1">
+                <Label for="name">Name</Label>
+                <Input id="name" v-model="form.name" required />
+              </div>
 
             <Label for="email">Email</Label>
             <Input id="email" v-model="form.email" type="email" required />
@@ -184,43 +187,56 @@ onMounted(fetchManagers);
             <Label for="avatar">Avatar</Label>
             <Input id="avatar" type="file" @change="handleFileUpload" />
 
-            <div class="flex justify-end gap-2">
-              <Button variant="secondary" @click="isEditModalOpen = false">Close</Button>
-              <Button type="submit">Update</Button>
-            </div>
-          </form>
-        </template>
-      </ManageModal>
+              <div class="flex justify-end gap-2">
+                <Button variant="secondary" @click="isEditModalOpen = false">Close</Button>
+                <Button type="submit">Update</Button>
+              </div>
+            </form>
+          </template>
+        </ManageModal>
 
-      <!-- Add Modal -->
-      <ManageModal v-if="isAddModalOpen" title="Add Manager" v-model:open="isAddModalOpen" :buttonsVisible="false">
-        <template #description>
-          <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
-            <Label for="name">Name</Label>
-            <Input id="name" v-model="form.name" required />
+        <!-- Add Modal -->
+        <ManageModal v-if="isAddModalOpen" title="Add Manager" v-model:open="isAddModalOpen" :buttonsVisible="false">
+          <template #description>
+            <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
+              <div class="flex flex-col gap-1">
+                <Label for="name">Name</Label>
+                <Input id="name" v-model="form.name" required />
+              </div>
 
-            <Label for="email">Email</Label>
-            <Input id="email" v-model="form.email" type="email" required />
+              <div class="flex flex-col gap-1">
+                <Label for="email">Email</Label>
+                <Input id="email" v-model="form.email" type="email" required />
+              </div>
 
-            <Label for="national_id">National ID</Label>
-            <Input id="national_id" v-model="form.national_id" required />
 
-            <Label for="avatar">Avatar</Label>
-            <Input id="avatar" type="file" @change="handleFileUpload" />
+              <div class="flex flex-col gap-1">
+                <Label for="national_id">National ID</Label>
+                <Input id="national_id" v-model="form.national_id" required />
+              </div>
 
-            <Label for="password">Password</Label>
-            <Input id="password" v-model="form.password" type="password" required />
+              <div class="flex flex-col gap-1">
+                <Label for="avatar">Avatar</Label>
+                <Input id="avatar" type="file" @change="handleFileUpload" />
+              </div>
 
-            <Label for="password_confirmation">Confirm Password</Label>
-            <Input id="password_confirmation" v-model="form.password_confirmation" type="password" required />
+              <div class="flex flex-col gap-1">
+                <Label for="password">Password</Label>
+                <Input id="password" v-model="form.password" type="password" required />
+              </div>
 
-            <div class="flex justify-end gap-2">
-              <Button variant="secondary" @click="isAddModalOpen = false">Close</Button>
-              <Button type="submit">Add</Button>
-            </div>
-          </form>
-        </template>
-      </ManageModal>
-    </div>
-  </AppLayout>
-</template>
+              <div class="flex flex-col gap-1">
+                <Label for="password_confirmation">Confirm Password</Label>
+                <Input id="password_confirmation" v-model="form.password_confirmation" type="password" required />
+              </div>
+
+              <div class="flex justify-end gap-2">
+                <Button variant="secondary" @click="isAddModalOpen = false">Close</Button>
+                <Button type="submit">Add</Button>
+              </div>
+            </form>
+          </template>
+        </ManageModal>
+      </div>
+    </AppLayout>
+  </template>
