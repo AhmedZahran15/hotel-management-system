@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreManagerRequest;
 use App\Http\Requests\UpdateManagerRequest;
+use App\Http\Resources\UserResource;
 use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -20,8 +21,9 @@ class ManagerController extends Controller
     public function index(): Response
     {
         $managers = User::role('manager')->with('profile')->paginate(10);
-        return Inertia::render('Admin/ManageManagers', ['managers' => $managers]);
-        // return $managers;
+        return Inertia::render('Admin/ManageManagers', [
+            'managers' => UserResource::collection($managers)
+        ]);
     }
 
     //will be tested later
@@ -48,7 +50,7 @@ class ManagerController extends Controller
         if ($request->file("avatar_image")) {
             $user->updateAvatar($request->file("avatar_image"));
         }
-
+ 
         //create the associated profile with the user
         $user->profile()->create([
             'name' => $data['name'],
