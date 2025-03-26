@@ -28,11 +28,10 @@ class RoomController extends Controller
             AllowedFilter::exact('room_price'),
             AllowedFilter::exact('state'),
             AllowedFilter::exact('floor_number'),
-            AllowedFilter::exact('Managere'),
-        ])
+            ])
         ->allowedSorts(['number', 'capacity','state','room_price','floor_number','manager_name'])
-        ->join('users', 'rooms.creator_user_id', '=', 'users.id') // ✅ Join users table
-        ->select('rooms.*', 'users.name as manager_name') // ✅ Select derived columns
+        ->join('users', 'rooms.creator_user_id', '=', 'users.id') //
+        ->select('rooms.*', 'users.name as manager_name') //
         ->with(['floor','creatorUser']);
         if(Auth::user()->hasRole("manager"))
             $rooms=RoomManagerResource::collection($query->paginate(10));
