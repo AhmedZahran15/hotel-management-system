@@ -21,9 +21,8 @@ class ManagerController extends Controller
     public function index(): Response
     {
         $managers = User::role('manager')->with('profile')->paginate(10);
-        return Inertia::render('Admin/ManageManagers', [
-            'managers' => UserResource::collection($managers)
-        ]);
+        return Inertia::render('Admin/ManageManagers', ['managers' =>UserResource::collection($managers)]);
+        // return $managers;
     }
 
     //will be tested later

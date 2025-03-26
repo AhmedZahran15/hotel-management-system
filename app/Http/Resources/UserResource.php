@@ -18,6 +18,9 @@ class UserResource extends JsonResource
             "id"=> $this->id,
             "name"=>$this->name,
             "email"=>$this->email,
+            'national_id'=>$this->whenLoaded('profile', function () {
+                return $this->profile->national_id;
+            }),
             'user_type'=>$this->user_type,
             'banned'=>$this->banned_at? true : false,
             'avatar_image'=>$this->getAvatarUrl()
