@@ -50,7 +50,7 @@ const columns = [
           header: 'Manager Creator',
           cell: (info) => {
             const creator = info.getValue();
-            return creator && creator.name ? creator.name : 'Unknown';
+            return creator && creator.name ? creator.name : 'Manager not found';
           },
         },
       ]
@@ -132,14 +132,9 @@ const handleFileUpload = (event) => {
 
 const handleAdd = async () => {
   const formData = new FormData();
-  formData.append('name', form.value.name);
-  formData.append('email', form.value.email);
-  formData.append('password', form.value.password);
-  formData.append('password_confirmation', form.value.password_confirmation);
-  formData.append('national_id', form.value.national_id);
-  if (form.value.avatar_image instanceof File) {
-    formData.append('avatar_image', form.value.avatar_image);
-  }
+  Object.keys(form.value).forEach((key) => {
+    if (form.value[key] !== null) formData.append(key, form.value[key]);
+  });
   router.post('/dashboard/receptionists', formData, {
     onSuccess: () => {
       isAddModalOpen.value = false;
@@ -151,14 +146,9 @@ const handleAdd = async () => {
 const handleEdit = async () => {
   const formData = new FormData();
   formData.append('_method', 'PATCH');
-  formData.append('name', form.value.name);
-  formData.append('email', form.value.email);
-  formData.append('national_id', form.value.national_id);
-
-  if (form.value.avatar_image instanceof File) {
-    formData.append('avatar_image', form.value.avatar_image);
-  }
-
+  Object.keys(form.value).forEach((key) => {
+    if (form.value[key] !== null) formData.append(key, form.value[key]);
+  });
   router.post(`/dashboard/receptionists/${form.value.id}`, formData, {
     onSuccess: () => {
       isEditModalOpen.value = false;
