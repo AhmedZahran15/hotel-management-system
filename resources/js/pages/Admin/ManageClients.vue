@@ -227,16 +227,6 @@ onMounted(fetchClients);
               <Input id="avatar" type="file" @change="handleFileUpload" />
             </div>
 
-            <div class="flex flex-col gap-1">
-              <Label for="password">New Password (Leave empty to keep current)</Label>
-              <Input id="password" type="password" v-model="form.password" />
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <Label for="password_confirmation">Confirm New Password</Label>
-              <Input id="password_confirmation" type="password" v-model="form.password_confirmation" />
-            </div>
-
             <div class="flex justify-end gap-2">
               <Button variant="secondary" @click="isEditModalOpen = false">Close</Button>
               <Button type="submit">Update</Button>

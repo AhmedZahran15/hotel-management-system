@@ -33,7 +33,7 @@ const mainNavItems: NavItem[] = [
 //         icon: School,
 //     });
 // }
-console.log(page.props.auth.user);
+
 if (page.props.auth.user.roles.includes('admin')) {
     mainNavItems.push(
         {
@@ -70,6 +70,11 @@ if (page.props.auth.user.roles.includes('manager')) {
             title: 'Manage Receptionists',
             href: '/dashboard/receptionists',
             icon: Users,
+        },
+        {
+        title: 'Manage Clients',
+        href: '/dashboard/clients',
+        icon: UserRoundPlus,
         },
         {
             title: 'Manage Floors',

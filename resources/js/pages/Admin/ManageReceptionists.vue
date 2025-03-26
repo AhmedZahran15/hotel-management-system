@@ -32,26 +32,24 @@ const columns = [
   { accessorKey: 'id', header: 'ID' },
   { accessorKey: 'name', header: 'Name' },
   { accessorKey: 'email', header: 'Email' },
-  { accessorKey: 'profile.national_id', header: 'National ID' },
   {
-    accessorKey: 'creator',
-    header: 'Manager Creator',
-    cell: (info) => {
-      const creator = info.getValue();
-      return creator && creator.name ? creator.name : 'Unknown';
-    },
+    accessorKey: 'created_at',
+    header: 'Created At',
+    cell: (info) => new Date(info.getValue()).toLocaleString(),
   },
-  { 
-    accessorKey: 'avatar_image', 
-    header: 'Avatar', 
-    cell: ({ row }) =>  
-      h('img', { 
-        src: row.original.profile?.img_name ? `/storage/${row.original.profile.img_name}` : '/default-avatar.jpg', 
-        alt: 'Avatar', 
-        class: 'w-12 h-12 rounded-full object-cover' 
-      })
-  },
-  {
+  ...(loggedInUserRole.value === 'admin'
+        ? [
+            {
+                accessorKey: 'creator',
+                header: 'Manager Creator',
+                cell: (info) => {
+                    const creator = info.getValue();
+                    return creator && creator.name ? creator.name : 'Unknown';
+                },
+            },
+        ]
+        : []),
+        {
     accessorKey: 'Actions',
     header: 'Actions',
     cell: (info) => {
@@ -89,6 +87,7 @@ const columns = [
   },
 ];
 
+
 const fetchReceptionists = async () => {
   router.get('/dashboard/receptionists', { 
     page: pagination.value.pageIndex + 1,
@@ -99,9 +98,10 @@ const fetchReceptionists = async () => {
     preserveState: true,
     onSuccess: (page) => {
       loggedInUserId.value = page.props.auth.user.id;
-      loggedInUserRole.value = page.props.auth.user.role;
+      loggedInUserRole.value = page.props.auth.user.roles[0]; 
       receptionists.value = page.props.receptionists.data;
       pagination.value.total = page.props.receptionists.total;
+      console.log(page.props.auth.user);
     }
   });
 };
@@ -255,48 +255,50 @@ onMounted(fetchReceptionists);
         </ManageDataTable>
 
         <!-- Add Modal -->
-        <ManageModal v-if="isAddModalOpen" title="Add Receptionist" v-model:open="isAddModalOpen" :buttonsVisible="false">
+        <ManageModal v-if="isAddModalOpen" title="Add Manager" v-model:open="isAddModalOpen" :buttonsVisible="false">
           <template #description>
             <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
               <div class="flex flex-col gap-1">
                 <Label for="name">Name</Label>
                 <Input id="name" v-model="form.name" required />
               </div>
-
+  
               <div class="flex flex-col gap-1">
                 <Label for="email">Email</Label>
                 <Input id="email" v-model="form.email" type="email" required />
               </div>
-
-              <div class="flex flex-col gap-1">
-                <Label for="password">Password</Label>
-                <Input id="password" v-model="form.password" type="password" required />
-              </div>
-
-              <div class="flex flex-col gap-1">
-                <Label for="password_confirmation">Confirm Password</Label>
-                <Input id="password_confirmation" v-model="form.password_confirmation" type="password" required />
-              </div>
-
+  
+              
               <div class="flex flex-col gap-1">
                 <Label for="national_id">National ID</Label>
                 <Input id="national_id" v-model="form.national_id" required />
               </div>
-
+              
               <div class="flex flex-col gap-1">
                 <Label for="avatar">Avatar</Label>
                 <Input id="avatar" type="file" @change="handleFileUpload" />
               </div>
-
+              
+              <div class="flex flex-col gap-1">
+                <Label for="password">Password</Label>
+                <Input id="password" v-model="form.password" type="password" required />
+              </div>
+  
+              <div class="flex flex-col gap-1">
+                <Label for="password_confirmation">Confirm Password</Label>
+                <Input id="password_confirmation" v-model="form.password_confirmation" type="password" required />
+              </div>
+              
               <div class="flex justify-end gap-2">
                 <Button variant="secondary" @click="isAddModalOpen = false">Close</Button>
                 <Button type="submit">Add</Button>
               </div>
             </form>
           </template>
-        </ManageModal>
+          </ManageModal>
+
         <!-- Edit Modal -->
-        <ManageModal v-if="isEditModalOpen" title="Edit Receptionist" v-model:open="isEditModalOpen" :buttonsVisible="false">
+        <ManageModal v-if="isEditModalOpen" title="Edit Manager" v-model:open="isEditModalOpen" :buttonsVisible="false">
           <template #description>
             <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
               <div class="flex flex-col gap-1">
@@ -321,20 +323,21 @@ onMounted(fetchReceptionists);
 
               <div class="flex justify-end gap-2">
                 <Button variant="secondary" @click="isEditModalOpen = false">Close</Button>
-                <Button type="submit">Save</Button>
+                <Button type="submit">Update</Button>
               </div>
             </form>
           </template>
         </ManageModal>
-         <!-- Delete Modal -->
-         <ManageModal 
+
+        <!-- Delete Modal -->
+        <ManageModal 
         v-if="isDeleteModalOpen" 
         title="Deleting Manager" 
         v-model:open="isDeleteModalOpen" 
         :buttonsVisible="false"
         >
         <template #description>
-            <p class="text-lg">Are you sure you want to delete this receptionist?</p>
+            <p class="text-lg">Are you sure you want to delete this manager?</p>
         </template>
         
         <template #footer>

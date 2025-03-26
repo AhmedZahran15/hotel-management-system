@@ -219,6 +219,17 @@ onMounted(fetchManagers);
                 <Input id="email" v-model="form.email" type="email" required />
               </div>
   
+              
+              <div class="flex flex-col gap-1">
+                <Label for="national_id">National ID</Label>
+                <Input id="national_id" v-model="form.national_id" required />
+              </div>
+              
+              <div class="flex flex-col gap-1">
+                <Label for="avatar">Avatar</Label>
+                <Input id="avatar" type="file" @change="handleFileUpload" />
+              </div>
+              
               <div class="flex flex-col gap-1">
                 <Label for="password">Password</Label>
                 <Input id="password" v-model="form.password" type="password" required />
@@ -228,17 +239,7 @@ onMounted(fetchManagers);
                 <Label for="password_confirmation">Confirm Password</Label>
                 <Input id="password_confirmation" v-model="form.password_confirmation" type="password" required />
               </div>
-  
-              <div class="flex flex-col gap-1">
-                <Label for="national_id">National ID</Label>
-                <Input id="national_id" v-model="form.national_id" required />
-              </div>
-  
-              <div class="flex flex-col gap-1">
-                <Label for="avatar">Avatar</Label>
-                <Input id="avatar" type="file" @change="handleFileUpload" />
-              </div>
-  
+              
               <div class="flex justify-end gap-2">
                 <Button variant="secondary" @click="isAddModalOpen = false">Close</Button>
                 <Button type="submit">Add</Button>
