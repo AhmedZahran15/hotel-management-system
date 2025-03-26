@@ -57,19 +57,24 @@ const columns = [
 
 // Fetch Managers
 const fetchManagers = async () => {
-  router.get('/dashboard/managers', {
-    page: pagination.value.pageIndex + 1,
-    perPage: pagination.value.pageSize,
-    sorting: sorting.value,
-    filters: filters.value
-  }, {
-    preserveState: true,
-    onSuccess: (page) => {
-      managers.value = page.props.managers.data;
-      pagination.value.total = page.props.managers.total;
+  router.get(
+    '/dashboard/managers',
+    {
+      page: pagination.value.pageIndex + 1,
+      perPage: pagination.value.pageSize,
+      sorting: sorting.value,
+      filters: filters.value,
+    },
+    {
+      preserveState: true,
+      onSuccess: (page) => {
+        managers.value = page.props.managers.data;
+        pagination.value.total = page.props.managers.total;
+      },
     }
   );
 };
+
 
 // Open Edit Modal
 const openEditModal = (manager) => {
