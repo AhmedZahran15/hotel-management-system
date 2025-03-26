@@ -259,7 +259,7 @@ onMounted(fetchReceptionists);
         </ManageDataTable>
 
         <!-- Add Modal -->
-        <ManageModal v-if="isAddModalOpen" title="Add Manager" v-model:open="isAddModalOpen" :buttonsVisible="false">
+        <ManageModal v-if="isAddModalOpen" title="Add Receptionist" v-model:open="isAddModalOpen" :buttonsVisible="false">
           <template #description>
             <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
               <div class="flex flex-col gap-1">
@@ -302,7 +302,7 @@ onMounted(fetchReceptionists);
           </ManageModal>
 
         <!-- Edit Modal -->
-        <ManageModal v-if="isEditModalOpen" title="Edit Manager" v-model:open="isEditModalOpen" :buttonsVisible="false">
+        <ManageModal v-if="isEditModalOpen" title="Edit Receptionist" v-model:open="isEditModalOpen" :buttonsVisible="false">
           <template #description>
             <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
               <div class="flex flex-col gap-1">
