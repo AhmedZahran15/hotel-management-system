@@ -20,6 +20,7 @@ class UserResource extends JsonResource
             "email"=>$this->email,
             'user_type'=>$this->user_type,
             'banned'=>$this->banned_at? true : false,
+            'avatar_image'=>$this->getAvatarUrl()
         ];
     }
 }
