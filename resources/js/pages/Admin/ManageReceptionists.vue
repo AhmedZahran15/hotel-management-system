@@ -135,7 +135,7 @@ const handleAdd = async () => {
   formData.append('name', form.value.name);
   formData.append('email', form.value.email);
   formData.append('password', form.value.password);
-  formData.append('password_confirmation', form.value.password);
+  formData.append('password_confirmation', form.value.password_confirmation);
   formData.append('national_id', form.value.national_id);
   if (form.value.avatar_image instanceof File) {
     formData.append('avatar_image', form.value.avatar_image);
@@ -336,12 +336,12 @@ onMounted(fetchReceptionists);
         <!-- Delete Modal -->
         <ManageModal 
         v-if="isDeleteModalOpen" 
-        title="Deleting Manager" 
+        title="Deleting Receptionist" 
         v-model:open="isDeleteModalOpen" 
         :buttonsVisible="false"
         >
         <template #description>
-            <p class="text-lg">Are you sure you want to delete this manager?</p>
+            <p class="text-lg">Are you sure you want to delete this Receptionist?</p>
         </template>
         
         <template #footer>
