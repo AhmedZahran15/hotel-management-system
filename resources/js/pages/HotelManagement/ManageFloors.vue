@@ -21,7 +21,6 @@ const breadcrumbs: BreadcrumbItem[] = [
         title: 'Manage Floors',
         href: route('floors.index'),
     },
-    },
 ];
 
 const page = usePage();
@@ -95,7 +94,6 @@ const fetchData = (url?: string) => {
     }
 
     // Apply pagination
-    params.append('page', pagination.value.pageIndex + 1);
     params.append('perPage', pagination.value.pageSize);
     params.append('dataSize', pagination.value.dataSize);
     params.append('page', pagination.value.pageIndex + 1);
@@ -105,13 +103,6 @@ const fetchData = (url?: string) => {
         preserveScroll: true,
         preserveState: true,
         only: ['floors'],
-        onSuccess: () => {
-            pagination.value = {
-                pageIndex: props.floors.meta.current_page > pagination.value.pageIndex ? props.floors.meta.current_pag - 1 : 1,
-                pageSize: props.floors.meta.per_page,
-                dataSize: props.floors.meta.total,
-            };
-        },
     });
 };
 
@@ -126,7 +117,7 @@ const handleDelete = (floor: Floor) => {
 const deleteConfirmed = () => {
     if (selectedFloor.value) {
         router.delete(route('floors.destroy', selectedFloor.value.number));
-
+        router.get(page.url);
     }
     selectedFloor.value = null;
 };
@@ -135,12 +126,6 @@ const deleteConfirmed = () => {
 const editModalOpen = ref<boolean>(false);
 const handleEdit = (floor: Floor) => {
     selectedFloor.value = floor;
-
-    // Dynamically set the edit form values when opening the modal
-    editForm.setValues({
-        floorName: floor.name, // Update form with the selected floor's name
-    });
-
     editModalOpen.value = true;
 };
 
@@ -158,7 +143,7 @@ watch(editModalOpen, (newVal) => {
 
 const editFormSchema = toTypedSchema(
     z.object({
-        floorName:  z.string().min(2, 'Floor name is required').max(50, 'Too long'),
+        floorName: z.string().min(2, 'Floor name is required').max(50, 'Too long'),
     }),
 );
 
@@ -169,23 +154,25 @@ const editForm = useForm({
     },
 });
 
-const onEditSubmit = editForm.handleSubmit((values) => {
+const onEditSubmit = editForm.handleSubmit((values: any) => {
     if (selectedFloor.value) {
         router.put(
             route('floors.update', selectedFloor.value.number),
             {
-                name: values.floorName, // Send the updated name
+                name: values.floorName,
             },
             {
                 preserveScroll: true,
                 onSuccess: () => {
                     editModalOpen.value = false;
                     toast({ title: 'Floor updated successfully!' });
+                    router.get(page.url);
                 },
             },
         );
     }
 });
+
 //Add
 const addModalOpen = ref<boolean>(false);
 
@@ -219,10 +206,9 @@ const onAddSubmit = addForm.handleSubmit((values: any) => {
         {
             preserveScroll: true,
             onSuccess: () => {
-                addForm.resetForm(); // Reset form after submission
                 addModalOpen.value = false;
                 toast({ title: 'Floor added successfully!' });
-                router.get(page.url); // Refresh floors list
+                router.get(page.url);
             },
         },
     );
@@ -267,14 +253,12 @@ const dismissError = () => {
                     :sorting="sorting"
                     @update:sorting="
                         (newSorting) => {
-                            //pagination.pageIndex = 1;
                             sorting = newSorting;
                             fetchData();
                         }
                     "
                     @update:filters="
                         (newFilters) => {
-                            //pagination.pageIndex = 1;
                             filters = newFilters;
                             fetchData();
                         }
@@ -287,7 +271,6 @@ const dismissError = () => {
                     "
                 >
                     <template #table-action>
-                        <Button @click="addModalOpen = true" class="px-16">Add Floor</Button>
                         <Button @click="addModalOpen = true" class="px-16">Add Floor</Button>
                     </template>
                 </DataTable>

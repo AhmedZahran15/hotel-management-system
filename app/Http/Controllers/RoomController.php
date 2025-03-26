@@ -54,6 +54,7 @@ class RoomController extends Controller
      */
     public function store(Request $request)
     {
+        dd($request);
         $request -> validate([
             "floor_number"=>["required","int",Rule::exists("floors","number")],
             "number"=>["required","integer","min_digits:4", Rule::unique('rooms','number')],
