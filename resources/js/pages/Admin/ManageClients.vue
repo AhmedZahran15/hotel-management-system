@@ -22,7 +22,7 @@ const selectedClientId = ref(null);
 const pagination = ref({ pageIndex: 0, pageSize: 10, total: 0 });
 const sorting = ref([]);
 const filters = ref({});
-const form = ref({ id: null, name: '', email: '', country: '', gender: '', avatar_image: null });
+const form = ref({name: '', email: '', country: '', gender: '', avatar_image: null });
 const page = usePage();
 const columns = [
   { accessorKey: 'id', header: 'ID' },
@@ -31,14 +31,14 @@ const columns = [
   { accessorKey: 'country', header: 'Country' },
   { accessorKey: 'gender', header: 'Gender' },
   {
-    accessorKey: 'avatar_image',
-    header: 'Avatar',
-    cell: ({ row }) =>
-      h('img', {
-        src: row.original.avatar_image ? `/storage/${row.original.avatar_image}` : '/default-avatar.jpg',
-        alt: 'Avatar',
-        class: 'w-12 h-12 rounded-full object-cover'
-      })
+  accessorKey: 'user.avatar_image',
+  header: 'Avatar',
+  cell: ({ row }) =>
+    h('img', {
+      src: row.original.user?.avatar_image || '/default-avatar.jpg',
+      alt: 'Avatar',
+      class: 'w-12 h-12 rounded-full object-cover'
+    })
   },
   {
     accessorKey: 'Actions',
@@ -59,6 +59,7 @@ const fetchClients = async () => {
   }, {
     preserveState: true,
     onSuccess: (page) => {
+      console.log(page.props.clients);
       clients.value = page.props.clients.data;
       pagination.value.total = page.props.clients.total;
     }
@@ -67,7 +68,6 @@ const fetchClients = async () => {
 
 const openEditModal = (client) => {
   form.value = {
-    id: client.id,
     name: client.name || '',
     email: client.email || '',
     country: client.country || '',
@@ -90,23 +90,14 @@ const handleFileUpload = (event) => {
 
 const handleAdd = async () => {
   const formData = new FormData();
-  formData.append('name', form.value.name);
-  formData.append('email', form.value.email);
-  formData.append('country', form.value.country);
-  formData.append('gender', form.value.gender);
-  formData.append('password', form.value.password);
-  formData.append('password_confirmation', form.value.password_confirmation);
-
-  if (form.value.avatar_image instanceof File) {
-    formData.append('avatar_image', form.value.avatar_image);
-  }
-
+  Object.keys(form.value).forEach((key) => {
+    if (form.value[key] !== null) formData.append(key, form.value[key]);
+  });
   await router.post('/dashboard/clients', formData, {
     onSuccess: () => {
       isAddModalOpen.value = false;
       fetchClients();
       form.value = {
-        id: null,
         name: '',
         email: '',
         country: '',
@@ -117,26 +108,14 @@ const handleAdd = async () => {
       };
     },
   });
-  console.log(page.props.errors);
 };
 
 const handleEdit = async () => {
   const formData = new FormData();
   formData.append('_method', 'PATCH');
-  formData.append('name', form.value.name);
-  formData.append('email', form.value.email);
-  formData.append('country', form.value.country);
-  formData.append('gender', form.value.gender);
-
-  if (form.value.password) {
-    formData.append('password', form.value.password);
-    formData.append('password_confirmation', form.value.password_confirmation);
-  }
-
-  if (form.value.avatar_image instanceof File) {
-    formData.append('avatar_image', form.value.avatar_image);
-  }
-
+  Object.keys(form.value).forEach((key) => {
+    if (form.value[key] !== null) formData.append(key, form.value[key]);
+  });
   await router.post(`/dashboard/clients/${form.value.id}`, formData, {
     onSuccess: () => {
       isEditModalOpen.value = false;

@@ -64,6 +64,11 @@ if (page.props.auth.user.roles.includes('manager')) {
 if (page.props.auth.user.roles.includes('receptionist')) {
     mainNavItems.push(
         {
+        title: 'Manage Clients',
+         href: '/dashboard/clients',
+        icon: UserRoundPlus,
+        },
+        {
             title: 'My Approved Clients',
             href: '/dashboard/approved',
             icon: UserRoundPlus,
@@ -78,7 +83,7 @@ if (page.props.auth.user.roles.includes('receptionist')) {
 
 if (page.props.auth.user.roles.includes('client')) {
     mainNavItems.push(
-        {
+     {
             title: 'My Reservations',
             href: '/dashboard/my-reservations',
             icon: Calendar,

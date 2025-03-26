@@ -31,7 +31,11 @@ class ClientController extends Controller
         } else if (Auth::user()->hasRole("receptionist")) {
             $clients = ClientResource::collection(Client::with("user")->whereNull("approved_by")->paginate(10));
         }
-        return Inertia::render("Admin/ManageClients", ["clients" => $clients,'countries' => $countries]);
+        return Inertia::render("Admin/ManageClients",
+        ["clients" => $clients,
+        'countries' => $countries,
+        'type' => 'unapproved',
+    ]);
 
     }
 
@@ -40,6 +44,7 @@ class ClientController extends Controller
     {
         return Inertia::render("Admin/ManageClients", [
             "approved_clients" => ClientResource::collection(Client::with('user', 'phones')->where("approved_by", Auth::id())->get())
+            ,'type' => 'approved'
         ]);
     }
 
