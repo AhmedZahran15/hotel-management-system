@@ -86,7 +86,7 @@ const toggleSort = (columnId: string) => {
         </div>
 
         <!-- Table -->
-        <div class="rounded-lg border-2 border-gray-500 overflow-x-auto">
+        <div class="border-2 border-gray-500 rounded-lg text-center">
             <Table>
                 <TableHeader>
                     <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">

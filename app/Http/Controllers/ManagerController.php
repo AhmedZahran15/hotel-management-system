@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreManagerRequest;
 use App\Http\Requests\UpdateManagerRequest;
+use App\Http\Resources\UserResource;
 use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class ManagerController extends Controller
     public function index(): Response
     {
         $managers = User::role('manager')->with('profile')->paginate(10);
-        return Inertia::render('Admin/ManageManagers', ['managers' => $managers]);
+        return Inertia::render('Admin/ManageManagers', ['managers' => UserResource::collection( $managers)]);
         // return $managers;
     }
 

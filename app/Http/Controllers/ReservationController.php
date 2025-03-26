@@ -51,10 +51,10 @@ class ReservationController extends Controller
         }
 
         $reservations = $query->orderBy('id', 'asc')->paginate(10);
-        // return Inertia::render('Reservations/Index', [
-        //     'reservations' => $reservations,
-        // ]);
-        return $reservations;
+        return Inertia::render('HotelManagement/ManageReservations', [
+            'reservations' => $reservations,
+        ]);
+        // return $reservations;
     }
 
 

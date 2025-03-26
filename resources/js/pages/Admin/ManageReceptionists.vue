@@ -105,8 +105,8 @@ const fetchReceptionists = async () => {
       loggedInUserId.value = page.props.auth.user.id;
       loggedInUserRole.value = page.props.auth.user.roles[0]; 
       receptionists.value = page.props.receptionists.data;
-      pagination.value.total = page.props.receptionists.total;
-      console.log(page.props.auth.user);    }
+      pagination.value.total = page.props.receptionists.total;  
+     }
   });
 };
 
@@ -135,7 +135,7 @@ const handleAdd = async () => {
   formData.append('name', form.value.name);
   formData.append('email', form.value.email);
   formData.append('password', form.value.password);
-  formData.append('password_confirmation', form.value.password);
+  formData.append('password_confirmation', form.value.password_confirmation);
   formData.append('national_id', form.value.national_id);
   if (form.value.avatar_image instanceof File) {
     formData.append('avatar_image', form.value.avatar_image);
@@ -259,7 +259,7 @@ onMounted(fetchReceptionists);
         </ManageDataTable>
 
         <!-- Add Modal -->
-        <ManageModal v-if="isAddModalOpen" title="Add Manager" v-model:open="isAddModalOpen" :buttonsVisible="false">
+        <ManageModal v-if="isAddModalOpen" title="Add Receptionist" v-model:open="isAddModalOpen" :buttonsVisible="false">
           <template #description>
             <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
               <div class="flex flex-col gap-1">
@@ -302,7 +302,7 @@ onMounted(fetchReceptionists);
           </ManageModal>
 
         <!-- Edit Modal -->
-        <ManageModal v-if="isEditModalOpen" title="Edit Manager" v-model:open="isEditModalOpen" :buttonsVisible="false">
+        <ManageModal v-if="isEditModalOpen" title="Edit Receptionist" v-model:open="isEditModalOpen" :buttonsVisible="false">
           <template #description>
             <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
               <div class="flex flex-col gap-1">
@@ -336,12 +336,12 @@ onMounted(fetchReceptionists);
         <!-- Delete Modal -->
         <ManageModal 
         v-if="isDeleteModalOpen" 
-        title="Deleting Manager" 
+        title="Deleting Receptionist" 
         v-model:open="isDeleteModalOpen" 
         :buttonsVisible="false"
         >
         <template #description>
-            <p class="text-lg">Are you sure you want to delete this manager?</p>
+            <p class="text-lg">Are you sure you want to delete this Receptionist?</p>
         </template>
         
         <template #footer>

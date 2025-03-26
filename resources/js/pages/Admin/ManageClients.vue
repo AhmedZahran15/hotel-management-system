@@ -7,6 +7,7 @@ import ManageModal from '@/components/Shared/ManageModal.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { RadioGroupItem, RadioGroup } from '@/components/ui/radio-group';
 
 const breadcrumbs = [
   { title: 'Dashboard', href: '/dashboard' },
@@ -100,7 +101,7 @@ const handleAdd = async () => {
     formData.append('avatar_image', form.value.avatar_image);
   }
 
-  router.post('/dashboard/clients', formData, {
+  await router.post('/dashboard/clients', formData, {
     onSuccess: () => {
       isAddModalOpen.value = false;
       fetchClients();
@@ -119,7 +120,6 @@ const handleAdd = async () => {
   console.log(page.props.errors);
 };
 
-
 const handleEdit = async () => {
   const formData = new FormData();
   formData.append('_method', 'PATCH');
@@ -137,7 +137,7 @@ const handleEdit = async () => {
     formData.append('avatar_image', form.value.avatar_image);
   }
 
-  router.post(`/dashboard/clients/${form.value.id}`, formData, {
+  await router.post(`/dashboard/clients/${form.value.id}`, formData, {
     onSuccess: () => {
       isEditModalOpen.value = false;
       fetchClients();
@@ -211,9 +211,14 @@ onMounted(fetchClients);
             </div>
 
             <div class="flex flex-col gap-1">
-              <Label for="gender">Gender</Label>
-              <Input id="gender" v-model="form.gender" required />
-            </div>
+            <Label for="gender">Gender</Label>
+            <RadioGroup v-model="form.gender" id="gender" class="flex items-center gap-4">
+              <RadioGroupItem value="Male" id="male" class="mr-2" :checked="form.gender === 'Male'" />
+              <Label for="male">Male</Label>
+              <RadioGroupItem value="Female" id="female" class="mr-2" :checked="form.gender === 'Female'" />
+              <Label for="female">Female</Label>
+            </RadioGroup>
+          </div>  
 
             <div class="flex flex-col gap-1">
               <Label for="avatar">Avatar</Label>
@@ -247,9 +252,14 @@ onMounted(fetchClients);
             </div>
 
             <div class="flex flex-col gap-1">
-              <Label for="gender">Gender</Label>
-              <Input id="gender" v-model="form.gender" required />
-            </div>
+            <Label for="gender">Gender</Label>
+            <RadioGroup v-model="form.gender" id="gender" class="flex items-center gap-4">
+              <RadioGroupItem value="Male" id="male" class="mr-2" />
+              <Label for="male">Male</Label>
+              <RadioGroupItem value="Female" id="female" class="mr-2" />
+              <Label for="female">Female</Label>
+            </RadioGroup>
+          </div>
 
             <div class="flex flex-col gap-1">
               <Label for="avatar">Avatar</Label>

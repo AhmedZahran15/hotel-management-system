@@ -10,8 +10,10 @@ use App\Notifications\ClientApprovedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Nnjeim\World\World;
 
 class ClientController extends Controller
 {
@@ -20,17 +22,22 @@ class ClientController extends Controller
      */
     public function index()
     {
+        $countries = Cache::remember('countries', now()->addMonth(), function () {
+            $response = World::countries();
+            return $response->success ? $response->data : [];
+        });
         if (Auth::user() && Auth::user()->hasAnyRole(["admin", "manager"])) {
-                $clients = ClientResource::collection(Client::with("user", 'phones')->paginate(10));
+            $clients = ClientResource::collection(Client::with("user", 'phones')->paginate(10));
         } else if (Auth::user()->hasRole("receptionist")) {
-                $clients = ClientResource::collection(Client::with("user")->whereNull("approved_by")->paginate(10));
+            $clients = ClientResource::collection(Client::with("user")->whereNull("approved_by")->paginate(10));
         }
-            return Inertia::render("Admin/ManageClients", ["clients"=>$clients]);
+        return Inertia::render("Admin/ManageClients", ["clients" => $clients,'countries' => $countries]);
 
     }
 
     // return  clietns that are approved by the logged in user
-    public function approved(){
+    public function approved()
+    {
         return Inertia::render("Admin/ManageClients", [
             "approved_clients" => ClientResource::collection(Client::with('user', 'phones')->where("approved_by", Auth::id())->get())
         ]);
@@ -141,11 +148,13 @@ class ClientController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id,Request $request)
+    public function destroy(string $id, Request $request)
     {
 
-        $selfdelete=false;
-        if (Auth::user()->id == $id) {$selfdelete = true;}
+        $selfdelete = false;
+        if (Auth::user()->id == $id) {
+            $selfdelete = true;
+        }
         $client = Client::with("user")->findOrFail($id);
         $user = $client->user;
         $client->forceDelete();
