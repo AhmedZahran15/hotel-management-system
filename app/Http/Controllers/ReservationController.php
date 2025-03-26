@@ -28,17 +28,20 @@ class ReservationController extends Controller
     {
         $user = Auth::user();
         $query = Reservation::with(['room', 'client']);
-
-        //load all reservations for admin
         if ($user->hasRole('admin')) {
             $query->with('client.approvedBy:id,name,email');
         } elseif ($user->hasRole('manager')) {
-            //for manager load the reservations by the receptionist created by the manager 
             $query->whereHas('client.approvedBy', function ($q) use ($user) {
-                $q->where('creator_user_id', $user->id);
+                $q->where('creator_user_id', $user->id)
+                    ->orWhereHas('createdUsers', function ($subQuery) use ($user) {
+                        $subQuery->where('creator_user_id', $user->id);
+                    });
+            });
+        } elseif ($user->hasRole('receptionist')) {
+            $query->whereHas('client', function ($q) use ($user) {
+                $q->where('approved_by', $user->id);
             });
         } elseif ($user->hasRole('client')) {
-            //retrive all client reservations if logged is a client
             $client = $user->profile;
             if ($client) {
                 $query->where('client_id', $client->id);
@@ -47,13 +50,14 @@ class ReservationController extends Controller
             }
         }
 
-        $reservations = $query->orderBy('created_at', 'desc')->paginate(10);
-
+        $reservations = $query->orderBy('id', 'asc')->paginate(10);
         // return Inertia::render('Reservations/Index', [
         //     'reservations' => $reservations,
         // ]);
         return $reservations;
     }
+
+
 
     public function create($roomId): Response
     {
@@ -69,7 +73,7 @@ class ReservationController extends Controller
         try {
             $room = Room::findOrFail($request->room_number);
             $session = $this->reservationService->createCheckoutSession(
-                $request->validated(), 
+                $request->validated(),
                 $room
             );
             return response()->json(['sessionId' => $session->id], 200);
@@ -83,7 +87,7 @@ class ReservationController extends Controller
         try {
             // Verify payment with Stripe
             $session = Session::retrieve($request->session_id);
-            
+
             // Create reservation
             $reservation = $this->reservationService->createReservation([
                 'reservation_date' => $session->metadata->reservation_date,
@@ -141,18 +145,18 @@ class ReservationController extends Controller
     }
 
     public function paymentCancel(Request $request)
-{
-    try {
-        if ($request->session_id) {
-            $session = Session::retrieve($request->session_id);
-            $room = Room::findOrFail($session->metadata->room_number);
-            $this->reservationService->handlePaymentCancellation($room);
+    {
+        try {
+            if ($request->session_id) {
+                $session = Session::retrieve($request->session_id);
+                $room = Room::findOrFail($session->metadata->room_number);
+                $this->reservationService->handlePaymentCancellation($room);
+            }
+            return redirect()->route('reservations.available')
+                ->with('info', 'Reservation has been cancelled.');
+        } catch (\Exception $e) {
+            return redirect()->route('reservations.available')
+                ->with('error', 'Something went wrong with cancellation.');
         }
-        return redirect()->route('reservations.available')
-            ->with('info', 'Reservation has been cancelled.');
-    } catch (\Exception $e) {
-        return redirect()->route('reservations.available')
-            ->with('error', 'Something went wrong with cancellation.');
     }
-}
 }
