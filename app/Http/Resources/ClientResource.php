@@ -18,7 +18,7 @@ class ClientResource extends JsonResource
         return[
             "id"=> $this->id,
             "name"=> $this->name,
-            "profile_picture_url"=> "/clients/image/".$this->id,
+            'avatar_image'=>$this->getAvatarUrl(),
             "country"=> $this->country,
             "gender"=> $this->gender,
             "user" => new UserResource($this->whenLoaded('user')),
