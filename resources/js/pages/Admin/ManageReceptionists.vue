@@ -105,8 +105,8 @@ const fetchReceptionists = async () => {
       loggedInUserId.value = page.props.auth.user.id;
       loggedInUserRole.value = page.props.auth.user.roles[0]; 
       receptionists.value = page.props.receptionists.data;
-      pagination.value.total = page.props.receptionists.total;
-      console.log(page.props.auth.user);    }
+      pagination.value.total = page.props.receptionists.total;  
+     }
   });
 };
 

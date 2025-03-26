@@ -91,14 +91,19 @@ if (page.props.auth.user.roles.includes('manager')) {
 
 if (page.props.auth.user.roles.includes('receptionist')) {
     mainNavItems.push(
+        // {
+        //     title: 'Manage Clients',
+        //     href: '/dashboard/clients',
+        //     icon: UserRoundPlus,
+        // },
         {
             title: 'My Approved Clients',
-            href: '/dashboard/approved-clients',
+            href: '/dashboard/approved',
             icon: UserRoundPlus,
         },
         {
             title: 'Clients Reservations',
-            href: '/dashboard/clients-reservations',
+            href: '/dashboard/reservations',
             icon: Calendar,
         }
     );
