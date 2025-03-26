@@ -13,13 +13,26 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
-
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class ManagerController extends Controller
 {
     //✅
     public function index(): Response
     {
+        $query = QueryBuilder::for(User::class)
+        ->allowedFilters([
+            AllowedFilter::partial('Name'),
+            AllowedFilter::exact('capacity'),
+            AllowedFilter::exact('room_price'),
+            AllowedFilter::exact('state'),
+            AllowedFilter::exact('floor_number'),
+            ])
+        ->allowedSorts(['number', 'capacity','state','room_price','floor_number','manager_name'])
+        ->join('users', 'rooms.creator_user_id', '=', 'users.id') //
+        ->select('rooms.*', 'users.name as manager_name') //
+        ->with(['floor','creatorUser']);
         $managers = User::role('manager')->with('profile')->paginate(10);
         return Inertia::render('Admin/ManageManagers', ['managers' => UserResource::collection( $managers)]);
         // return $managers;

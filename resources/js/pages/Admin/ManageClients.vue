@@ -88,7 +88,7 @@ const handleFileUpload = (event) => {
   form.value.avatar_image = event.target.files[0];
 };
 
-const handleAdd = async () => {
+const handleAdd = () => {
   const formData = new FormData();
   formData.append('name', form.value.name);
   formData.append('email', form.value.email);
@@ -101,7 +101,7 @@ const handleAdd = async () => {
     formData.append('avatar_image', form.value.avatar_image);
   }
 
-  await router.post('/dashboard/clients', formData, {
+   router.post('/dashboard/clients', formData, {
     onSuccess: () => {
       isAddModalOpen.value = false;
       fetchClients();
@@ -115,6 +115,10 @@ const handleAdd = async () => {
         password: '',
         password_confirmation: '',
       };
+
+    },
+    onerror: (page) => {
+      console.log(page.props.errors);
     },
   });
   console.log(page.props.errors);
@@ -218,7 +222,7 @@ onMounted(fetchClients);
               <RadioGroupItem value="Female" id="female" class="mr-2" :checked="form.gender === 'Female'" />
               <Label for="female">Female</Label>
             </RadioGroup>
-          </div>  
+          </div>
 
             <div class="flex flex-col gap-1">
               <Label for="avatar">Avatar</Label>
