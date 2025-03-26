@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 
-
 const successMessage = ref('');
 const errorMessage = ref('');
+const loggedInUserId = ref(null);
+const loggedInUserRole = ref('');
 
 const breadcrumbs = [
   { title: 'Dashboard', href: '/dashboard' },
@@ -27,13 +28,19 @@ const sorting = ref([]);
 const filters = ref({});
 const form = ref({ id: null, name: '', email: '', password: '', password_confirmation: '', national_id: '', avatar_image: null });
 
-
 const columns = [
   { accessorKey: 'id', header: 'ID' },
   { accessorKey: 'name', header: 'Name' },
   { accessorKey: 'email', header: 'Email' },
   { accessorKey: 'profile.national_id', header: 'National ID' },
-  { accessorKey: 'creator.name', header: 'Manager Creator' },
+  {
+    accessorKey: 'creator',
+    header: 'Manager Creator',
+    cell: (info) => {
+      const creator = info.getValue();
+      return creator && creator.name ? creator.name : 'Unknown';
+    },
+  },
   { 
     accessorKey: 'avatar_image', 
     header: 'Avatar', 
@@ -47,26 +54,40 @@ const columns = [
   {
     accessorKey: 'Actions',
     header: 'Actions',
-    cell: (info) => [
-      h(Button, { variant: 'default', class: 'mx-1', onClick: () => openEditModal(info.row.original) }, () => 'Edit'),
-      h(Button, { variant: 'destructive', class: 'mx-1', onClick: () => openDeleteModal(info.row.original.id) }, () => 'Remove'),
-      // Show Ban/Unban button
-      info.row.original.banned_at
-        ? h(Button, {
-            variant: 'default',
-            class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
-            onClick: () => handleUnban(info.row.original.id),
-          }, () => 'Unban')
-        : h(Button, {
-            variant: 'default',
-            class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
-            onClick: () => handleBan(info.row.original.id),
-          }, () => 'Ban'),
-    ],
+    cell: (info) => {
+      const isAdmin = loggedInUserRole.value === 'admin';
+      const isManagerAndCreator = loggedInUserRole.value === 'manager' && loggedInUserId.value === info.row.original.creator_user_id;
+
+      return [
+        h(Button, { 
+          variant: 'default', 
+          class: 'mx-1', 
+          onClick: () => openEditModal(info.row.original),
+          disabled: !(isAdmin || isManagerAndCreator)
+        }, () => 'Edit'),
+        h(Button, { 
+          variant: 'destructive', 
+          class: 'mx-1', 
+          onClick: () => openDeleteModal(info.row.original.id),
+          disabled: !(isAdmin || isManagerAndCreator)
+        }, () => 'Remove'),
+        info.row.original.banned_at
+          ? h(Button, {
+              variant: 'default',
+              class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
+              onClick: () => handleUnban(info.row.original.id),
+              disabled: !(isAdmin || isManagerAndCreator)
+            }, () => 'Unban')
+          : h(Button, {
+              variant: 'default',
+              class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
+              onClick: () => handleBan(info.row.original.id),
+              disabled: !(isAdmin || isManagerAndCreator)
+            }, () => 'Ban'),
+      ];
+    },
   },
 ];
-
-
 
 const fetchReceptionists = async () => {
   router.get('/dashboard/receptionists', { 
@@ -77,12 +98,14 @@ const fetchReceptionists = async () => {
   }, {
     preserveState: true,
     onSuccess: (page) => {
-      console.log(page.props.receptionists.data);
+      loggedInUserId.value = page.props.auth.user.id;
+      loggedInUserRole.value = page.props.auth.user.role;
       receptionists.value = page.props.receptionists.data;
       pagination.value.total = page.props.receptionists.total;
     }
   });
 };
+
 const openEditModal = (receptionist) => {
   form.value = {
     id: receptionist.id,
@@ -98,7 +121,6 @@ const openDeleteModal = (id) => {
   selectedReceptionistId.value = id;
   isDeleteModalOpen.value = true;
 };
-
 
 const handleFileUpload = (event) => {
   form.value.avatar_image = event.target.files[0];
@@ -140,6 +162,7 @@ const handleEdit = async () => {
     },
   });
 };
+
 const confirmDelete = async () => {
   await router.delete(`/dashboard/receptionists/${selectedReceptionistId.value}`, { 
     preserveState: true, 
@@ -147,10 +170,10 @@ const confirmDelete = async () => {
   });
   isDeleteModalOpen.value = false;
 };
+
 const handleBan = async (id) => {
   try {
     await router.post(`/dashboard/receptionists/${id}/ban`);
-
     const updatedReceptionists = receptionists.value.map((receptionist) => {
       if (receptionist.id === id) {
         receptionist.banned_at = new Date();
@@ -158,20 +181,15 @@ const handleBan = async (id) => {
       }
       return receptionist;
     });
-
     receptionists.value = updatedReceptionists;
-
     successMessage.value = 'Receptionist has been banned successfully.';
     errorMessage.value = '';
-
     setTimeout(() => {
       successMessage.value = '';
     }, 5000);
   } catch (error) {
-    console.error(error);
     errorMessage.value = 'Failed to ban receptionist.';
     successMessage.value = '';
-
     setTimeout(() => {
       errorMessage.value = '';
     }, 5000);
@@ -181,7 +199,6 @@ const handleBan = async (id) => {
 const handleUnban = async (id) => {
   try {
     await router.post(`/dashboard/receptionists/${id}/unban`);
-
     const updatedReceptionists = receptionists.value.map((receptionist) => {
       if (receptionist.id === id) {
         receptionist.banned_at = null;
@@ -189,27 +206,20 @@ const handleUnban = async (id) => {
       }
       return receptionist;
     });
-
     receptionists.value = updatedReceptionists;
-
     successMessage.value = 'Receptionist has been unbanned successfully.';
     errorMessage.value = '';
-
     setTimeout(() => {
       successMessage.value = '';
     }, 5000);
   } catch (error) {
-    console.error(error);
     errorMessage.value = 'Failed to unban receptionist.';
     successMessage.value = '';
-
     setTimeout(() => {
       errorMessage.value = '';
     }, 5000);
   }
 };
-
-
 
 onMounted(fetchReceptionists);
 </script>
