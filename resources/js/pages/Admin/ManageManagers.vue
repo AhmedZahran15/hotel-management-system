@@ -96,7 +96,7 @@ const handleAdd = async () => {
   formData.append('name', form.value.name);
   formData.append('email', form.value.email);
   formData.append('password', form.value.password);
-  formData.append('password_confirmation', form.value.password);
+  formData.append('password_confirmation', form.value.password_confirmation);
   formData.append('national_id', form.value.national_id);
   if (form.value.avatar_image instanceof File) {
     formData.append('avatar_image', form.value.avatar_image);
