@@ -21,7 +21,16 @@ const selectedClientId = ref(null);
 const pagination = ref({ pageIndex: 0, pageSize: 10, total: 0 });
 const sorting = ref([]);
 const filters = ref({});
-const form = ref({ id: null, name: '', email: '', country: '', gender: '', avatar_image: null });
+const form = ref({
+  id: null,
+  name: '',
+  email: '',
+  country: '',
+  gender: '',
+  avatar_image: null,
+  password: '',
+  password_confirmation: '',
+});
 
 const columns = [
   { accessorKey: 'id', header: 'ID' },
@@ -72,6 +81,8 @@ const openEditModal = (client) => {
     country: client.country || '',
     gender: client.gender || '',
     avatar_image: null,
+    password: '',
+    password_confirmation: '',
   };
   isEditModalOpen.value = true;
 };
@@ -91,16 +102,31 @@ const handleAdd = async () => {
   formData.append('email', form.value.email);
   formData.append('country', form.value.country);
   formData.append('gender', form.value.gender);
+  formData.append('password', form.value.password);
+  formData.append('password_confirmation', form.value.password_confirmation);
+
   if (form.value.avatar_image instanceof File) {
     formData.append('avatar_image', form.value.avatar_image);
   }
+
   router.post('/dashboard/clients', formData, {
     onSuccess: () => {
       isAddModalOpen.value = false;
       fetchClients();
+      form.value = {
+        id: null,
+        name: '',
+        email: '',
+        country: '',
+        gender: '',
+        avatar_image: null,
+        password: '',
+        password_confirmation: '',
+      };
     },
   });
 };
+
 
 const handleEdit = async () => {
   const formData = new FormData();
@@ -109,6 +135,11 @@ const handleEdit = async () => {
   formData.append('email', form.value.email);
   formData.append('country', form.value.country);
   formData.append('gender', form.value.gender);
+
+  if (form.value.password) {
+    formData.append('password', form.value.password);
+    formData.append('password_confirmation', form.value.password_confirmation);
+  }
 
   if (form.value.avatar_image instanceof File) {
     formData.append('avatar_image', form.value.avatar_image);
@@ -152,7 +183,6 @@ onMounted(fetchClients);
         </template>
       </ManageDataTable>
 
-      <!-- Delete Modal -->
       <ManageModal 
         v-if="isDeleteModalOpen" 
         title="Deleting Client" 
@@ -169,7 +199,6 @@ onMounted(fetchClients);
         </template>
       </ManageModal>
 
-      <!-- Edit Modal -->
       <ManageModal v-if="isEditModalOpen" title="Edit Client" v-model:open="isEditModalOpen" :buttonsVisible="false">
         <template #description>
           <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
@@ -198,6 +227,16 @@ onMounted(fetchClients);
               <Input id="avatar" type="file" @change="handleFileUpload" />
             </div>
 
+            <div class="flex flex-col gap-1">
+              <Label for="password">New Password (Leave empty to keep current)</Label>
+              <Input id="password" type="password" v-model="form.password" />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <Label for="password_confirmation">Confirm New Password</Label>
+              <Input id="password_confirmation" type="password" v-model="form.password_confirmation" />
+            </div>
+
             <div class="flex justify-end gap-2">
               <Button variant="secondary" @click="isEditModalOpen = false">Close</Button>
               <Button type="submit">Update</Button>
@@ -206,7 +245,6 @@ onMounted(fetchClients);
         </template>
       </ManageModal>
 
-      <!-- Add Modal -->
       <ManageModal v-if="isAddModalOpen" title="Add Client" v-model:open="isAddModalOpen" :buttonsVisible="false">
         <template #description>
           <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
@@ -233,6 +271,16 @@ onMounted(fetchClients);
             <div class="flex flex-col gap-1">
               <Label for="avatar">Avatar</Label>
               <Input id="avatar" type="file" @change="handleFileUpload" />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <Label for="password">Password</Label>
+              <Input id="password" type="password" v-model="form.password" required />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <Label for="password_confirmation">Confirm Password</Label>
+              <Input id="password_confirmation" type="password" v-model="form.password_confirmation" required />
             </div>
 
             <div class="flex justify-end gap-2">
