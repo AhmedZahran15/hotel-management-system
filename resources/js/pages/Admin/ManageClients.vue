@@ -93,7 +93,7 @@ const handleAdd = () => {
   Object.keys(form.value).forEach((key) => {
     if (form.value[key] !== null) formData.append(key, form.value[key]);
   });
-  await router.post('/dashboard/clients', formData, {
+   router.post('/dashboard/clients', formData, {
     onSuccess: () => {
       isAddModalOpen.value = false;
       fetchClients();
