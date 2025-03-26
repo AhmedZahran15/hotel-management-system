@@ -54,7 +54,6 @@ class RoomController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request);
         $request -> validate([
             "floor_number"=>["required","int",Rule::exists("floors","number")],
             "number"=>["required","integer","min_digits:4", Rule::unique('rooms','number')],
@@ -104,7 +103,6 @@ class RoomController extends Controller
      */
     public function update(Request $request, Room $room)
     {
-        dd($request);
         // $room = Room::with(["creatorUser","floor"])->where("number",$room)->firstOrFail();
         $request -> validate([
             "floor_number"=>["required","int",Rule::exists("floors")],
