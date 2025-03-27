@@ -238,14 +238,14 @@ const dismissError = () => {
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
                         <div class="flex flex-col gap-1">
                             <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name" required />
+                            <Input id="name" v-model="form.name"  />
                         </div>
 
                         <Label for="email">Email</Label>
-                        <Input id="email" v-model="form.email" type="email" required />
+                        <Input id="email" v-model="form.email" type="email"  />
 
                         <Label for="national_id">National ID</Label>
-                        <Input id="national_id" v-model="form.national_id" required />
+                        <Input id="national_id" v-model="form.national_id"  />
 
                         <Label for="avatar">Avatar</Label>
                         <Input id="avatar" type="file" @change="handleFileUpload" />

@@ -64,6 +64,7 @@ const fetchClients = async () => {
         {
             preserveState: true,
             onSuccess: (page) => {
+              console.log(page.props.clients.data);
                 clients.value = page.props.clients.data;
                 pagination.value.total = page.props.clients.total;
             },
@@ -131,6 +132,7 @@ const handleAdd = () => {
     });
     router.post('/dashboard/clients', formData, {
         onSuccess: () => {
+
             isAddModalOpen.value = false;
             fetchClients();
             resetAddForm();
@@ -253,12 +255,12 @@ onMounted(fetchClients);
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
                         <div class="flex flex-col gap-1">
                             <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name" required />
+                            <Input id="name" v-model="form.name"  />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email" required />
+                            <Input id="email" v-model="form.email" type="email"  />
                         </div>
 
                         <div class="flex flex-col gap-1">
@@ -337,12 +339,12 @@ onMounted(fetchClients);
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
                         <div class="flex flex-col gap-1">
                             <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name" required />
+                            <Input id="name" v-model="form.name"  />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email" required />
+                            <Input id="email" v-model="form.email" type="email"  />
                         </div>
 
                         <div class="flex flex-col gap-1">
@@ -376,12 +378,12 @@ onMounted(fetchClients);
 
                         <div class="flex flex-col gap-1">
                             <Label for="password">Password</Label>
-                            <Input id="password" type="password" v-model="form.password" required />
+                            <Input id="password" type="password" v-model="form.password"  />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="password_confirmation">Confirm Password</Label>
-                            <Input id="password_confirmation" type="password" v-model="form.password_confirmation" required />
+                            <Input id="password_confirmation" type="password" v-model="form.password_confirmation"  />
                         </div>
 
                         <div class="flex justify-end gap-2">
