@@ -22,8 +22,10 @@ class ClientResource extends JsonResource
             "gender"=> $this->gender,
             "user" => new UserResource($this->whenLoaded('user')),
             "email"=>$this->user->email,
-            "approved_by"=>new UserResource($this->whenLoaded("approved_by")),
-            "phones" => PhoneResource::collection($this->whenLoaded("phones"))
+            "approvedBy"=>new UserResource($this->whenLoaded("approved_by")),
+            "approved_by"=>$this->approved_by,
+            "phones" => $this->whenLoaded("phones", fn() => $this->phones->pluck('phone_number')->toArray()),
+
         ];
     }
 }
