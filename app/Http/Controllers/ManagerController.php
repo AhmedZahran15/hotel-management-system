@@ -18,25 +18,20 @@ use Spatie\QueryBuilder\QueryBuilder;
 
 class ManagerController extends Controller
 {
-    //✅
+
     public function index(): Response
     {
-        $query = QueryBuilder::for(User::class)
-        ->allowedFilters([
-            AllowedFilter::partial('Name'),
-            AllowedFilter::exact('capacity'),
-            AllowedFilter::exact('room_price'),
-            AllowedFilter::exact('state'),
-            AllowedFilter::exact('floor_number'),
+        $query = QueryBuilder::for(User::class)->role('manager')
+            ->allowedFilters([
+            AllowedFilter::partial('name'),
+            AllowedFilter::exact('email'),
+            AllowedFilter::exact('national_id'),
             ])
-        ->allowedSorts(['number', 'capacity','state','room_price','floor_number','manager_name'])
-        ->join('users', 'rooms.creator_user_id', '=', 'users.id') //
-        ->select('rooms.*', 'users.name as manager_name') //
-        ->with(['floor','creatorUser']);
-        $managers = User::role('manager')->with('profile')->paginate(10);
-        return Inertia::render('Admin/ManageManagers', ['managers' => UserResource::collection( $managers)]);
-        // return $managers;
-    }
+        ->allowedSorts(['name', 'email','national_id'])
+        ->with(['profile']);
+
+        return Inertia::render('Admin/ManageManagers', ['managers' => UserResource::collection( $query->paginate(10))]);
+        }
 
     //will be tested later
     public function create()

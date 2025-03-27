@@ -22,10 +22,13 @@ class ClientController extends Controller
      */
     public function index()
     {
+        //send countries to the front end to be used in the select input
         $countries = Cache::remember('countries', now()->addMonth(), function () {
             $response = World::countries();
             return $response->success ? $response->data : [];
         });
+
+        //return clients based on the user role
         if (Auth::user() && Auth::user()->hasAnyRole(["admin", "manager"])) {
             $clients = ClientResource::collection(Client::with("user", 'phones')->paginate(10));
         } else if (Auth::user()->hasRole("receptionist")) {
