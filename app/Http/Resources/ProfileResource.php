@@ -17,9 +17,9 @@ class ProfileResource extends JsonResource
     public function toArray(Request $request): array
     {
         if ($this->resource instanceof Client) {
-            return new  ClientResource( $this->resource)->toArray($request);
+            return (new  ClientResource( $this->resource))->toArray($request);
         } elseif ($this->resource instanceof Employee) {
-            return new EmployeeResource($this->resource)->toArray($request);
+            return (new EmployeeResource($this->resource))->toArray($request);
         }
 
         return [];
