@@ -31,8 +31,8 @@ class RoomController extends Controller
             ])
         ->allowedSorts(['number', 'capacity','state','room_price','floor_number','manager_name'])
         ->leftJoin('users', function ($join) {
-            $join->on('rooms.creator_user_id', '=', 'users.id')->where('users.role', '=', 'manager');})
-        ->select('rooms.*', 'users.name as manager_name') //
+            $join->on('rooms.creator_user_id', '=', 'users.id');})
+        ->select('rooms.*', 'users.name as manager_name') 
         ->with(['floor','creatorUser']);
 
         // Apply different resource collections dynamically
