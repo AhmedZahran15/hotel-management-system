@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Nnjeim\World\World;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class ClientController extends Controller
 {
@@ -28,17 +30,26 @@ class ClientController extends Controller
             return $response->success ? $response->data : [];
         });
 
-        //return clients based on the user role
-        if (Auth::user() && Auth::user()->hasAnyRole(["admin", "manager"])) {
-            $clients = ClientResource::collection(Client::with("user", 'phones')->paginate(10));
-        } else if (Auth::user()->hasRole("receptionist")) {
-            $clients = ClientResource::collection(Client::with("user")->whereNull("approved_by")->paginate(10));
+
+        $query = QueryBuilder::for(Client::class)
+        ->allowedFilters([
+            AllowedFilter::partial('name'),
+            AllowedFilter::partial('email'),
+            AllowedFilter::partial('country'),
+        ])
+        ->allowedSorts(['name', 'email'])
+        ->with(['user', 'phones']);
+
+        if (Auth::user() && Auth::user()->hasRole('receptionist')) {
+        $query->whereNull('approved_by');
         }
-        return Inertia::render("Admin/ManageClients",
-        ["clients" => $clients,
+
+        $clients = ClientResource::collection($query->paginate(10));
+
+        return Inertia::render('Admin/ManageClients', [
+        'clients' => $clients,
         'countries' => $countries,
-        'type' => 'unapproved',
-    ]);
+        ]);
 
     }
 
@@ -46,9 +57,7 @@ class ClientController extends Controller
     public function approved()
     {
         return Inertia::render("Admin/ManageClients", [
-            "approved_clients" => ClientResource::collection(Client::with('user', 'phones')->where("approved_by", Auth::id())->get())
-            ,'type' => 'approved'
-        ]);
+            "approved_clients" => ClientResource::collection(Client::with('user', 'phones')->where("approved_by", Auth::id())->get()),'type' => 'approved']);
     }
 
     /**
