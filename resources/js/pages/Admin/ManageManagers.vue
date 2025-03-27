@@ -73,7 +73,7 @@ const columns = [
 ];
 
 // Fetch Managers
-const fetchManagers = async () => {
+const fetchManagers = () => {
     const params = new URLSearchParams();
     
     Object.entries(filters.value).forEach(([key, value]) => {
