@@ -12,7 +12,7 @@ import { computed, h, onMounted, ref } from 'vue';
 // Breadcrumbs for navigation
 const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Manage Managers', href: '/dashboard/managers', active: true },
+    { title: 'Manage Managers', href: route('managers.index')},
 ];
 
 const props = defineProps(['managers']);
@@ -44,7 +44,6 @@ const pagination = ref({
 
 // Table Columns
 const columns = [
-    { accessorKey: 'id', header: 'ID' },
     { accessorKey: 'name', header: 'Name' },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'profile.national_id', header: 'National ID' },
@@ -73,12 +72,6 @@ const columns = [
 // Fetch Managers
 const fetchManagers = async () => {
     const params = new URLSearchParams();
-    if (filters.value.room_price) {
-        params.append('filter[room_price]', (filters.value.room_price * 100).toString());
-    }
-    Object.entries(filters.value).forEach(([key, value]) => {
-        if (value && key !== 'room_price') params.append(`filter[${key}]`, value);
-    });
     if (sorting.value.length > 0) {
         const sortString = sorting.value.map((s) => (s.desc ? `-${s.id}` : s.id)).join(',');
         params.append('sort', sortString);
@@ -123,10 +116,9 @@ const handleAdd = async () => {
     Object.keys(form.value).forEach((key) => {
         if (form.value[key] !== null) formData.append(key, form.value[key]);
     });
-    router.post(router.route('managers.store'), formData, {
+    router.post(route('managers.store'), formData, {
         onSuccess: () => {
             isAddModalOpen.value = false;
-            //   fetchManagers();
         },
     });
 };
@@ -142,7 +134,6 @@ const handleEdit = async () => {
     router.post(`/dashboard/managers/${form.value.id}`, formData, {
         onSuccess: () => {
             isEditModalOpen.value = false;
-            fetchManagers();
         },
     });
 };
@@ -151,7 +142,9 @@ const handleEdit = async () => {
 const confirmDelete = async () => {
     router.delete(`/dashboard/managers/${selectedManagerId.value}`, {
         preserveState: true,
-        onSuccess: fetchManagers,
+        onSuccess: () => {
+            isDeleteModalOpen.value = false;
+        },
     });
     isDeleteModalOpen.value = false;
 };
@@ -181,6 +174,7 @@ const dismissError = () => {
             <Button class="bg-white text-black" @click="dismissError">Dismiss</Button>
         </template>
     </Alert>
+    <!-- Main Content -->
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="px-6">
             <ManageDataTable
