@@ -29,11 +29,9 @@ class ClientController extends Controller
         });
 
         //return clients based on the user role
-        if (Auth::user() && Auth::user()->hasAnyRole(["admin", "manager"])) {
+        if (Auth::user() && Auth::user()->hasAnyRole(["admin", "manager",'receptionist'])) {
             $clients = ClientResource::collection(Client::with("user", 'phones',"approvedBy")->paginate(10));
-        } else if (Auth::user()->hasRole("receptionist")) {
-            $clients = ClientResource::collection(Client::with("user")->whereNull("approved_by")->paginate(10));
-        }
+        } 
         return Inertia::render("Admin/ManageClients",
         ["clients" => $clients,
         'countries' => $countries,
