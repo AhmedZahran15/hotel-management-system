@@ -44,6 +44,7 @@ const pagination = ref({
 
 // Table Columns
 const columns = [
+    { accessorKey: 'id', header: 'ID' },
     { accessorKey: 'name', header: 'Name' },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'profile.national_id', header: 'National ID' },
@@ -263,17 +264,17 @@ const dismissError = () => {
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
                         <div class="flex flex-col gap-1">
                             <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name" required />
+                            <Input id="name" v-model="form.name"  />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email" required />
+                            <Input id="email" v-model="form.email" type="email"  />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="national_id">National ID</Label>
-                            <Input id="national_id" v-model="form.national_id" required />
+                            <Input id="national_id" v-model="form.national_id"  />
                         </div>
 
                         <div class="flex flex-col gap-1">
@@ -283,12 +284,12 @@ const dismissError = () => {
 
                         <div class="flex flex-col gap-1">
                             <Label for="password">Password</Label>
-                            <Input id="password" v-model="form.password" type="password" required />
+                            <Input id="password" v-model="form.password" type="password"  />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="password_confirmation">Confirm Password</Label>
-                            <Input id="password_confirmation" v-model="form.password_confirmation" type="password" required />
+                            <Input id="password_confirmation" v-model="form.password_confirmation" type="password"  />
                         </div>
 
                         <div class="flex justify-end gap-2">
