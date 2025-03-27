@@ -10,7 +10,6 @@ class ClientExportController extends Controller
 {
     public function export(Request $request)
     {
-        
         return Excel::download(new ClientsExport, 'clients.xlsx');
     }
 }
