@@ -24,7 +24,7 @@ class ManagerController extends Controller
         $query = QueryBuilder::for(User::class)->role('manager')
             ->allowedFilters([
             AllowedFilter::partial('name'),
-            AllowedFilter::exact('email'),
+            AllowedFilter::partial('email'),
             ])
         ->allowedSorts(['name', 'email',])
         ->with(['profile']);

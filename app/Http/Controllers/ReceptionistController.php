@@ -24,7 +24,7 @@ class ReceptionistController extends Controller
         $query = QueryBuilder::for(User::class)->role('receptionist')
             ->allowedFilters([
             AllowedFilter::partial('name'),
-            AllowedFilter::exact('email'),
+            AllowedFilter::partial('email'),
             ])
         ->allowedSorts(['name', 'email',])
         ->with(['profile', 'creator']);
