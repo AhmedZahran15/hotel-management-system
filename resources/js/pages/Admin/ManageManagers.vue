@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { AlertCircle } from 'lucide-vue-next';
-import { computed, h, onMounted, ref } from 'vue';
+import { h, ref, computed } from 'vue';
+
 // Breadcrumbs for navigation
 const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -24,6 +25,7 @@ const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
 const selectedManagerId = ref(null);
 const form = ref({ name: '', email: '', password: '', password_confirmation: '', national_id: '', avatar_image: null });
+
 const errors = computed(() => page.props.errors);
 const params = new URLSearchParams(window.location.search);
 const filters = ref({
@@ -73,9 +75,11 @@ const columns = [
 // Fetch Managers
 const fetchManagers = async () => {
     const params = new URLSearchParams();
+    
     Object.entries(filters.value).forEach(([key, value]) => {
        if(value) params.append(`filter[${key}]`, value);
     });
+
     if (sorting.value.length > 0) {
         const sortString = sorting.value.map((s) => (s.desc ? `-${s.id}` : s.id)).join(',');
         params.append('sort', sortString);
@@ -109,8 +113,8 @@ const openDeleteModal = (id) => {
     isDeleteModalOpen.value = true;
 };
 
-// Handle File Upload
-const handleFileUpload = (event) => {
+// Handle Image Upload
+const handleImageUpload = (event) => {
     const file = event.target.files[0];
     delete errors.value.avatar_image; 
     if (file && !['image/jpeg', 'image/jpg'].includes(file.type)) {
@@ -123,7 +127,7 @@ const handleFileUpload = (event) => {
 
 
 // Handle Add Manager
-const handleAdd = async () => {
+const handleAdd = () => {
     const formData = new FormData();
     Object.keys(form.value).forEach((key) => {
         if (form.value[key] !== null) formData.append(key, form.value[key]);
@@ -136,7 +140,7 @@ const handleAdd = async () => {
 };
 
 // Handle Edit Manager
-const handleEdit = async () => {
+const handleEdit = () => {
     const formData = new FormData();
     formData.append('_method', 'PATCH');
     Object.keys(form.value).forEach((key) => {
@@ -151,7 +155,7 @@ const handleEdit = async () => {
 };
 
 // Confirm Delete
-const confirmDelete = async () => {
+const confirmDelete = () => {
     router.delete(`/dashboard/managers/${selectedManagerId.value}`, {
         preserveState: true,
         onSuccess: () => {
@@ -175,7 +179,7 @@ const dismissError = () => {
         v-for="(value, index) of errors"
         :key="index"
         :show="true"
-        :variant="'destructive'"
+        :variant="destructive"
         :title="index"
         :message="value"
     >
@@ -248,7 +252,7 @@ const dismissError = () => {
                         <Input id="national_id" v-model="form.national_id"  />
 
                         <Label for="avatar">Avatar</Label>
-                        <Input id="avatar" type="file" @change="handleFileUpload" />
+                        <Input id="avatar" type="file" @change="handleImageUpload" />
 
                         <div class="flex justify-end gap-2">
                             <Button variant="secondary" @click="isEditModalOpen = false">Close</Button>
@@ -279,7 +283,7 @@ const dismissError = () => {
 
                         <div class="flex flex-col gap-1">
                             <Label for="avatar">Avatar</Label>
-                            <Input id="avatar" type="file" @change="handleFileUpload" />
+                            <Input id="avatar" type="file" @change="handleImageUpload" />
                         </div>
 
                         <div class="flex flex-col gap-1">
