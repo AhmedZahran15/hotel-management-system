@@ -32,13 +32,13 @@ const manageRoomsItem = {
 
 const manageReceptionistsItem = {
     title: 'Manage Receptionists',
-    href: '/dashboard/receptionists',
+    href: route('receptionists.index'),
     icon: Users,
 };
 
 const manageClientsItem = {
     title: 'Manage Clients',
-    href: '/dashboard/clients',
+    href: route('clients.index'),
     icon: UserRoundPlus,
 };
 
@@ -47,14 +47,14 @@ if (page.props.auth.user.roles.includes('admin')) {
     mainNavItems.push(
         {
             title: 'Manage Managers',
-            href: '/dashboard/managers',
+            href: route('managers.index'),
             icon: CircleUser,
         },
         manageReceptionistsItem,
         manageClientsItem,
         {
             title: 'Clients Reservations',
-            href: '/dashboard/reservations',
+            href: route('reservations.index'),
             icon: Calendar,
         },
         {
@@ -75,7 +75,7 @@ if (page.props.auth.user.roles.includes('receptionist')) {
     mainNavItems.push(
         {
         title: 'Manage Clients',
-         href: '/dashboard/clients',
+         href: route('clients.index'),
         icon: UserRoundPlus,
         },
         {
@@ -85,7 +85,7 @@ if (page.props.auth.user.roles.includes('receptionist')) {
         },
         {
             title: 'Clients Reservations',
-            href: '/dashboard/reservations',
+            href: route('reservations.index'),
             icon: Calendar,
         },
     );
@@ -95,12 +95,12 @@ if (page.props.auth.user.roles.includes('client')) {
     mainNavItems.push(
      {
             title: 'My Reservations',
-            href: '/dashboard/my-reservations',
+            href: route('reservations.index'),
             icon: Calendar,
         },
         {
             title: 'Make Reservation',
-            href: '/dashboard/make-reservation',
+            href: route('reservations.create'),
             icon: CalendarCheck,
         },
     );

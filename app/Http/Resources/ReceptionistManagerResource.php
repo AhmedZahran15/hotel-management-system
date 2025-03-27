@@ -19,6 +19,7 @@ class ReceptionistManagerResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            'created_at' => $this->created_at,
             'profile' => new ProfileResource($this->whenLoaded('profile')),
             // 'creator' is not included for managers
             "created_at"=> $this->created_at

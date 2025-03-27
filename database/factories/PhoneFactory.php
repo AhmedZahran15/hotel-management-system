@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Client;
+use App\Models\Phone;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -10,16 +11,12 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class PhoneFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
+    protected $model = Phone::class;
     public function definition(): array
     {
         return [
-            "phone_number" => fake()->phoneNumber(),
-            "client_id" => Client::pluck('id')->random(),
+            'client_id' => Client::inRandomOrder()->first()->id,
+            'phone_number'  => $this->faker->phoneNumber,
         ];
     }
 }

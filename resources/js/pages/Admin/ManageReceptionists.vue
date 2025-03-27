@@ -1,18 +1,24 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Alert from '@/components/Shared/Alert.vue';
 import ManageDataTable from '@/components/Shared/ManageDataTable.vue';
 import ManageModal from '@/components/Shared/ManageModal.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { h, onMounted, ref, computed } from 'vue';
+import { AlertCircle } from 'lucide-vue-next';
+import { h, ref, computed } from 'vue';
 
+//error ,success messages
 const successMessage = ref('');
 const errorMessage = ref('');
+
+//Specify user id and role
 const loggedInUserId = ref(null);
 const loggedInUserRole = ref('');
 
+// Breadcrumbs for navigation
 const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },
     { title: 'Manage Receptionists', href: route('receptionists.index'), active: true },
@@ -20,13 +26,21 @@ const breadcrumbs = [
 
 const props = defineProps(['receptionists']);
 const page = usePage();
+
+// Errors
+const errors = computed(() => page.props.errors);
+
+// User and Admin Check
+const user = page.props.auth.user;
+const isAdmin = user?.roles.includes('admin');
+
+// State Variables
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
 const selectedReceptionistId = ref(null);
-const form = ref({ id: null, name: '', email: '', password: '', password_confirmation: '', national_id: '', avatar_image: null });
+const form = ref({ name: '', email: '', password: '', password_confirmation: '', national_id: '', avatar_image: null });
 
-const errors = computed(() => page.props.errors);
 const params = new URLSearchParams(window.location.search);
 const filters = ref({
     name: params.get('filter[name]') || '',
@@ -44,9 +58,8 @@ const pagination = ref({
     dataSize: props.receptionists.meta.total,
 });
 
-const user = page.props.auth.user;
-const isAdmin = user?.roles.includes('admin');
 
+// Table Columns
 const columns = [
     { accessorKey: 'id', header: 'ID' },
     { accessorKey: 'name', header: 'Name' },
@@ -122,15 +135,12 @@ const columns = [
     },
 ];
 
-const fetchReceptionists = async () => {
+// Fetch Receptionists
+const fetchReceptionists = () => {
     const params = new URLSearchParams();
 
-    if (filters.value.room_price) {
-        params.append('filter[room_price]', (filters.value.room_price * 100).toString());
-    }
-
     Object.entries(filters.value).forEach(([key, value]) => {
-        if (value && key !== 'room_price') params.append(`filter[${key}]`, value);
+        if (value) params.append(`filter[${key}]`, value);
     });
 
     if (sorting.value.length > 0) {
@@ -156,41 +166,48 @@ const fetchReceptionists = async () => {
     });
 };
 
+// Open Edit Modal
 const openEditModal = (receptionist) => {
-    form.value = {
-        id: receptionist.id,
-        name: receptionist.name || '',
-        email: receptionist.email || '',
-        national_id: receptionist.profile?.national_id || '',
-        avatar_image: null,
-    };
+    form.value = {...receptionist,
+        national_id: receptionist.profile?.national_id,
+        avatar_image: null};
     isEditModalOpen.value = true;
 };
 
+// Open Delete Modal
 const openDeleteModal = (id) => {
     selectedReceptionistId.value = id;
     isDeleteModalOpen.value = true;
 };
 
-const handleFileUpload = (event) => {
-    form.value.avatar_image = event.target.files[0];
+// Handle Image Upload
+const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    delete errors.value.avatar_image; 
+    if (file && !['image/jpeg', 'image/jpg'].includes(file.type)) {
+        errors.value.avatar_image = "Only JPG and JPEG files are allowed.";
+        form.value.avatar_image = null;
+        return;
+    }
+    form.value.avatar_image = file;
 };
 
+// Handle Add Receptionist
 const handleAdd =  () => {
 
     const formData = new FormData();
     Object.keys(form.value).forEach((key) => {
         if (form.value[key] !== null) formData.append(key, form.value[key]);
     });
-     router.post('/dashboard/receptionists', formData, {
+     router.post(route('receptionists.store'), formData, {
         onSuccess: () => {
             isAddModalOpen.value = false;
-            fetchReceptionists();
         },
     });
 };
 
-const handleEdit = async () => {
+// Handle Edit Receptionist
+const handleEdit = () => {
     const formData = new FormData();
     formData.append('_method', 'PATCH');
     Object.keys(form.value).forEach((key) => {
@@ -199,22 +216,22 @@ const handleEdit = async () => {
     router.post(`/dashboard/receptionists/${form.value.id}`, formData, {
         onSuccess: () => {
             isEditModalOpen.value = false;
-            fetchReceptionists();
         },
     });
 };
 
-const confirmDelete = async () => {
-    await router.delete(`/dashboard/receptionists/${selectedReceptionistId.value}`, {
+// Confirm Delete
+const confirmDelete = () => {
+     router.delete(`/dashboard/receptionists/${selectedReceptionistId.value}`, {
         preserveState: true,
-        onSuccess: fetchReceptionists,
     });
     isDeleteModalOpen.value = false;
 };
 
-const handleBan = async (id) => {
+// Handle Ban 
+const handleBan = (id) => {
     try {
-        await router.post(route('ban', id));
+        router.post(route('ban', id));
 
         successMessage.value = 'Receptionist has been banned successfully.';
         errorMessage.value = '';
@@ -230,9 +247,10 @@ const handleBan = async (id) => {
     }
 };
 
-const handleUnban = async (id) => {
+// Handle Unban
+const handleUnban = (id) => {
     try {
-        await router.post(`/dashboard/receptionists/${id}/unban`);
+        router.post(`/dashboard/receptionists/${id}/unban`);
         successMessage.value = 'Receptionist has been unbanned successfully.';
         errorMessage.value = '';
         setTimeout(() => {
@@ -247,11 +265,30 @@ const handleUnban = async (id) => {
     }
 };
 
-onMounted(fetchReceptionists);
+//AlertDismiss
+const dismissError = () => {
+    page.props.errors = {};
+};
 </script>
 
 <template>
     <Head title="Manage Receptionists" />
+     <!-- Errors -->
+     <Alert
+        class="fixed left-1/2 top-4 z-[9999] mx-auto mt-4 w-10/12 -translate-x-1/2 bg-red-500 text-white"
+        v-for="(value, index) of errors"
+        :key="index"
+        :show="true"
+        :variant="'destructive'"
+        :title="index"
+        :message="value"
+    >
+        <template v-slot:icon><AlertCircle class="h-4 w-4" /></template>
+        <template v-slot:dismissBtn>
+            <Button class="bg-white text-black" @click="dismissError">Dismiss</Button>
+        </template>
+    </Alert>
+    <!-- Main Content -->
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="px-6">
             <div v-if="successMessage" class="rounded bg-green-500 p-4 text-white">
@@ -302,32 +339,32 @@ onMounted(fetchReceptionists);
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
                         <div class="flex flex-col gap-1">
                             <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name" required />
+                            <Input id="name" v-model="form.name"  />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email" required />
+                            <Input id="email" v-model="form.email" type="email"  />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="national_id">National ID</Label>
-                            <Input id="national_id" v-model="form.national_id" required />
+                            <Input id="national_id" v-model="form.national_id"  />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="avatar">Avatar</Label>
-                            <Input id="avatar" type="file" @change="handleFileUpload" />
+                            <Input id="avatar" type="file" @change="handleImageUpload" />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="password">Password</Label>
-                            <Input id="password" v-model="form.password" type="password" required />
+                            <Input id="password" v-model="form.password" type="password"  />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="password_confirmation">Confirm Password</Label>
-                            <Input id="password_confirmation" v-model="form.password_confirmation" type="password" required />
+                            <Input id="password_confirmation" v-model="form.password_confirmation" type="password"  />
                         </div>
 
                         <div class="flex justify-end gap-2">
@@ -344,22 +381,22 @@ onMounted(fetchReceptionists);
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
                         <div class="flex flex-col gap-1">
                             <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name" required />
+                            <Input id="name" v-model="form.name" />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email" required />
+                            <Input id="email" v-model="form.email" type="email"  />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="national_id">National ID</Label>
-                            <Input id="national_id" v-model="form.national_id" required />
+                            <Input id="national_id" v-model="form.national_id" />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="avatar">Avatar</Label>
-                            <Input id="avatar" type="file" @change="handleFileUpload" />
+                            <Input id="avatar" type="file" @change="handleImageUpload" />
                         </div>
 
                         <div class="flex justify-end gap-2">

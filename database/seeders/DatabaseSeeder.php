@@ -23,6 +23,6 @@ class DatabaseSeeder extends Seeder
         Floor::factory(10)->create();
         Room::factory(100)->create();
         Reservation::factory(50)->create();
-        Phone::factory(50)->create();
+        Phone::factory()->count(50)->create();
     }
 }

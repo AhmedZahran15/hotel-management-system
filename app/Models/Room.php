@@ -13,6 +13,10 @@ class Room extends Model
     /** @use HasFactory<\Database\Factories\RoomFactory> */
     use HasFactory, SoftDeletes;
 
+    public $incrementing = false;
+
+    protected $keyType = 'int';
+
     protected $fillable = [
         "number",
         "capacity",
@@ -37,5 +41,9 @@ class Room extends Model
     public function scopeAvailable($query)
     {
         return $query->where('state', 'available');
+    }
+    public function getRouteKeyName()
+    {
+    return 'number';
     }
 }
