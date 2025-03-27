@@ -114,7 +114,7 @@ const handleFileUpload = (event) => {
     const file = event.target.files[0];
     delete errors.value.avatar_image; 
     if (file && !['image/jpeg', 'image/jpg'].includes(file.type)) {
-        errors.value.avatar_image = ["Only JPG and JPEG files are allowed."];
+        errors.value.avatar_image = "Only JPG and JPEG files are allowed.";
         form.value.avatar_image = null;
         return;
     }
