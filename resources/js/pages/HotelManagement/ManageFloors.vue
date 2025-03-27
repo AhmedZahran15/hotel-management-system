@@ -99,6 +99,13 @@ const fetchData = (url?: string) => {
         preserveScroll: true,
         preserveState: true,
         only: ['floors'],
+        onSuccess: () => {
+            pagination.value = {
+                pageIndex: props.floors.meta.current_page - 1,
+                pageSize: props.floors.meta.per_page,
+                dataSize: props.floors.meta.total,
+            };
+        },
     });
 };
 
@@ -248,7 +255,7 @@ const dismissError = () => {
                     @update:sorting="
                         (newSorting) => {
                             sorting = newSorting;
-                            fetchData();
+                            //fetchData();
                         }
                     "
                     @update:filters="
@@ -260,7 +267,7 @@ const dismissError = () => {
                     @update:pagination="
                         (newPagination) => {
                             pagination = newPagination;
-                            fetchData();
+                            //fetchData();
                         }
                     "
                 >

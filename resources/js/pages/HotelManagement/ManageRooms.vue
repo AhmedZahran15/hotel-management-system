@@ -98,6 +98,7 @@ const fetchData = (url?: string) => {
     }
     params.append('page', (pagination.value.pageIndex + 1).toString());
     params.append('perPage', pagination.value.pageSize.toString());
+    
     router.get(url || route('rooms.index'), Object.fromEntries(params.entries()), {
         preserveScroll: true,
         preserveState: true,
