@@ -34,7 +34,11 @@ class ClientController extends Controller
         } else if (Auth::user()->hasRole("receptionist")) {
             $clients = ClientResource::collection(Client::with("user")->whereNull("approved_by")->paginate(10));
         }
-        return Inertia::render("Admin/ManageClients", ["clients" => $clients,'countries' => $countries]);
+        return Inertia::render("Admin/ManageClients",
+        ["clients" => $clients,
+        'countries' => $countries,
+        'type' => 'unapproved',
+    ]);
 
     }
 
@@ -43,6 +47,7 @@ class ClientController extends Controller
     {
         return Inertia::render("Admin/ManageClients", [
             "approved_clients" => ClientResource::collection(Client::with('user', 'phones')->where("approved_by", Auth::id())->get())
+            ,'type' => 'approved'
         ]);
     }
 
@@ -63,7 +68,7 @@ class ClientController extends Controller
             "name" => ["required", "string", "min:3"],
             "avatar_image" => ["image", "mimes:jpg,jpeg", "max:2048"],
             "country" => ["required", "string"],
-            "gender" => ["required", "string", "in:Male,Female"],
+            "gender" => ["required", "string", "in:male,female"],
             "email" => ["required", "string", "email", "unique:users",],
             "password" => ["required", "string", "min:8", "confirmed"],
             'phone' => ['sometimes', 'string', 'regex:/^\+?[0-9]{7,}$/'],

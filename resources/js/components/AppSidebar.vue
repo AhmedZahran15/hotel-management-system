@@ -52,6 +52,16 @@ if (page.props.auth.user.roles.includes('admin')) {
         },
         manageReceptionistsItem,
         manageClientsItem,
+        {
+            title: 'Clients Reservations',
+            href: '/dashboard/reservations',
+            icon: Calendar,
+        },
+        {
+            title: 'My Approved Clients',
+            href: route('clients.approved'),
+            icon: UserRoundPlus,
+        },
         manageFloorsItem,
         manageRoomsItem,
     );
@@ -64,8 +74,13 @@ if (page.props.auth.user.roles.includes('manager')) {
 if (page.props.auth.user.roles.includes('receptionist')) {
     mainNavItems.push(
         {
+        title: 'Manage Clients',
+         href: '/dashboard/clients',
+        icon: UserRoundPlus,
+        },
+        {
             title: 'My Approved Clients',
-            href: '/dashboard/approved',
+            href: route('clients.approved'),
             icon: UserRoundPlus,
         },
         {
@@ -78,7 +93,7 @@ if (page.props.auth.user.roles.includes('receptionist')) {
 
 if (page.props.auth.user.roles.includes('client')) {
     mainNavItems.push(
-        {
+     {
             title: 'My Reservations',
             href: '/dashboard/my-reservations',
             icon: Calendar,
