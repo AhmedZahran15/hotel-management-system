@@ -13,7 +13,6 @@ const props = defineProps<{
     sorting?: { id: string; desc: boolean }[];
     filters?: any;
     pagination?: { pageIndex: number; pageSize: number; dataSize: number };
-    meta?: { current_page: number; per_page: number; total: number; from: number; to: number; last_page: number; links: any };
 }>();
 
 const emit = defineEmits(['update:sorting', 'update:filters', 'update:pagination']);
@@ -41,19 +40,22 @@ const table = useVueTable({
 });
 
 watch(sorting, (newSorting) => {
-    pagination.value.pageIndex = 1;
-    emit('update:sorting', newSorting);
+        emit('update:sorting', newSorting);
 }, { deep: true });
 
 watch(pagination, (newPagination) => emit('update:pagination', newPagination), { deep: true });
 
 const toggleSort = (columnId: string) => {
+    if (!Object.keys(filters.value).find((f) => f === columnId)) return;
+
     const existingIndex = sorting.value.findIndex((s) => s.id === columnId);
+    pagination.value.pageIndex = 0;
     if (existingIndex !== -1) {
         sorting.value[existingIndex].desc = !sorting.value[existingIndex].desc;
     } else {
         sorting.value = [{ id: columnId, desc: false }];
     }
+
 };
 </script>
 
@@ -77,7 +79,7 @@ const toggleSort = (columnId: string) => {
             <div class="flex flex-wrap gap-4 justify-between">
                 <div class="flex gap-4">
                     <Button class="px-6 sm:px-16" @click="pagination.pageIndex = 0; emit('update:filters', filters);">Filter</Button>
-                    <Button class="px-6 sm:px-16" variant="destructive" @click="Object.keys(filters).forEach((key) => (filters[key] = '')); emit('update:filters', filters);">Clear</Button>
+                    <Button class="px-6 sm:px-16" variant="destructive" @click="pagination.pageIndex = 0; Object.keys(filters).forEach((key) => (filters[key] = '')); emit('update:filters', filters);">Clear</Button>
                 </div>
                 <div class="flex justify-end w-full sm:w-auto">
                     <slot name="table-action"></slot>

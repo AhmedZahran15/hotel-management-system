@@ -9,25 +9,37 @@ import { Head, router, usePage } from '@inertiajs/vue3';
 import { h, onMounted, ref, computed} from 'vue';
 import Alert from '@/components/Shared/Alert.vue';
 import { AlertCircle } from 'lucide-vue-next';
-
 // Breadcrumbs for navigation
-const breadcrumbs = [
+    const breadcrumbs = [
   { title: 'Dashboard', href: '/dashboard' },
   { title: 'Manage Managers', href: '/dashboard/managers', active: true },
 ];
-
+const props = defineProps(['managers']);
+console.log(props.managers);
 // State Variables
 const page = usePage();
-const managers = ref([]);
+
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
 const selectedManagerId = ref(null);
-const pagination = ref({ pageIndex: 0, pageSize: 10, total: 0 });
-const sorting = ref([]);
-const filters = ref({});
 const form = ref({name: '', email: '', password: '', password_confirmation: '', national_id: '', avatar_image: null });
 const errors = computed(() => page.props.errors);
+const params = new URLSearchParams(window.location.search);
+const filters = ref({
+    name: params.get('filter[name]') || '',
+    email: params.get('filter[email]'),});
+const sorting = ref([
+    {
+        id: params.get('sort')?.replace('-', '') || '',
+        desc: params.get('sort')?.includes('-') || false,
+    },
+]);
+const pagination = ref({
+    pageIndex: props.managers.meta.current_page - 1,
+    pageSize: props.managers.meta.per_page,
+    dataSize: props.managers.meta.total,
+});
 
 // Table Columns
 const columns = [
@@ -39,11 +51,14 @@ const columns = [
     accessorKey: 'avatar_image',
     header: 'Avatar',
     cell: ({ row }) =>
-      h('img', {
+    h('div', { class: 'flex items-center justify-center' }, [
+         h('img', {
         src: row.getValue('avatar_image'),
         alt: 'Avatar',
         class: 'w-12 h-12 rounded-full object-cover'
       })
+    ])
+
   },
   {
     accessorKey: 'actions',
@@ -61,24 +76,35 @@ const columns = [
 
 // Fetch Managers
 const fetchManagers = async () => {
-  router.get(
-    '/dashboard/managers',
-    {
-      page: pagination.value.pageIndex + 1,
-      perPage: pagination.value.pageSize,
-      sorting: sorting.value,
-      filters: filters.value,
-    },
-    {
-      preserveState: true,
-      onSuccess: (page) => {
-        managers.value = page.props.managers.data;
-        pagination.value.total = page.props.managers.total;
-      },
-    }
-  );
-};
 
+    const params = new URLSearchParams();
+    if (filters.value.room_price) {
+        params.append('filter[room_price]', (filters.value.room_price * 100).toString());
+    }
+    Object.entries(filters.value).forEach(([key, value]) => {
+        if (value && key !== 'room_price') params.append(`filter[${key}]`, value);
+    });
+    if (sorting.value.length > 0) {
+        const sortString = sorting.value.map((s) => (s.desc ? `-${s.id}` : s.id)).join(',');
+        params.append('sort', sortString);
+    }
+    params.append('page', (pagination.value.pageIndex + 1).toString());
+    params.append('perPage', pagination.value.pageSize.toString());
+
+  router.get(route('managers.index'),Object.fromEntries(params.entries()),
+    {
+      preserveScroll: true,
+        preserveState: true,
+        only: ['managers'],
+        onSuccess: () => {
+            pagination.value = {
+                pageIndex: props.managers.meta.current_page - 1,
+                pageSize: props.managers.meta.per_page,
+                dataSize: props.managers.meta.total,
+            };
+        },
+    });
+};
 
 // Open Edit Modal
 const openEditModal = (manager) => {
@@ -103,10 +129,10 @@ const handleAdd = async () => {
   Object.keys(form.value).forEach((key) => {
     if (form.value[key] !== null) formData.append(key, form.value[key]);
   });
-  router.post('/dashboard/managers', formData, {
+  router.post(router.route('managers.store'), formData, {
     onSuccess: () => {
       isAddModalOpen.value = false;
-      fetchManagers();
+    //   fetchManagers();
     },
   });
 };
@@ -168,8 +194,9 @@ const dismissError = () => {
         <ManageDataTable
           title="Managers"
           :columns="columns"
-          :data="managers"
+          :data="props.managers.data"
           :pagination="pagination"
+          :filters="filters"
           :manual-pagination="true"
           :manual-sorting="true"
           :manual-filtering="true"
