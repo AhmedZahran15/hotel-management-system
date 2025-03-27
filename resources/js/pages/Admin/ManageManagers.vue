@@ -72,6 +72,9 @@ const columns = [
 // Fetch Managers
 const fetchManagers = async () => {
     const params = new URLSearchParams();
+    Object.entries(filters.value).forEach(([key, value]) => {
+       if(value) params.append(`filter[${key}]`, value);
+    });
     if (sorting.value.length > 0) {
         const sortString = sorting.value.map((s) => (s.desc ? `-${s.id}` : s.id)).join(',');
         params.append('sort', sortString);
@@ -107,8 +110,16 @@ const openDeleteModal = (id) => {
 
 // Handle File Upload
 const handleFileUpload = (event) => {
-    form.value.avatar_image = event.target.files[0];
+    const file = event.target.files[0];
+    delete errors.value.avatar_image; 
+    if (file && !['image/jpeg', 'image/jpg'].includes(file.type)) {
+        errors.value.avatar_image = ["Only JPG and JPEG files are allowed."];
+        form.value.avatar_image = null;
+        return;
+    }
+    form.value.avatar_image = file;
 };
+
 
 // Handle Add Manager
 const handleAdd = async () => {
@@ -148,8 +159,6 @@ const confirmDelete = async () => {
     });
     isDeleteModalOpen.value = false;
 };
-
-onMounted(fetchManagers);
 
 //AlertDismiss
 const dismissError = () => {
