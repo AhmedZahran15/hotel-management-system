@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreReceptionistRequest;
 use App\Http\Requests\UpdateReceptionistRequest;
+use App\Http\Resources\ReceptionistAdminResource;
+use App\Http\Resources\ReceptionistManagerResource;
 use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -11,25 +13,27 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class ReceptionistController extends Controller
 {
     public function index()
     {
         $user = auth()->user();
+        $query = QueryBuilder::for(User::class)->role('receptionist')
+            ->allowedFilters([
+            AllowedFilter::partial('name'),
+            AllowedFilter::exact('email'),
+            ])
+        ->allowedSorts(['name', 'email',])
+        ->with(['profile', 'creator']);
 
-        $query = User::role('receptionist')->with('profile');
-        //load the manager name with the receptionist if the user is admin
-        if ($user->hasRole('admin')) {
-            $query->with('creator:id,name,email');
-            //load all the receptionists 
-        } elseif ($user->hasRole('manager')) {
-            $query->with('creator:id,name,email');
-        }
+        $resource = $user->hasRole('admin') ? ReceptionistAdminResource::class : ReceptionistManagerResource::class;
 
-        $receptionists = $query->paginate(10);
-        return Inertia::render('Admin/ManageReceptionists', ['receptionists' => $receptionists]);
-        // return $receptionists;
+        $resiptionists = $resource::collection($query->paginate(10));
+
+        return Inertia::render('Admin/ManageReceptionists', ['receptionists' => $resiptionists]);
     }
 
 

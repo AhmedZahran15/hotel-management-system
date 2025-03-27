@@ -30,14 +30,17 @@ class RoomController extends Controller
             AllowedFilter::exact('floor_number'),
             ])
         ->allowedSorts(['number', 'capacity','state','room_price','floor_number','manager_name'])
-        ->join('users', 'rooms.creator_user_id', '=', 'users.id') //
+        ->leftJoin('users', function ($join) {
+            $join->on('rooms.creator_user_id', '=', 'users.id')->where('users.role', '=', 'manager');})
         ->select('rooms.*', 'users.name as manager_name') //
         ->with(['floor','creatorUser']);
-        if(Auth::user()->hasRole("manager"))
-            $rooms=RoomManagerResource::collection($query->paginate(10));
-        else if(Auth::user()->hasRole("admin"))
-            $rooms = RoomAdminResource::collection($query->paginate(10));
-        return Inertia::render("HotelManagement/ManageRooms",["rooms"=> $rooms]);
+
+        // Apply different resource collections dynamically
+        $resource = Auth::user()->hasRole('manager') ? RoomManagerResource::class : RoomAdminResource::class;
+
+        $rooms = $resource::collection($query->paginate(10));
+
+        return Inertia::render("HotelManagement/ManageRooms", ["rooms" => $rooms]);
 
     }
 
@@ -54,6 +57,7 @@ class RoomController extends Controller
      */
     public function store(Request $request)
     {
+        dd($request);
         $request -> validate([
             "floor_number"=>["required","int",Rule::exists("floors","number")],
             "number"=>["required","integer","min_digits:4", Rule::unique('rooms','number')],
@@ -103,6 +107,7 @@ class RoomController extends Controller
      */
     public function update(Request $request, Room $room)
     {
+        dd($request);
         // $room = Room::with(["creatorUser","floor"])->where("number",$room)->firstOrFail();
         $request -> validate([
             "floor_number"=>["required","int",Rule::exists("floors")],
