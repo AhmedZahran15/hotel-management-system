@@ -14,6 +14,7 @@ const params = new URLSearchParams(window.location.search);
 const filters = ref({
     name: params.get('filter[name]') || '',
     email: params.get('filter[email]') || '',
+    country: params.get('filter[country]')||'',
 });
 const sorting = params.get('sort')? ref<SortingValue[]>([
     {
@@ -22,9 +23,9 @@ const sorting = params.get('sort')? ref<SortingValue[]>([
     },
 ]): ref<SortingValue[]>([]);
 const pagination = ref({
-  pageIndex: props.clients?.meta?.current_page ? props.clients.meta.current_page - 1 : 0,
-  pageSize: props.clients?.meta?.per_page || 10,
-  dataSize: props.clients?.meta?.total || 0,
+  pageIndex: props.approved_clients?.meta?.current_page -1 ,
+  pageSize: props.approved_clients?.meta?.per_page || 10,
+  dataSize: props.approved_clients?.meta?.total || 0,
 });
 
 // Table Columns
@@ -64,7 +65,7 @@ const fetchApprovedClients = () => {
     router.get(route('clients.approved'), Object.fromEntries(params.entries()), {
         preserveScroll: true,
         preserveState: true,
-        only: ['clients'],
+        only: ['approved_clients'],
         onSuccess: (response) => {
             pagination.value = {
                 pageIndex: response.props.approved_clients.meta.current_page - 1,
