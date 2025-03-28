@@ -110,7 +110,7 @@ const toggleSort = (columnId: string) => {
                 <TableBody>
                     <template v-if="table.getRowModel().rows.length">
                         <TableRow v-for="row in table.getRowModel().rows" :key="row.id">
-                            <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" class="text-center px-2 py-2">
+                            <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" class="text-center px-4 py-2">
                                 <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
                             </TableCell>
                         </TableRow>
