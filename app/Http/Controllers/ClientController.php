@@ -17,6 +17,8 @@ use Nnjeim\World\World;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\Filters\Filter;
 
 class ClientController extends Controller
@@ -31,8 +33,6 @@ class ClientController extends Controller
             $response = World::countries();
             return $response->success ? $response->data : [];
         });
-
-
         $query = QueryBuilder::for(Client::class)
         ->allowedFilters([
             AllowedFilter::partial('name'),
@@ -42,7 +42,8 @@ class ClientController extends Controller
                         $q->where('name', 'like', "%{$value}%"); // Assuming country name is stored in `name` column
                     });
                 }
-            }),            AllowedFilter::custom('email', new class implements Filter {
+            }),
+            AllowedFilter::custom('email', new class implements Filter {
                 public function __invoke(Builder $query, $value, string $property)
                 {
                     $query->whereHas('user', function ($q) use ($value) {
@@ -51,8 +52,27 @@ class ClientController extends Controller
                 }
             }),
         ])
-        ->allowedSorts(['name', 'user.email']) // <-- Sort by email via the user relation
-        ->with(['user', 'phones', 'countryInfo']);
+ ->allowedSorts([
+        'name',
+        AllowedSort::custom('email', new class implements \Spatie\QueryBuilder\Sorts\Sort {
+            public function __invoke(Builder $query, bool $descending, string $property) {
+                $direction = $descending ? 'desc' : 'asc';
+                $query->orderBy(
+                    DB::raw('(SELECT email FROM users WHERE users.id = clients.user_id)'),
+                    $direction
+                );
+            }
+        }),
+        AllowedSort::custom('country', new class implements \Spatie\QueryBuilder\Sorts\Sort {
+            public function __invoke(Builder $query, bool $descending, string $property) {
+                $direction = $descending ? 'desc' : 'asc';
+                $query->orderBy(
+                    DB::raw('(SELECT name FROM countries WHERE countries.id = clients.country)'),
+                    $direction
+                );
+            }
+        }),
+    ])->with(['user', 'phones', 'countryInfo']);
 
         if (Auth::user() && Auth::user()->hasRole('receptionist')) {
             $query->whereNull('approved_by');
@@ -71,8 +91,7 @@ class ClientController extends Controller
     public function approved()
     {
         return Inertia::render("HotelManagement/ManageApprovedClients", [
-            "approved_clients" => ClientResource::collection(Client::with('user', 'phones')->where("approved_by", Auth::id())->get())
-            ,'type' => 'approved'
+            "approved_clients" => ClientResource::collection(Client::with('user', 'phones','countryInfo')->where("approved_by", Auth::id())->paginate(10))
         ]);
     }
 
