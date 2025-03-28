@@ -7,36 +7,37 @@ import { Link } from '@inertiajs/vue3';
 <template>
     <PublicLayout title="Welcome to Our Hotel">
         <!-- Hero Section -->
-        <div class="relative bg-gray-900 text-white">
+        <div class="relative bg-gray-800 text-white">
             <!-- Hero background image -->
             <div class="absolute inset-0 overflow-hidden">
-                <img src="/images/hotel-hero.jpg" alt="Luxury Hotel" class="h-full w-full object-cover opacity-40" />
+                <img src="heroSection.jpg" alt="Luxury Hotel" class="h-full w-full object-cover opacity-50" />
+                <div class="absolute inset-0 bg-gray-900 opacity-50 blur-sm"></div>
             </div>
 
             <!-- Hero content -->
             <div class="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8 lg:py-32">
                 <div class="max-w-3xl">
                     <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">Experience Luxury & Comfort</h1>
-                    <p class="mt-6 max-w-3xl text-xl">
+                    <p class="mt-6 max-w-3xl text-xl text-gray-300">
                         Book your stay at our premium hotel and enjoy world-class amenities, exceptional service, and unforgettable experiences.
                     </p>
                     <div class="mt-10 flex gap-4">
                         <Link href="/reservations/make">
                             <Button size="lg" class="font-medium">Book Now</Button>
                         </Link>
-                        <Button variant="outline" size="lg" class="border-white text-white hover:bg-white/10"> Learn More </Button>
+                        <Button variant="outline" size="lg" class="border-white text-black hover:bg-white/70"> Learn More </Button>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Features section -->
-        <div class="bg-white py-16 dark:bg-gray-900">
+        <div class="bg-white py-16">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="text-center">
                     <h2 class="text-primary-600 text-base font-semibold uppercase tracking-wide">Features</h2>
-                    <p class="mt-1 text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl sm:tracking-tight">Why Choose Our Hotel</p>
-                    <p class="mx-auto mt-5 max-w-xl text-xl text-gray-500 dark:text-gray-400">
+                    <p class="mt-1 text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight">Why Choose Our Hotel</p>
+                    <p class="mx-auto mt-5 max-w-xl text-xl text-gray-500">
                         Experience the perfect blend of luxury, comfort, and exceptional service at our premium hotel.
                     </p>
                 </div>
@@ -44,10 +45,10 @@ import { Link } from '@inertiajs/vue3';
                 <div class="mt-12">
                     <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
                         <div class="pt-6">
-                            <div class="flow-root rounded-lg bg-gray-50 px-6 pb-8 dark:bg-gray-800">
+                            <div class="flow-root rounded-lg bg-gray-50 px-6 pb-8">
                                 <div class="-mt-6">
                                     <div>
-                                        <span class="bg-primary-500 inline-flex items-center justify-center rounded-md p-3 shadow-lg">
+                                        <span class="inline-flex items-center justify-center rounded-md bg-blue-500 p-3 shadow-lg">
                                             <svg
                                                 class="h-6 w-6 text-white"
                                                 xmlns="http://www.w3.org/2000/svg"
@@ -64,8 +65,8 @@ import { Link } from '@inertiajs/vue3';
                                             </svg>
                                         </span>
                                     </div>
-                                    <h3 class="mt-8 text-lg font-medium text-gray-900 dark:text-white">Luxury Accommodations</h3>
-                                    <p class="mt-5 text-base text-gray-500 dark:text-gray-400">
+                                    <h3 class="mt-8 text-lg font-medium text-gray-900">Luxury Accommodations</h3>
+                                    <p class="mt-5 text-base text-gray-500">
                                         Our elegantly appointed rooms and suites offer the perfect blend of comfort, style, and modern amenities.
                                     </p>
                                 </div>
@@ -73,10 +74,10 @@ import { Link } from '@inertiajs/vue3';
                         </div>
 
                         <div class="pt-6">
-                            <div class="flow-root rounded-lg bg-gray-50 px-6 pb-8 dark:bg-gray-800">
+                            <div class="flow-root rounded-lg bg-gray-50 px-6 pb-8">
                                 <div class="-mt-6">
                                     <div>
-                                        <span class="bg-primary-500 inline-flex items-center justify-center rounded-md p-3 shadow-lg">
+                                        <span class="inline-flex items-center justify-center rounded-md bg-blue-500 p-3 shadow-lg">
                                             <svg
                                                 class="h-6 w-6 text-white"
                                                 xmlns="http://www.w3.org/2000/svg"
@@ -93,8 +94,8 @@ import { Link } from '@inertiajs/vue3';
                                             </svg>
                                         </span>
                                     </div>
-                                    <h3 class="mt-8 text-lg font-medium text-gray-900 dark:text-white">24/7 Service</h3>
-                                    <p class="mt-5 text-base text-gray-500 dark:text-gray-400">
+                                    <h3 class="mt-8 text-lg font-medium text-gray-900">24/7 Service</h3>
+                                    <p class="mt-5 text-base text-gray-500">
                                         Our dedicated staff is available around the clock to ensure your stay is comfortable and hassle-free.
                                     </p>
                                 </div>
@@ -102,10 +103,10 @@ import { Link } from '@inertiajs/vue3';
                         </div>
 
                         <div class="pt-6">
-                            <div class="flow-root rounded-lg bg-gray-50 px-6 pb-8 dark:bg-gray-800">
+                            <div class="flow-root rounded-lg bg-gray-50 px-6 pb-8">
                                 <div class="-mt-6">
                                     <div>
-                                        <span class="bg-primary-500 inline-flex items-center justify-center rounded-md p-3 shadow-lg">
+                                        <span class="inline-flex items-center justify-center rounded-md bg-blue-500 p-3 shadow-lg">
                                             <svg
                                                 class="h-6 w-6 text-white"
                                                 xmlns="http://www.w3.org/2000/svg"
@@ -122,8 +123,8 @@ import { Link } from '@inertiajs/vue3';
                                             </svg>
                                         </span>
                                     </div>
-                                    <h3 class="mt-8 text-lg font-medium text-gray-900 dark:text-white">Fine Dining</h3>
-                                    <p class="mt-5 text-base text-gray-500 dark:text-gray-400">
+                                    <h3 class="mt-8 text-lg font-medium text-gray-900">Fine Dining</h3>
+                                    <p class="mt-5 text-base text-gray-500">
                                         Enjoy exceptional cuisine at our on-site restaurants, offering a diverse range of culinary experiences.
                                     </p>
                                 </div>
@@ -135,17 +136,17 @@ import { Link } from '@inertiajs/vue3';
         </div>
 
         <!-- CTA Section -->
-        <div class="bg-primary-700">
+        <div class="bg-gray-100">
             <div class="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 sm:py-20 lg:px-8">
-                <h2 class="text-3xl font-extrabold text-white sm:text-4xl">
+                <h2 class="text-3xl font-extrabold text-neutral-800 sm:text-4xl">
                     <span class="block">Ready for an unforgettable stay?</span>
                 </h2>
                 <p class="text-primary-200 mt-4 text-lg leading-6">Book your room now and experience our world-class hospitality.</p>
                 <Link href="/reservations/make">
                     <Button
                         size="lg"
-                        variant="outline"
-                        class="hover:text-primary-700 mt-8 inline-flex w-full items-center justify-center border-2 border-white bg-transparent text-white hover:bg-white sm:w-auto"
+                        variant="default"
+                        class="mt-8 inline-flex w-full items-center justify-center border-2 border-white text-white hover:bg-white hover:text-neutral-900 sm:w-auto"
                     >
                         Make a Reservation
                     </Button>
