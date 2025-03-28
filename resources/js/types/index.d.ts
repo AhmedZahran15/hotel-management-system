@@ -48,3 +48,16 @@ export interface Profile {
     phones: string[];
 }
 export type BreadcrumbItemType = BreadcrumbItem;
+export interface Room {
+    number: number;
+    capacity: number;
+    room_price: number;
+    state: 'available' | 'maintenance' | 'occupied';
+    floor: { number: number };
+    manager_id?: number;
+    manager?: { name: string };
+    title: string;
+    description: string;
+    room_images: { url: string }[];
+}
+

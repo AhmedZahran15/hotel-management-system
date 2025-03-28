@@ -3,6 +3,7 @@ import DataTable from '@/components/Shared/ManageDataTable.vue';
 import Modal from '@/components/Shared/ManageModal.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/toast/use-toast';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -10,23 +11,8 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { computed, defineProps, h, ref } from 'vue';
-
+import type { Room } from '@/types';
 // Define missing types
-interface SortingValue {
-    id: string;
-    desc: boolean;
-}
-
-interface Room {
-    number: number;
-    capacity: number;
-    room_price: number;
-    state: 'available' | 'maintenance' | 'occupied';
-    floor: { number: number };
-    manager_id?: number;
-    manager?: { name: string };
-}
-
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Manage Rooms', href: route('rooms.index') }];
 
 const page = usePage();
@@ -129,30 +115,37 @@ const deleteConfirmed = () => {
 
 // Form data objects
 const editForm = ref({
+    editRoomTitle: '',
+    editRoomDescription: '',
     editRoomFloorNumber: '',
     editRoomCapacity: '',
     editRoomPrice: '',
     editRoomState: 'available',
+    editRoomImage: null,
 });
 
 const addForm = ref({
+    addRoomTitle: '',
+    addRoomDescription: '',
     addRoomNumber: '',
     addRoomFloorNumber: '',
     addRoomCapacity: '',
     addRoomPrice: '',
     addRoomState: 'available',
+    addRoomImage: null,
 });
 
-// Create reset functions for forms
 const resetAddForm = () => {
     addForm.value = {
+        addRoomTitle: '',
+        addRoomDescription: '',
         addRoomNumber: '',
         addRoomFloorNumber: '',
         addRoomCapacity: '',
         addRoomPrice: '',
         addRoomState: 'available',
+        addRoomImage: null,
     };
-    // Clear any validation errors
     page.props.errors = {};
 };
 
@@ -174,6 +167,9 @@ const handleEdit = (room: Room) => {
         editRoomCapacity: room.capacity.toString(),
         editRoomPrice: (room.room_price / 100).toString(), // Convert from cents to dollars
         editRoomState: room.state !== 'occupied' ? room.state : 'available',
+        editRoomTitle: room.title,
+        editRoomDescription: room.description,
+        editRoomImage: null,
     };
 };
 
@@ -185,44 +181,65 @@ const openAddModal = () => {
 
 // Update successful submission to use the reset function
 const onAddSubmit = () => {
-    router.post(
-        route('rooms.store'),
-        {
-            number: addForm.value.addRoomNumber,
-            floor_number: addForm.value.addRoomFloorNumber,
-            capacity: addForm.value.addRoomCapacity,
-            room_price: Number(addForm.value.addRoomPrice) * 100,
-            state: addForm.value.addRoomState,
-        },
-        {
-            preserveScroll: true,
-            onSuccess: () => {
-                addModalOpen.value = false;
-                toast({ title: 'Room added successfully!' });
-                resetAddForm(); // Reset the form
-                router.get(page.url);
-            },
-        },
-    );
-};
+    const formData = new FormData();
+    formData.append('title', addForm.value.addRoomTitle);
+    formData.append('description', addForm.value.addRoomDescription);
+    formData.append('number', addForm.value.addRoomNumber);
+    formData.append('floor_number', addForm.value.addRoomFloorNumber);
+    formData.append('capacity', addForm.value.addRoomCapacity);
+    formData.append('room_price', (Number(addForm.value.addRoomPrice) * 100).toString());
+    formData.append('state', addForm.value.addRoomState);
+    console.log(addForm.value.addRoomImage);
+    if (addForm.value.addRoomImage) {
+        formData.append('image', addForm.value.addRoomImage);
+    }
 
-const onEditSubmit = () => {
-    router.put(
-        route('rooms.update', selectedRoom.value?.number),
-        {
-            floor_number: editForm.value.editRoomFloorNumber,
-            capacity: editForm.value.editRoomCapacity,
-            room_price: Number(editForm.value.editRoomPrice) * 100, // Convert to cents
-            state: editForm.value.editRoomState,
+    router.post(route('rooms.store'), formData, {
+        preserveScroll: true,
+        onSuccess: () => {
+            addModalOpen.value = false;
+            toast({ title: 'Room added successfully!' });
+            resetAddForm();
         },
+    });
+};
+const onEditSubmit = () => {
+    const formData = new FormData();
+    formData.append('_method', 'PUT');
+    formData.append('floor_number', editForm.value.editRoomFloorNumber);
+    formData.append('capacity', editForm.value.editRoomCapacity);
+    formData.append('room_price', Number(editForm.value.editRoomPrice) * 100);
+    formData.append('state', editForm.value.editRoomState);
+    formData.append('title', editForm.value.editRoomTitle);
+    formData.append('description', editForm.value.editRoomDescription);
+
+    // Append image if a new one is selected
+    if (editForm.value.editRoomImage) {
+        formData.append('image', editForm.value.editRoomImage);
+    }
+    console.log(editForm);
+    router.post(
+        route('rooms.update', selectedRoom.value?.number), // Change to POST if necessary
+        formData,
         {
             preserveScroll: true,
             onSuccess: () => {
                 editModalOpen.value = false;
                 toast({ title: 'Room updated successfully!' });
             },
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
         },
     );
+};
+
+// Handle file selection
+const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        editForm.value.editRoomImage = file;
+    }
 };
 
 // We'll also clear errors when modals are closed
@@ -294,7 +311,7 @@ const closeAddModal = () => {
                 </template>
             </Modal>
 
-            <!-- Edit Modal -->
+          <!-- Edit Modal -->
             <Modal
                 v-if="editModalOpen"
                 :title="'Updating Room No. ' + selectedRoom?.number.toString()"
@@ -309,21 +326,49 @@ const closeAddModal = () => {
             >
                 <template #description>
                     <div class="flex flex-col justify-center gap-4 p-6">
+                        <!-- Title -->
+                        <div>
+                            <label class="text-sm font-medium">Title</label>
+                            <Input type="text" placeholder="Enter room title" v-model="editForm.editRoomTitle" />
+                            <p v-if="errors.title" class="text-sm text-red-500">{{ errors.title }}</p>
+                        </div>
+
+                        <!-- Description -->
+                        <div>
+                            <label class="text-sm font-medium">Description</label>
+                            <Textarea placeholder="Enter room description" v-model="editForm.editRoomDescription" />
+                            <p v-if="errors.description" class="text-sm text-red-500">{{ errors.description }}</p>
+                        </div>
+
+                        <!-- Image Upload -->
+                        <div>
+                            <label class="text-sm font-medium">Upload Image</label>
+                            <Input type="file" @change="handleImageUpload" />
+                            <p v-if="errors.image" class="text-sm text-red-500">{{ errors.image }}</p>
+                        </div>
+
+                        <!-- Floor Number -->
                         <div>
                             <label class="text-sm font-medium">Floor Number</label>
                             <Input type="text" placeholder="4 digits floor number" v-model="editForm.editRoomFloorNumber" />
                             <p v-if="errors.floor_number" class="text-sm text-red-500">{{ errors.floor_number }}</p>
                         </div>
+
+                        <!-- Room Capacity -->
                         <div>
                             <label class="text-sm font-medium">Room Capacity</label>
                             <Input type="text" placeholder="Capacity: Maximum is 5" v-model="editForm.editRoomCapacity" />
                             <p v-if="errors.capacity" class="text-sm text-red-500">{{ errors.capacity }}</p>
                         </div>
+
+                        <!-- Room Price -->
                         <div>
                             <label class="text-sm font-medium">Room Price</label>
                             <Input type="text" placeholder="price in $" v-model="editForm.editRoomPrice" />
                             <p v-if="errors.room_price" class="text-sm text-red-500">{{ errors.room_price }}</p>
                         </div>
+
+                        <!-- Room State -->
                         <div>
                             <label class="text-sm font-medium">Room State</label>
                             <Select v-model="editForm.editRoomState">
@@ -339,6 +384,7 @@ const closeAddModal = () => {
                             </Select>
                             <p v-if="errors.state" class="text-sm text-red-500">{{ errors.state }}</p>
                         </div>
+
                         <div class="flex justify-end gap-2">
                             <Button variant="outline" @click="closeEditModal">Cancel</Button>
                             <Button @click="() => onEditSubmit()">Update</Button>
@@ -354,14 +400,19 @@ const closeAddModal = () => {
                 v-model:open="addModalOpen"
                 :buttonsVisible="false"
                 :disableEsc="false"
-                @update:open="
-                    (val) => {
-                        if (!val) resetAddForm();
-                    }
-                "
-            >
+                @update:open="(val) => {if (!val) resetAddForm();}">
                 <template #description>
                     <div class="flex flex-col justify-center gap-4 p-6">
+                        <div>
+                            <label class="text-sm font-medium">Title</label>
+                            <Input type="text" placeholder="Enter room title" v-model="addForm.addRoomTitle" />
+                            <p v-if="errors.title" class="text-sm text-red-500">{{ errors.title }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium">Description</label>
+                            <Textarea placeholder="Enter room description" v-model="addForm.addRoomDescription" />
+                            <p v-if="errors.description" class="text-sm text-red-500">{{ errors.description }}</p>
+                        </div>
                         <div>
                             <label class="text-sm font-medium">Room Number</label>
                             <Input type="text" placeholder="4 digits room number" v-model="addForm.addRoomNumber" />
@@ -397,6 +448,11 @@ const closeAddModal = () => {
                             </Select>
                             <p v-if="errors.state" class="text-sm text-red-500">{{ errors.state }}</p>
                         </div>
+                        <div>
+                            <label class="text-sm font-medium">Room Image</label>
+                            <Input type="file"  @change="(e) => addForm.addRoomImage = e.target.files[0]" />
+                            <p v-if="errors.image" class="text-sm text-red-500">{{ errors.image }}</p>
+                        </div>
                         <div class="flex justify-end gap-2">
                             <Button variant="outline" @click="closeAddModal">Cancel</Button>
                             <Button @click="onAddSubmit">Add</Button>
@@ -404,6 +460,7 @@ const closeAddModal = () => {
                     </div>
                 </template>
             </Modal>
+
         </div>
     </AppLayout>
 </template>

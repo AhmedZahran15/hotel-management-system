@@ -63,11 +63,16 @@ class RoomController extends Controller
             "capacity"=>["required","integer","max:5"],
             "room_price"=>["required","integer","min:10"],
             "state"=>["required","in:available,occupied,being_reserved,maintenance",],
+            "title"=>["required","string","max:255",'min:5'],
+            "description"=>["required","string",'min:5'],
+            'image' => ['required', 'image', 'mimes:jpeg,jpg', 'max:2048'],
         ]);
         $request["creator_user_id"]= Auth::user()->id;
-        $room = Room::create($request->all());
-
-        return back()->with("success","floor created");
+        $room = Room::create(
+            $request->only('floor_number','number','capacity','room_price','state','title','description','creator_user_id')
+        );
+        $room->updateImage($request->file('image'));
+        return back()->with("success","Reoom created successfuly");
 
     }
 
@@ -106,17 +111,20 @@ class RoomController extends Controller
      */
     public function update(Request $request, Room $room)
     {
-        dd($request);
+
         // $room = Room::with(["creatorUser","floor"])->where("number",$room)->firstOrFail();
         $request -> validate([
-            "floor_number"=>["required","int",Rule::exists("floors")],
+            "floor_number"=>["required","int",Rule::exists("floors","number")],
             "number"=>["required","integer","min_digits:4", Rule::unique('rooms')->ignore($room->number)],
             "capacity"=>["required","integer","max:5"],
             "room_price"=>["required","integer",],
-            "state"=>["required","in:available,occupied,being_reserved,maintenance",],
+            "state"=>["required","in:available,occupied,being_reserved,maintenance"],
+            "title"=>["required","string","max:255",'min:5'],
+            "description"=>["required","string",'min:5'],
+            'image' => ['required', 'image', 'mimes:jpeg,jpg', 'max:2048'],
         ]);
-        $room->update($request->all());
-
+        $room->update($request->only('floor_number','number','capacity','room_price','state','title','description'));
+        $room->updateImage($request->file('image'));
         return back()->with("success","floor updated");
     }
 

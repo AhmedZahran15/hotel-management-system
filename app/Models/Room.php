@@ -48,7 +48,16 @@ class Room extends Model implements HasMedia
         $media = $this->getFirstMedia('room_images');
         return $media ? $media->getUrl() : null;
     }
+    public function updateImage($newImage): void
+    {
+        // First clear the existing avatar image
+        $this->clearMediaCollection('room_images');
 
+        // Then add the new avatar image
+        $extension = $newImage->getClientOriginalExtension();
+        $uniqueFileName = time() . '_' . $this->id . '.' . $extension;
+        $this->addMedia($newImage)->usingFileName($uniqueFileName)->toMediaCollection('room_images');
+    }
     public function creatorUser()
     {
         return $this->belongsTo(User::class, "creator_user_id", "id");

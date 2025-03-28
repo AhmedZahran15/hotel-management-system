@@ -22,6 +22,9 @@ class RoomManagerResource extends JsonResource
             "state" => $this->state,
             "floor"=> new FloorManagerResource($this->whenLoaded("floor")),
             "manager_id"=>$this->creator_user_id,
+            "title"=>$this->title,
+            "description"=>$this->description,
+            "image_url"=>$this->getImageUrl(),
 
         ];
     }
