@@ -16,6 +16,8 @@ use Inertia\Inertia;
 use Nnjeim\World\World;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
+use Illuminate\Database\Eloquent\Builder;
+use Spatie\QueryBuilder\Filters\Filter;
 
 class ClientController extends Controller
 {
@@ -34,21 +36,33 @@ class ClientController extends Controller
         $query = QueryBuilder::for(Client::class)
         ->allowedFilters([
             AllowedFilter::partial('name'),
-            AllowedFilter::partial('email'),
-            AllowedFilter::partial('country'),
+            AllowedFilter::custom('country', new class implements Filter {
+                public function __invoke(Builder $query, $value, string $property) {
+                    $query->whereHas('countryInfo', function ($q) use ($value) {
+                        $q->where('name', 'like', "%{$value}%"); // Assuming country name is stored in `name` column
+                    });
+                }
+            }),            AllowedFilter::custom('email', new class implements Filter {
+                public function __invoke(Builder $query, $value, string $property)
+                {
+                    $query->whereHas('user', function ($q) use ($value) {
+                        $q->where('email', 'like', "%{$value}%");
+                    });
+                }
+            }),
         ])
-        ->allowedSorts(['name', 'email'])
-        ->with(['user', 'phones']);
+        ->allowedSorts(['name', 'user.email']) // <-- Sort by email via the user relation
+        ->with(['user', 'phones', 'countryInfo']);
 
         if (Auth::user() && Auth::user()->hasRole('receptionist')) {
-        $query->whereNull('approved_by');
+            $query->whereNull('approved_by');
         }
 
         $clients = ClientResource::collection($query->paginate(10));
 
         return Inertia::render('Admin/ManageClients', [
-        'clients' => $clients,
-        'countries' => $countries,
+            'clients' => $clients,
+            'countries' => $countries,
         ]);
 
     }
