@@ -8,33 +8,51 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { h, onMounted, ref } from 'vue';
+import { h, computed, ref } from 'vue';
+
 
 const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },
     { title: 'Manage Clients', href: '/dashboard/clients', active: true },
 ];
 
-const clients = ref([]);
+
+const props = defineProps(['clients', 'countries']);
+const page = usePage();
+console.log(props.clients);
+
+const errors = computed(() => page.props.errors);
+
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
 const selectedClientId = ref(null);
-const pagination = ref({ pageIndex: 0, pageSize: 10, total: 0 });
-const sorting = ref([]);
-const filters = ref({});
 const form = ref({ name: '', email: '', country: '', gender: '', avatar_image: null });
-const page = usePage();
-const countries = page.props.countries;
+const params = new URLSearchParams(window.location.search);
+const filters = ref({
+    name: params.get('filter[name]') || '',
+    email: params.get('filter[email]')||'',
+    country: params.get('filter[country]')||'',
+});
+const sorting = ref([
+    {
+        id: params.get('sort')?.replace('-', '') || '',
+        desc: params.get('sort')?.includes('-') || false,
+    },
+]);
+const pagination = ref({
+    pageIndex: props.clients.meta.current_page - 1,
+    pageSize: props.clients.meta.per_page,
+    dataSize: props.clients.meta.total,
+});
+
 const columns = [
     { accessorKey: 'id', header: 'ID' },
     { accessorKey: 'name', header: 'Name' },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'country.name', header: 'Country' },
     { accessorKey: 'gender', header: 'Gender' },
-    {
-        accessorKey: 'user.avatar_image',
-        header: 'Avatar',
+    {accessorKey: 'user.avatar_image', header: 'Avatar',
         cell: ({ row }) =>
             h('img', {
                 src: row.original.user?.avatar_image || '/default-avatar.jpg',
@@ -53,23 +71,32 @@ const columns = [
 ];
 
 const fetchClients = async () => {
-    router.get(
-        '/dashboard/clients',
-        {
-            page: pagination.value.pageIndex + 1,
-            perPage: pagination.value.pageSize,
-            sorting: sorting.value,
-            filters: filters.value,
+  const params = new URLSearchParams();
+
+    Object.entries(filters.value).forEach(([key, value]) => {
+        if (value) params.append(`filter[${key}]`, value);
+    });
+
+    if (sorting.value.length > 0) {
+        const sortString = sorting.value.map((s) => (s.desc ? `-${s.id}` : s.id)).join(',');
+        params.append('sort', sortString);
+    }
+    params.append('page', (pagination.value.pageIndex + 1).toString());
+    params.append('perPage', pagination.value.pageSize.toString());
+
+    router.get(route('clients.index'), Object.fromEntries(params.entries()), {
+        preserveScroll: true,
+        preserveState: true,
+        only: ['clients'],
+        onSuccess: () => {
+            pagination.value = {
+                pageIndex: props.clients.meta.current_page - 1,
+                pageSize: props.clients.meta.per_page,
+                dataSize: props.clients.meta.total,
+            };
         },
-        {
-            preserveState: true,
-            onSuccess: (page) => {
-              console.log(page.props.clients.data);
-                clients.value = page.props.clients.data;
-                pagination.value.total = page.props.clients.total;
-            },
-        },
-    );
+
+    });
 };
 
 const openEditModal = (client) => {
@@ -77,7 +104,7 @@ const openEditModal = (client) => {
     let gender = client.gender || '';
     if (gender.toLowerCase() === 'male') gender = 'male';
     if (gender.toLowerCase() === 'female') gender = 'female';
-
+    page.props.errors = {};
     form.value = {
         id: client.id,
         name: client.name || '',
@@ -89,6 +116,16 @@ const openEditModal = (client) => {
         password_confirmation: '',
     };
     isEditModalOpen.value = true;
+};
+
+const openAddModal = (client) => {
+    // Normalize gender value to ensure it matches exactly "Male" or "Female"
+    let gender = client.gender || '';
+    if (gender.toLowerCase() === 'male') gender = 'male';
+    if (gender.toLowerCase() === 'female') gender = 'female';
+    page.props.errors = {};
+    resetAddForm();
+    isAddModalOpen.value = true;
 };
 
 const openDeleteModal = (id) => {
@@ -126,20 +163,23 @@ const resetEditForm = () => {
 };
 
 const handleAdd = () => {
+
     const formData = new FormData();
     Object.keys(form.value).forEach((key) => {
         if (form.value[key] !== null) formData.append(key, form.value[key]);
     });
-    router.post('/dashboard/clients', formData, {
-        onSuccess: () => {
+    router.post(route('clients.store'), formData, {
+        preserveScroll: true,
+        preserveState: true,
 
+        onSuccess: () => {
             isAddModalOpen.value = false;
-            fetchClients();
             resetAddForm();
         },
-        onerror: (page) => {
-            console.log(page.props.errors);
+        onError: (errors) => {
+            console.error('Add form submission errors:', errors);
         },
+
     });
 };
 
@@ -167,7 +207,7 @@ const handleEdit = async () => {
     });
 
     // Submit the form
-    await router.post(`/dashboard/clients/${form.value.id}`, formData, {
+    await router.post(route('clients.update', form.value.id), formData, {
         onSuccess: () => {
             isEditModalOpen.value = false;
             fetchClients();
@@ -183,7 +223,6 @@ const confirmDelete = async () => {
     isDeleteModalOpen.value = false;
 };
 
-onMounted(fetchClients);
 </script>
 
 <template>
@@ -193,17 +232,13 @@ onMounted(fetchClients);
             <ManageDataTable
                 title="Clients"
                 :columns="columns"
-                :data="
-                    clients.map((client) => ({
-                        ...client,
-                        country: countries.find((country) => +country.id === +client.country) || 'Unknown',
-                    }))
-                "
+                :data="props.clients.data"
                 :pagination="pagination"
                 :manual-pagination="true"
                 :manual-sorting="true"
                 :manual-filtering="true"
                 :sorting="sorting"
+                :filters="filters"
                 @update:sorting="
                     (newSorting) => {
                         sorting = newSorting;
@@ -224,7 +259,7 @@ onMounted(fetchClients);
                 "
             >
                 <template #table-action>
-                    <Button variant="default" @click="isAddModalOpen = true">Add Client</Button>
+                    <Button variant="default" @click="openAddModal">Add Client</Button>
                 </template>
             </ManageDataTable>
 
@@ -245,12 +280,8 @@ onMounted(fetchClients);
                 title="Edit Client"
                 v-model:open="isEditModalOpen"
                 :buttonsVisible="false"
-                @update:open="
-                    (val) => {
-                        if (!val) resetEditForm();
-                    }
-                "
-            >
+                :errors="errors"
+                @update:open="(val) => {if (!val) resetEditForm();}">
                 <template #description>
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
                         <div class="flex flex-col gap-1">
@@ -326,16 +357,13 @@ onMounted(fetchClients);
 
             <ManageModal
                 v-if="isAddModalOpen"
+                :errors="errors"
                 title="Add Client"
                 v-model:open="isAddModalOpen"
                 :buttonsVisible="false"
-                @update:open="
-                    (val) => {
-                        if (!val) resetAddForm();
-                    }
-                "
-            >
+                @update:open=" (val) => {if (!val) resetAddForm();}">
                 <template #description>
+
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
                         <div class="flex flex-col gap-1">
                             <Label for="name">Name</Label>
@@ -390,12 +418,7 @@ onMounted(fetchClients);
                             <Button
                                 variant="secondary"
                                 @click="
-                                    () => {
-                                        isAddModalOpen = false;
-                                        resetAddForm();
-                                    }
-                                "
-                                >Close</Button
+                                    () => {isAddModalOpen = false;resetAddForm();}">Close</Button
                             >
                             <Button type="submit">Add</Button>
                         </div>
