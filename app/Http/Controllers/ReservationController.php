@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreReservationRequest;
+use App\Http\Resources\RoomClientResource;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Services\ReservationService;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 // use Stripe\Session;
 use Stripe\Checkout\Session;
 
@@ -57,7 +60,53 @@ class ReservationController extends Controller
         // return $reservations;
     }
 
+    /**
+     * Display a list of available rooms for making a reservation.
+     * This is a public-facing method that doesn't require authentication.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Inertia\Response
+     */
+    public function makeReservation(Request $request): Response
+    {
+        // Get original filters for passing to the view
+        $filters = $request->only(['search', 'capacity', 'price_min', 'price_max']);
 
+        // Start with a base query for available rooms
+        $query = Room::where('state', 'available');
+
+        // Apply filters manually instead of relying on QueryBuilder's default behavior
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+        if ($request->has('capacity') && !empty($request->capacity)) {
+            $query->where('capacity', $request->capacity);
+        }
+        if ($request->has('price_min') && !empty($request->price_min)) {
+            $query->where('room_price', '>=', $request->price_min);
+        }
+        if ($request->has('price_max') && !empty($request->price_max)) {
+            $query->where('room_price', '<=', $request->price_max);
+        }
+        // Use QueryBuilder just for sorting
+        $rooms = QueryBuilder::for($query)
+            ->allowedSorts(['room_price', 'capacity', 'name'])
+            ->defaultSort('room_price')
+            ->with(['media'])
+            ->paginate(9);
+
+        // Transform the rooms using the new client resource
+        $formattedRooms = RoomClientResource::collection($rooms);
+
+        return Inertia::render('Reservations/MakeReservation', [
+            'rooms' => $formattedRooms,
+            'filters' => $filters,
+        ]);
+    }
 
     public function create($roomId): Response
     {
