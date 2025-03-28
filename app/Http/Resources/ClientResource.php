@@ -18,12 +18,14 @@ class ClientResource extends JsonResource
         return[
             "id"=> $this->id,
             "name"=> $this->name,
-            "country"=> $this->country,
+            "country"=> $this->whenLoaded("countryInfo")??$this->country,
             "gender"=> $this->gender,
             "user" => new UserResource($this->whenLoaded('user')),
             "email"=>$this->user->email,
-            "approved_by"=>new UserResource($this->whenLoaded("approvedBy")),
-            "phones" => PhoneResource::collection($this->whenLoaded("phones"))
+            "approvedBy"=>new UserResource($this->whenLoaded("approved_by")),
+            "approved_by"=>$this->approved_by,
+            "phones" => $this->whenLoaded("phones", fn() => $this->phones->pluck('phone_number')->toArray()),
+
         ];
     }
 }

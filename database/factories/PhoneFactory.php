@@ -15,7 +15,7 @@ class PhoneFactory extends Factory
     public function definition(): array
     {
         return [
-            'client_id' => Client::inRandomOrder()->first()->id, 
+            'client_id' => Client::inRandomOrder()->first()->id,
             'phone_number'  => $this->faker->phoneNumber,
         ];
     }

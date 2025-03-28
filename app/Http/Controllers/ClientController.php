@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Nnjeim\World\World;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
+use Illuminate\Database\Eloquent\Builder;
+use Spatie\QueryBuilder\Filters\Filter;
 
 class ClientController extends Controller
 {
@@ -28,15 +32,38 @@ class ClientController extends Controller
             return $response->success ? $response->data : [];
         });
 
-        //return clients based on the user role
-        if (Auth::user() && Auth::user()->hasAnyRole(["admin", "manager",'receptionist'])) {
-            $clients = ClientResource::collection(Client::with("user", 'phones',"approvedBy")->paginate(10));
-        } 
-        return Inertia::render("Admin/ManageClients",
-        ["clients" => $clients,
-        'countries' => $countries,
-        'type' => 'unapproved',
-    ]);
+
+        $query = QueryBuilder::for(Client::class)
+        ->allowedFilters([
+            AllowedFilter::partial('name'),
+            AllowedFilter::custom('country', new class implements Filter {
+                public function __invoke(Builder $query, $value, string $property) {
+                    $query->whereHas('countryInfo', function ($q) use ($value) {
+                        $q->where('name', 'like', "%{$value}%"); // Assuming country name is stored in `name` column
+                    });
+                }
+            }),            AllowedFilter::custom('email', new class implements Filter {
+                public function __invoke(Builder $query, $value, string $property)
+                {
+                    $query->whereHas('user', function ($q) use ($value) {
+                        $q->where('email', 'like', "%{$value}%");
+                    });
+                }
+            }),
+        ])
+        ->allowedSorts(['name', 'user.email']) // <-- Sort by email via the user relation
+        ->with(['user', 'phones', 'countryInfo']);
+
+        if (Auth::user() && Auth::user()->hasRole('receptionist')) {
+            $query->whereNull('approved_by');
+        }
+
+        $clients = ClientResource::collection($query->paginate(10));
+
+        return Inertia::render('Admin/ManageClients', [
+            'clients' => $clients,
+            'countries' => $countries,
+        ]);
 
     }
 

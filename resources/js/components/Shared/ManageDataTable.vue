@@ -68,19 +68,19 @@ const toggleSort = (columnId: string) => {
         <!-- Filters -->
         <div v-if="showFilters" class="flex flex-col gap-4 py-4">
             <div class="grid w-full gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                <div v-for="(value, column) in filters" :key="column" class="flex items-center gap-3">
-                    <Label class="w-1/3 text-right font-bold">{{ column }}:</Label>
+                <div v-for="(value, column) in filters" :key="column" class="flex items-center  gap-3 ">
+                    <Label class=" text-left font-bold">{{ column }}:</Label>
                     <Input
                         type="text"
                         v-model="filters[column]"
                         :placeholder="'Filter ' + column + '...'"
-                        class="w-2/3 flex-grow shadow-md"
+                        class="w-2/3 flex-grow shadow-md "
                         @keyup.enter="pagination.pageIndex = 0; emit('update:filters', filters)"
                     />
                 </div>
             </div>
 
-            <div class="flex flex-wrap gap-4 justify-between">
+            <div v-if="props.filters && Object.keys(props.filters).length >0" class="flex flex-wrap gap-4 justify-between">
                 <div class="flex gap-4">
                     <Button class="px-6 sm:px-16" @click="pagination.pageIndex = 0; emit('update:filters', filters);">Filter</Button>
                     <Button class="px-6 sm:px-16" variant="destructive" @click="pagination.pageIndex = 0; Object.keys(filters).forEach((key) => (filters[key] = '')); emit('update:filters', filters);">Clear</Button>

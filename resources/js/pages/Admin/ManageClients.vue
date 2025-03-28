@@ -1,6 +1,5 @@
-<script setup>
+<script setup lang="ts">
 import AppLayout from '@/Layouts/AppLayout.vue';
-import Alert from '@/components/Shared/Alert.vue';
 import ManageDataTable from '@/components/Shared/ManageDataTable.vue';
 import ManageModal from '@/components/Shared/ManageModal.vue';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { AlertCircle } from 'lucide-vue-next';
 import { computed, h, ref } from 'vue';
 
 // Success Message
@@ -21,11 +19,14 @@ const breadcrumbs = [
     { title: 'Manage Clients', href: route('clients.index'), active: true },
 ];
 
-const props = defineProps(['clients']);
+
+const props = defineProps(['clients', 'countries']);
 const page = usePage();
 
 // User Role
 const userRole = page.props.auth.user.roles[0];
+
+const errors = computed(() => page.props.errors);
 
 // State Variables
 const isAddModalOpen = ref(false);
@@ -41,11 +42,11 @@ const form = ref({
     phones: '',
     avatar_image: null,
 });
-const errors = computed(() => page.props.errors);
 const params = new URLSearchParams(window.location.search);
 const filters = ref({
     name: params.get('filter[name]') || '',
     email: params.get('filter[email]') || '',
+    country: params.get('filter[country]')||'',
 });
 const sorting = ref([
     {
@@ -159,6 +160,7 @@ const fetchClients = () => {
 
 // Open Edit Modal
 const openEditModal = (client) => {
+    page.props.errors = {};
     form.value = {
         ...client,
         country: typeof client.country === 'object' ? client.country.id : client.country,
@@ -167,12 +169,31 @@ const openEditModal = (client) => {
     isEditModalOpen.value = true;
 };
 
+// Open Add Modal
+const openAddModal = (client) => {
+    page.props.errors = {};
+    resetAddForm();
+    isAddModalOpen.value = true;
+};
+
 // Open Delete Modal
 const openDeleteModal = (id) => {
     selectedClientId.value = id;
     isDeleteModalOpen.value = true;
 };
 
+// Reset Add Form
+const resetAddForm = () => {
+    form.value = {
+        name: '',
+        email: '',
+        country: '',
+        gender: '',
+        avatar_image: null,
+        password: '',
+        password_confirmation: '',
+    };
+};
 // Handle Image Upload
 const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -187,6 +208,7 @@ const handleImageUpload = (event) => {
 
 // Handle Add Client
 const handleAdd = () => {
+
     const formData = new FormData();
     Object.keys(form.value).forEach((key) => {
         if (form.value[key] !== null) formData.append(key, form.value[key]);
@@ -195,6 +217,7 @@ const handleAdd = () => {
         onSuccess: () => {
             isAddModalOpen.value = false;
         },
+
     });
 };
 
@@ -206,6 +229,7 @@ const handleEdit = () => {
         if (form.value[key] !== null) formData.append(key, form.value[key]);
     });
 
+    // Submit the form
     router.post(`/dashboard/clients/${form.value.id}`, formData, {
         onSuccess: () => {
             isEditModalOpen.value = false;
@@ -222,11 +246,6 @@ const confirmDelete = () => {
         },
     });
     isDeleteModalOpen.value = false;
-};
-
-//AlertDismiss
-const dismissError = () => {
-    page.props.errors = {};
 };
 
 // Approve Client
@@ -256,26 +275,10 @@ const approveClient = (id) => {
         }, 3000);
     }
 };
-console.log(props.clients)
 </script>
 
 <template>
     <Head title="Manage Clients" />
-    <!-- Errors -->
-    <Alert
-        class="fixed left-1/2 top-4 z-[9999] mx-auto mt-4 w-10/12 -translate-x-1/2 bg-red-500 text-white"
-        v-for="(value, index) of errors"
-        :key="index"
-        :show="true"
-        :variant="destructive"
-        :title="index"
-        :message="value"
-    >
-        <template v-slot:icon><AlertCircle class="h-4 w-4" /></template>
-        <template v-slot:dismissBtn>
-            <Button class="bg-white text-black" @click="dismissError">Dismiss</Button>
-        </template>
-    </Alert>
     <!-- Main Content -->
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="px-6">
@@ -288,7 +291,7 @@ console.log(props.clients)
                 title="Clients"
                 :columns="columns"
                 :data="
-                    clients.data
+                    props.clients.data
                         .filter((client) => {
                             if (userRole === 'admin' || userRole === 'manager') return true;
                             if (userRole === 'receptionist') return client.approved_by === null;
@@ -325,7 +328,7 @@ console.log(props.clients)
                 "
             >
                 <template #table-action>
-                    <Button variant="default" @click="isAddModalOpen = true">Add Client</Button>
+                    <Button variant="default" @click="openAddModal">Add Client</Button>
                 </template>
             </ManageDataTable>
 
@@ -341,8 +344,12 @@ console.log(props.clients)
                 </template>
             </ManageModal>
 
-            <!-- Edit Modal -->
-            <ManageModal v-if="isEditModalOpen" title="Edit Client" v-model:open="isEditModalOpen" :buttonsVisible="false">
+            <ManageModal
+                v-if="isEditModalOpen"
+                title="Edit Client"
+                v-model:open="isEditModalOpen"
+                :buttonsVisible="false"
+                :errors="errors">
                 <template #description>
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
                         <div class="flex flex-col gap-1">
@@ -411,9 +418,14 @@ console.log(props.clients)
                 </template>
             </ManageModal>
 
-            <!-- Add Modal -->
-            <ManageModal v-if="isAddModalOpen" title="Add Client" v-model:open="isAddModalOpen" :buttonsVisible="false">
+            <ManageModal
+                v-if="isAddModalOpen"
+                :errors="errors"
+                title="Add Client"
+                v-model:open="isAddModalOpen"
+                :buttonsVisible="false">
                 <template #description>
+
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
                         <div class="flex flex-col gap-1">
                             <Label for="name">Name</Label>
@@ -470,7 +482,10 @@ console.log(props.clients)
                         </div>
 
                         <div class="flex justify-end gap-2">
-                            <Button variant="secondary" @click="isAddModalOpen = false">Close</Button>
+                            <Button
+                                variant="secondary"
+                                @click=" () => {isAddModalOpen = false;resetAddForm();}">Close</Button
+                            >
                             <Button type="submit">Add</Button>
                         </div>
                     </form>

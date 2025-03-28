@@ -1,10 +1,9 @@
-<script setup>
-import AppLayout from '@/Layouts/AppLayout.vue';
-import ManageDataTable from '@/components/Shared/ManageDataTable.vue';
-import { Head, router, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { Head, router, usePage } from '@inertiajs/vue3'
+import AppLayout from '@/Layouts/AppLayout.vue'
+import ManageDataTable from '@/components/Shared/ManageDataTable.vue'
 
-// Breadcrumbs for navigation
 const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },
     { title: 'My Approved Clients', href: route('clients.approved'), active: true },

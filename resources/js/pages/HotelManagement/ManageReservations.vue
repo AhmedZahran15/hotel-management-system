@@ -1,4 +1,6 @@
-<script setup>
+<script setup lang="ts">
+import { ref, onMounted, h } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ManageDataTable from '@/components/Shared/ManageDataTable.vue';
 import { Head, router } from '@inertiajs/vue3';

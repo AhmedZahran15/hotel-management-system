@@ -1,13 +1,11 @@
-<script setup>
+<script setup lang="ts">
 import AppLayout from '@/Layouts/AppLayout.vue';
-import Alert from '@/components/Shared/Alert.vue';
 import ManageDataTable from '@/components/Shared/ManageDataTable.vue';
 import ManageModal from '@/components/Shared/ManageModal.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { AlertCircle } from 'lucide-vue-next';
 import { computed, h, ref } from 'vue';
 
 // Breadcrumbs for navigation
@@ -110,7 +108,14 @@ const fetchManagers = () => {
 // Open Edit Modal
 const openEditModal = (manager) => {
     form.value = { ...manager, avatar_image: null };
+        page.props.errors = {};
     isEditModalOpen.value = true;
+};
+// Open Add Modal
+const openAddModal = () => {
+    form.value = { name: '', email: '', password: '', password_confirmation: '', national_id: '', avatar_image: null };
+    page.props.errors = {};
+    isAddModalOpen.value = true;
 };
 
 // Open Delete Modal
@@ -170,29 +175,10 @@ const confirmDelete = () => {
     isDeleteModalOpen.value = false;
 };
 
-//AlertDismiss
-const dismissError = () => {
-    page.props.errors = {};
-};
 </script>
 
 <template>
     <Head title="Manage Managers" />
-    <!-- Errors -->
-    <Alert
-        class="fixed left-1/2 top-4 z-[9999] mx-auto mt-4 w-10/12 -translate-x-1/2 bg-red-500 text-white"
-        v-for="(value, index) of errors"
-        :key="index"
-        :show="true"
-        :variant="destructive"
-        :title="index"
-        :message="value"
-    >
-        <template v-slot:icon><AlertCircle class="h-4 w-4" /></template>
-        <template v-slot:dismissBtn>
-            <Button class="bg-white text-black" @click="dismissError">Dismiss</Button>
-        </template>
-    </Alert>
     <!-- Main Content -->
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="px-6">
@@ -226,7 +212,7 @@ const dismissError = () => {
                 "
             >
                 <template #table-action>
-                    <Button variant="default" @click="isAddModalOpen = true">Add Manager</Button>
+                    <Button variant="default" @click="openAddModal">Add Manager</Button>
                 </template>
             </ManageDataTable>
 
@@ -244,9 +230,7 @@ const dismissError = () => {
             </ManageModal>
 
             <!-- Edit Modal -->
-            <ManageModal 
-            v-if="isEditModalOpen" 
-            title="Edit Manager" v-model:open="isEditModalOpen" :buttonsVisible="false">
+            <ManageModal v-if="isEditModalOpen" title="Edit Manager" v-model:open="isEditModalOpen" :buttonsVisible="false" :errors="errors">
                 <template #description>
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
                         <div class="flex flex-col gap-1">
@@ -282,9 +266,8 @@ const dismissError = () => {
             </ManageModal>
 
             <!-- Add Modal -->
-            <ManageModal 
-            v-if="isAddModalOpen" 
-            title="Add Manager" v-model:open="isAddModalOpen" :buttonsVisible="false">
+            <ManageModal v-if="isAddModalOpen" title="Add Manager"
+            v-model:open="isAddModalOpen" :disableEsc="false" :buttonsVisible="false" :errors="errors">
                 <template #description>
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
                         <div class="flex flex-col gap-1">

@@ -37,4 +37,7 @@ class Client extends Model
     public function phones(){
         return $this->hasMany(Phone::class);
     }
+    public function countryInfo(){
+        return $this->belongsTo(Country::class, 'country');
+    }
 }

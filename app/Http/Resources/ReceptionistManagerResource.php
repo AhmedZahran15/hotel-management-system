@@ -24,5 +24,7 @@ class ReceptionistManagerResource extends JsonResource
             'banned_at' => $this->banned_at,
             'profile' => new ProfileResource($this->whenLoaded('profile')),
             // 'creator' is not included for managers
-        ];    }
+            "created_at"=> $this->created_at
+        ];
+    }
 }
