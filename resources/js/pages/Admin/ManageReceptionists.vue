@@ -1,13 +1,11 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
-import Alert from '@/components/Shared/Alert.vue';
 import ManageDataTable from '@/components/Shared/ManageDataTable.vue';
 import ManageModal from '@/components/Shared/ManageModal.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { AlertCircle } from 'lucide-vue-next';
 import { h, ref, computed } from 'vue';
 
 //error ,success messages
@@ -171,8 +169,16 @@ const openEditModal = (receptionist) => {
     form.value = {...receptionist,
         national_id: receptionist.profile?.national_id,
         avatar_image: null};
+        page.props.errors = {};
     isEditModalOpen.value = true;
 };
+// Open Add Modal
+const openAddModal = () => {
+    form.value = { name: '', email: '', password: '', password_confirmation: '', national_id: '', avatar_image: null };
+    page.props.errors = {};
+    isAddModalOpen.value = true;
+};
+
 
 // Open Delete Modal
 const openDeleteModal = (id) => {
@@ -183,7 +189,7 @@ const openDeleteModal = (id) => {
 // Handle Image Upload
 const handleImageUpload = (event) => {
     const file = event.target.files[0];
-    delete errors.value.avatar_image; 
+    delete errors.value.avatar_image;
     if (file && !['image/jpeg', 'image/jpg'].includes(file.type)) {
         errors.value.avatar_image = "Only JPG and JPEG files are allowed.";
         form.value.avatar_image = null;
@@ -194,7 +200,6 @@ const handleImageUpload = (event) => {
 
 // Handle Add Receptionist
 const handleAdd =  () => {
-
     const formData = new FormData();
     Object.keys(form.value).forEach((key) => {
         if (form.value[key] !== null) formData.append(key, form.value[key]);
@@ -213,9 +218,13 @@ const handleEdit = () => {
     Object.keys(form.value).forEach((key) => {
         if (form.value[key] !== null) formData.append(key, form.value[key]);
     });
-    router.post(`/dashboard/receptionists/${form.value.id}`, formData, {
+    router.post(route('receptionists.update',form.value.id), formData, {
         onSuccess: () => {
             isEditModalOpen.value = false;
+        },
+        onError: (errors) => {
+            console.log(errors);
+            page.props.errors = errors;
         },
     });
 };
@@ -228,66 +237,34 @@ const confirmDelete = () => {
     isDeleteModalOpen.value = false;
 };
 
-// Handle Ban 
+// Handle Ban
 const handleBan = (id) => {
-    try {
-        router.post(route('ban', id));
 
-        successMessage.value = 'Receptionist has been banned successfully.';
-        errorMessage.value = '';
-        setTimeout(() => {
-            successMessage.value = '';
-        }, 5000);
-    } catch (error) {
-        errorMessage.value = 'Failed to ban receptionist.';
+    router.post(route('ban', id));
+
+    successMessage.value = 'Receptionist has been banned successfully.';
+    errorMessage.value = '';
+    setTimeout(() => {
         successMessage.value = '';
-        setTimeout(() => {
-            errorMessage.value = '';
-        }, 5000);
-    }
+    }, 5000);
+
 };
 
 // Handle Unban
 const handleUnban = (id) => {
-    try {
-        router.post(`/dashboard/receptionists/${id}/unban`);
-        successMessage.value = 'Receptionist has been unbanned successfully.';
-        errorMessage.value = '';
-        setTimeout(() => {
-            successMessage.value = '';
-        }, 5000);
-    } catch (error) {
-        errorMessage.value = 'Failed to unban receptionist.';
+    router.post(`/dashboard/receptionists/${id}/unban`);
+    successMessage.value = 'Receptionist has been unbanned successfully.';
+    errorMessage.value = '';
+    setTimeout(() => {
         successMessage.value = '';
-        setTimeout(() => {
-            errorMessage.value = '';
-        }, 5000);
-    }
+    }, 5000);
 };
 
-//AlertDismiss
-const dismissError = () => {
-    page.props.errors = {};
-};
+
 </script>
 
 <template>
     <Head title="Manage Receptionists" />
-     <!-- Errors -->
-     <Alert
-        class="fixed left-1/2 top-4 z-[9999] mx-auto mt-4 w-10/12 -translate-x-1/2 bg-red-500 text-white"
-        v-for="(value, index) of errors"
-        :key="index"
-        :show="true"
-        :variant="'destructive'"
-        :title="index"
-        :message="value"
-    >
-        <template v-slot:icon><AlertCircle class="h-4 w-4" /></template>
-        <template v-slot:dismissBtn>
-            <Button class="bg-white text-black" @click="dismissError">Dismiss</Button>
-        </template>
-    </Alert>
     <!-- Main Content -->
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="px-6">
@@ -329,12 +306,12 @@ const dismissError = () => {
                 "
             >
                 <template #table-action>
-                    <Button variant="default" @click="isAddModalOpen = true">Add Receptionist</Button>
+                    <Button variant="default" @click="openAddModal">Add Receptionist</Button>
                 </template>
             </ManageDataTable>
 
             <!-- Add Modal -->
-            <ManageModal v-if="isAddModalOpen" title="Add Receptionist" v-model:open="isAddModalOpen" :buttonsVisible="false">
+            <ManageModal v-if="isAddModalOpen" title="Add Receptionist" v-model:open="isAddModalOpen" :buttonsVisible="false" :errors="errors">
                 <template #description>
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
                         <div class="flex flex-col gap-1">
@@ -376,7 +353,7 @@ const dismissError = () => {
             </ManageModal>
 
             <!-- Edit Modal -->
-            <ManageModal v-if="isEditModalOpen" title="Edit Receptionist" v-model:open="isEditModalOpen" :buttonsVisible="false">
+            <ManageModal v-if="isEditModalOpen" title="Edit Receptionist" v-model:open="isEditModalOpen" :buttonsVisible="false" :erorrs="errors">
                 <template #description>
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
                         <div class="flex flex-col gap-1">
