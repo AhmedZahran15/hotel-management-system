@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ManageDataTable from '@/components/Shared/ManageDataTable.vue';
 import ManageModal from '@/components/Shared/ManageModal.vue';
