@@ -125,10 +125,10 @@ onMounted(() => {
         email: user.email || '',
         avatar_image: null,
     };
-
+    console.log(user);
     if (user_type === 'client' && user.profile) {
         formValues.gender = (user.profile?.gender as 'male' | 'female') || 'male';
-        formValues.country = user.profile?.country?.toString() || '';
+        formValues.country = user.profile?.country?.id.toString() || '';
         formValues.phone_number = user.profile?.phones?.[0] || '';
     } else if (user_type === 'employee' && user.profile) {
         formValues.national_id = user.profile?.national_id || '';
