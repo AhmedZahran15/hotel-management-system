@@ -13,6 +13,10 @@ const props = defineProps<{
     sorting?: { id: string; desc: boolean }[];
     filters?: any;
     pagination?: { pageIndex: number; pageSize: number; dataSize: number };
+    showFilters: {
+    type: Boolean,
+    default: true,
+  },
 }>();
 
 const emit = defineEmits(['update:sorting', 'update:filters', 'update:pagination']);
@@ -62,7 +66,7 @@ const toggleSort = (columnId: string) => {
 <template>
     <div>
         <!-- Filters -->
-        <div class="flex flex-col gap-4 py-4">
+        <div v-if="showFilters" class="flex flex-col gap-4 py-4">
             <div class="grid w-full gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <div v-for="(value, column) in filters" :key="column" class="flex items-center gap-3">
                     <Label class="w-1/3 text-right font-bold">{{ column }}:</Label>

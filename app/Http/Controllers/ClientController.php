@@ -43,7 +43,7 @@ class ClientController extends Controller
     // return  clietns that are approved by the logged in user
     public function approved()
     {
-        return Inertia::render("Admin/ManageClients", [
+        return Inertia::render("HotelManagement/ManageApprovedClients", [
             "approved_clients" => ClientResource::collection(Client::with('user', 'phones')->where("approved_by", Auth::id())->get())
             ,'type' => 'approved'
         ]);

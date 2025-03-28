@@ -8,12 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { AlertCircle } from 'lucide-vue-next';
-import { h, ref, computed } from 'vue';
+import { computed, h, ref } from 'vue';
 
 // Breadcrumbs for navigation
 const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Manage Managers', href: route('managers.index')},
+    { title: 'Manage Managers', href: route('managers.index') },
 ];
 
 const props = defineProps(['managers']);
@@ -24,13 +24,19 @@ const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
 const selectedManagerId = ref(null);
-const form = ref({ name: '', email: '', password: '', password_confirmation: '', national_id: '', avatar_image: null });
+const form = ref({ 
+    name: '', 
+    email: '', 
+    password: '', 
+    password_confirmation: '', 
+    national_id: '', 
+    avatar_image: null });
 
 const errors = computed(() => page.props.errors);
 const params = new URLSearchParams(window.location.search);
 const filters = ref({
     name: params.get('filter[name]') || '',
-    email: params.get('filter[email]'),
+    email: params.get('filter[email]')||'',
 });
 const sorting = ref([
     {
@@ -75,9 +81,9 @@ const columns = [
 // Fetch Managers
 const fetchManagers = () => {
     const params = new URLSearchParams();
-    
+
     Object.entries(filters.value).forEach(([key, value]) => {
-       if(value) params.append(`filter[${key}]`, value);
+        if (value) params.append(`filter[${key}]`, value);
     });
 
     if (sorting.value.length > 0) {
@@ -116,15 +122,14 @@ const openDeleteModal = (id) => {
 // Handle Image Upload
 const handleImageUpload = (event) => {
     const file = event.target.files[0];
-    delete errors.value.avatar_image; 
+    delete errors.value.avatar_image;
     if (file && !['image/jpeg', 'image/jpg'].includes(file.type)) {
-        errors.value.avatar_image = "Only JPG and JPEG files are allowed.";
+        errors.value.avatar_image = 'Only JPG and JPEG files are allowed.';
         form.value.avatar_image = null;
         return;
     }
     form.value.avatar_image = file;
 };
-
 
 // Handle Add Manager
 const handleAdd = () => {
@@ -226,7 +231,9 @@ const dismissError = () => {
             </ManageDataTable>
 
             <!-- Delete Modal -->
-            <ManageModal v-if="isDeleteModalOpen" title="Deleting Manager" v-model:open="isDeleteModalOpen" :buttonsVisible="false">
+            <ManageModal 
+            v-if="isDeleteModalOpen" 
+            title="Deleting Manager" v-model:open="isDeleteModalOpen" :buttonsVisible="false">
                 <template #description>
                     <p class="text-lg">Are you sure you want to delete this manager?</p>
                 </template>
@@ -237,22 +244,34 @@ const dismissError = () => {
             </ManageModal>
 
             <!-- Edit Modal -->
-            <ManageModal v-if="isEditModalOpen" title="Edit Manager" v-model:open="isEditModalOpen" :buttonsVisible="false">
+            <ManageModal 
+            v-if="isEditModalOpen" 
+            title="Edit Manager" v-model:open="isEditModalOpen" :buttonsVisible="false">
                 <template #description>
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
                         <div class="flex flex-col gap-1">
                             <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name"  />
+                            <Input id="name" v-model="form.name" />
                         </div>
 
                         <Label for="email">Email</Label>
-                        <Input id="email" v-model="form.email" type="email"  />
+                        <Input id="email" v-model="form.email" type="email" />
 
                         <Label for="national_id">National ID</Label>
-                        <Input id="national_id" v-model="form.national_id"  />
+                        <Input id="national_id" v-model="form.national_id" />
 
                         <Label for="avatar">Avatar</Label>
                         <Input id="avatar" type="file" @change="handleImageUpload" />
+
+                        <div class="flex flex-col gap-1">
+                            <Label for="password">Password (leave empty to keep current)</Label>
+                            <Input id="password" type="password" v-model="form.password" />
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <Label for="password_confirmation">Confirm Password</Label>
+                            <Input id="password_confirmation" type="password" v-model="form.password_confirmation" />
+                        </div>
 
                         <div class="flex justify-end gap-2">
                             <Button variant="secondary" @click="isEditModalOpen = false">Close</Button>
@@ -263,22 +282,24 @@ const dismissError = () => {
             </ManageModal>
 
             <!-- Add Modal -->
-            <ManageModal v-if="isAddModalOpen" title="Add Manager" v-model:open="isAddModalOpen" :buttonsVisible="false">
+            <ManageModal 
+            v-if="isAddModalOpen" 
+            title="Add Manager" v-model:open="isAddModalOpen" :buttonsVisible="false">
                 <template #description>
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
                         <div class="flex flex-col gap-1">
                             <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name"  />
+                            <Input id="name" v-model="form.name" />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email"  />
+                            <Input id="email" v-model="form.email" type="email" />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="national_id">National ID</Label>
-                            <Input id="national_id" v-model="form.national_id"  />
+                            <Input id="national_id" v-model="form.national_id" />
                         </div>
 
                         <div class="flex flex-col gap-1">
@@ -288,12 +309,12 @@ const dismissError = () => {
 
                         <div class="flex flex-col gap-1">
                             <Label for="password">Password</Label>
-                            <Input id="password" v-model="form.password" type="password"  />
+                            <Input id="password" v-model="form.password" type="password" />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="password_confirmation">Confirm Password</Label>
-                            <Input id="password_confirmation" v-model="form.password_confirmation" type="password"  />
+                            <Input id="password_confirmation" v-model="form.password_confirmation" type="password" />
                         </div>
 
                         <div class="flex justify-end gap-2">

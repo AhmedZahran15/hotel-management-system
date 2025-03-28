@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { AlertCircle } from 'lucide-vue-next';
-import { h, ref, computed } from 'vue';
+import { computed, h, ref } from 'vue';
 
 //error ,success messages
 const successMessage = ref('');
@@ -23,7 +23,6 @@ const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },
     { title: 'Manage Receptionists', href: route('receptionists.index'), active: true },
 ];
-
 const props = defineProps(['receptionists']);
 const page = usePage();
 
@@ -32,13 +31,14 @@ const errors = computed(() => page.props.errors);
 
 // User and Admin Check
 const user = page.props.auth.user;
-const isAdmin = user?.roles.includes('admin');
+const isAdmin = user?.roles[0].includes('admin');
 
 // State Variables
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
 const selectedReceptionistId = ref(null);
+const isLoading = ref(false);
 const form = ref({ name: '', email: '', password: '', password_confirmation: '', national_id: '', avatar_image: null });
 
 const params = new URLSearchParams(window.location.search);
@@ -58,7 +58,6 @@ const pagination = ref({
     dataSize: props.receptionists.meta.total,
 });
 
-
 // Table Columns
 const columns = [
     { accessorKey: 'id', header: 'ID' },
@@ -71,27 +70,27 @@ const columns = [
     },
     ...(isAdmin
         ? [
-            {
-                accessorKey: 'creator',
-                header: 'Manager Creator',
-                cell: (info) => {
-                    const creator = info.getValue();
-                    return creator && creator.name ? creator.name : 'Manager not found';
-                },
-            },
-        ]
+              {
+                  accessorKey: 'creator',
+                  header: 'Manager Creator',
+                  cell: (info) => {
+                      const creator = info.getValue();
+                      return creator && creator.name ? creator.name : 'Manager not found';
+                  },
+              },
+          ]
         : []),
-    {
-        accessorKey: 'Actions',
-        header: 'Actions',
-        cell: (info) => {
-            const isAdmin = user?.roles.includes('admin');
-            const isManagerAndCreator = user?.roles.includes('manager') && user.id === info.row.original.creator_user_id;
-
-            return [
-                h(
-                    Button,
-                    {
+        {
+            accessorKey: 'Actions',
+            header: 'Actions',
+            cell: (info) => {
+                const isAdmin = user?.roles[0].includes('admin');
+                const isManagerAndCreator = user?.roles[0].includes('manager') && (user.id === info.row.original
+                .creator_user_id);
+                return [
+                    h(
+                        Button,
+                        {
                         variant: 'default',
                         class: 'mx-1',
                         onClick: () => openEditModal(info.row.original),
@@ -116,7 +115,7 @@ const columns = [
                               variant: 'default',
                               class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
                               onClick: () => handleUnban(info.row.original.id),
-                              disabled: !(isAdmin || isManagerAndCreator),
+                              disabled: !(isAdmin || isManagerAndCreator) || isLoading.value,
                           },
                           () => 'Unban',
                       )
@@ -126,7 +125,7 @@ const columns = [
                               variant: 'default',
                               class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
                               onClick: () => handleBan(info.row.original.id),
-                              disabled: !(isAdmin || isManagerAndCreator),
+                              disabled: !(isAdmin || isManagerAndCreator) || isLoading.value,
                           },
                           () => 'Ban',
                       ),
@@ -168,9 +167,7 @@ const fetchReceptionists = () => {
 
 // Open Edit Modal
 const openEditModal = (receptionist) => {
-    form.value = {...receptionist,
-        national_id: receptionist.profile?.national_id,
-        avatar_image: null};
+    form.value = { ...receptionist, national_id: receptionist.profile?.national_id, avatar_image: null };
     isEditModalOpen.value = true;
 };
 
@@ -183,9 +180,9 @@ const openDeleteModal = (id) => {
 // Handle Image Upload
 const handleImageUpload = (event) => {
     const file = event.target.files[0];
-    delete errors.value.avatar_image; 
+    delete errors.value.avatar_image;
     if (file && !['image/jpeg', 'image/jpg'].includes(file.type)) {
-        errors.value.avatar_image = "Only JPG and JPEG files are allowed.";
+        errors.value.avatar_image = 'Only JPG and JPEG files are allowed.';
         form.value.avatar_image = null;
         return;
     }
@@ -193,13 +190,12 @@ const handleImageUpload = (event) => {
 };
 
 // Handle Add Receptionist
-const handleAdd =  () => {
-
+const handleAdd = () => {
     const formData = new FormData();
     Object.keys(form.value).forEach((key) => {
         if (form.value[key] !== null) formData.append(key, form.value[key]);
     });
-     router.post(route('receptionists.store'), formData, {
+    router.post(route('receptionists.store'), formData, {
         onSuccess: () => {
             isAddModalOpen.value = false;
         },
@@ -222,46 +218,61 @@ const handleEdit = () => {
 
 // Confirm Delete
 const confirmDelete = () => {
-     router.delete(`/dashboard/receptionists/${selectedReceptionistId.value}`, {
+    router.delete(`/dashboard/receptionists/${selectedReceptionistId.value}`, {
         preserveState: true,
     });
     isDeleteModalOpen.value = false;
 };
 
-// Handle Ban 
+// Handle Ban
 const handleBan = (id) => {
     try {
-        router.post(route('ban', id));
-
-        successMessage.value = 'Receptionist has been banned successfully.';
-        errorMessage.value = '';
-        setTimeout(() => {
-            successMessage.value = '';
-        }, 5000);
+        isLoading.value = true;
+        router.post(
+            route('ban', id),
+            {},
+            {
+                onSuccess: () => {
+                    isLoading.value = false;
+                    successMessage.value = 'Receptionist has been banned successfully.';
+                    errorMessage.value = '';
+                    setTimeout(() => {
+                        successMessage.value = '';
+                    }, 3000);
+                },
+            },
+        );
     } catch (error) {
+        isLoading.value = false;
         errorMessage.value = 'Failed to ban receptionist.';
         successMessage.value = '';
         setTimeout(() => {
             errorMessage.value = '';
-        }, 5000);
+        }, 3000);
     }
 };
 
 // Handle Unban
 const handleUnban = (id) => {
     try {
-        router.post(`/dashboard/receptionists/${id}/unban`);
-        successMessage.value = 'Receptionist has been unbanned successfully.';
-        errorMessage.value = '';
-        setTimeout(() => {
-            successMessage.value = '';
-        }, 5000);
+        isLoading.value = true;
+        router.post(`/dashboard/receptionists/${id}/unban`,{},{
+            onSuccess: () => {
+                isLoading.value = false;
+                successMessage.value = 'Receptionist has been unbanned successfully.';
+                errorMessage.value = '';
+                setTimeout(() => {
+                    successMessage.value = '';
+                }, 3000);
+            },
+        });
     } catch (error) {
+        isLoading.value = false;
         errorMessage.value = 'Failed to unban receptionist.';
         successMessage.value = '';
         setTimeout(() => {
             errorMessage.value = '';
-        }, 5000);
+        }, 3000);
     }
 };
 
@@ -273,8 +284,8 @@ const dismissError = () => {
 
 <template>
     <Head title="Manage Receptionists" />
-     <!-- Errors -->
-     <Alert
+    <!-- Errors -->
+    <Alert
         class="fixed left-1/2 top-4 z-[9999] mx-auto mt-4 w-10/12 -translate-x-1/2 bg-red-500 text-white"
         v-for="(value, index) of errors"
         :key="index"
@@ -339,17 +350,17 @@ const dismissError = () => {
                     <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
                         <div class="flex flex-col gap-1">
                             <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name"  />
+                            <Input id="name" v-model="form.name" />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email"  />
+                            <Input id="email" v-model="form.email" type="email" />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="national_id">National ID</Label>
-                            <Input id="national_id" v-model="form.national_id"  />
+                            <Input id="national_id" v-model="form.national_id" />
                         </div>
 
                         <div class="flex flex-col gap-1">
@@ -359,12 +370,12 @@ const dismissError = () => {
 
                         <div class="flex flex-col gap-1">
                             <Label for="password">Password</Label>
-                            <Input id="password" v-model="form.password" type="password"  />
+                            <Input id="password" v-model="form.password" type="password" />
                         </div>
 
                         <div class="flex flex-col gap-1">
                             <Label for="password_confirmation">Confirm Password</Label>
-                            <Input id="password_confirmation" v-model="form.password_confirmation" type="password"  />
+                            <Input id="password_confirmation" v-model="form.password_confirmation" type="password" />
                         </div>
 
                         <div class="flex justify-end gap-2">
@@ -386,7 +397,7 @@ const dismissError = () => {
 
                         <div class="flex flex-col gap-1">
                             <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email"  />
+                            <Input id="email" v-model="form.email" type="email" />
                         </div>
 
                         <div class="flex flex-col gap-1">
