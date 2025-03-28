@@ -46,8 +46,11 @@ class Room extends Model implements HasMedia
     public function getImageUrl()
     {
         $media = $this->getFirstMediaUrl('room_images');
-        $path = parse_url($media, PHP_URL_PATH);
-        return url((string)$path);
+        if ($media) {
+            $path = parse_url($media, PHP_URL_PATH);
+            return url((string)$path);
+        }
+        return null;
     }
     public function updateImage($newImage): void
     {
