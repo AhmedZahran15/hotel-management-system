@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue';
+import { ref, computed, h } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ManageDataTable from '@/components/Shared/ManageDataTable.vue';
-import { Head, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
 
 const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },

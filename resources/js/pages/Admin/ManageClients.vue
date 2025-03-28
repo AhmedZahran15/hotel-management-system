@@ -22,7 +22,6 @@ const breadcrumbs = [
 
 const props = defineProps(['clients', 'countries']);
 const page = usePage();
-
 // User Role
 const userRole = page.props.auth.user.roles[0];
 
@@ -48,12 +47,12 @@ const filters = ref({
     email: params.get('filter[email]') || '',
     country: params.get('filter[country]')||'',
 });
-const sorting = ref([
+const sorting = params.get('sort')? ref<SortingValue[]>([
     {
         id: params.get('sort')?.replace('-', '') || '',
         desc: params.get('sort')?.includes('-') || false,
     },
-]);
+]): ref<SortingValue[]>([]);
 const pagination = ref({
     pageIndex: props.clients.meta.current_page - 1,
     pageSize: props.clients.meta.per_page,
@@ -61,13 +60,12 @@ const pagination = ref({
 });
 
 // Table Columns
-const countries = page.props.countries;
 const columns = [
     { accessorKey: 'id', header: 'ID' },
     { accessorKey: 'name', header: 'Name' },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'country.name', header: 'Country' },
-    { accessorKey: 'phones.0.phone', header: 'Phone' },
+    { accessorKey: 'phones.0', header: 'Phone' },
     { accessorKey: 'gender', header: 'Gender' },
     {
         accessorKey: 'approved_by',
@@ -96,30 +94,30 @@ const columns = [
                     h(Button, { variant: 'destructive', class: 'mx-1', onClick: () => openDeleteModal(client.id) }, () => 'Remove'),
                     client.approved_by === null
                         ? h(
-                              Button,
-                              {
-                                  variant: 'success',
-                                  class: 'mx-1',
-                                  onClick: () => approveClient(client.id),
-                                  disabled: isLoading.value,
-                              },
-                              () => 'Approve',
-                          )
+                            Button,
+                            {
+                                variant: 'success',
+                                class: 'mx-1',
+                                onClick: () => approveClient(client.id),
+                                disabled: isLoading.value,
+                            },
+                            () => 'Approve',
+                        )
                         : h(Button, { variant: 'default', class: 'mx-1 bg-gray-400', disabled: true }, () => 'Approved'),
                 );
             } else if (userRole === 'receptionist') {
                 buttons.push(
                     client.approved_by === null
                         ? h(
-                              Button,
-                              {
-                                  variant: 'success',
-                                  class: 'mx-1',
-                                  onClick: () => approveClient(client.id),
-                                  disabled: isLoading.value,
-                              },
-                              () => 'Approve',
-                          )
+                            Button,
+                            {
+                                variant: 'success',
+                                class: 'mx-1',
+                                onClick: () => approveClient(client.id),
+                                disabled: isLoading.value,
+                            },
+                            () => 'Approve',
+                        )
                         : h(Button, { variant: 'default', class: 'mx-1 bg-gray-400', disabled: true }, () => 'Approved'),
                 );
             }
@@ -132,17 +130,23 @@ const columns = [
 // Fetch Clients
 const fetchClients = () => {
     const params = new URLSearchParams();
-
+    // Apply filtering
     Object.entries(filters.value).forEach(([key, value]) => {
         if (value) params.append(`filter[${key}]`, value);
     });
 
+    // Apply sorting
     if (sorting.value.length > 0) {
-        const sortString = sorting.value.map((s) => (s.desc ? `-${s.id}` : s.id)).join(',');
+        const sortString = sorting.value
+            .map((s: SortingValue) => (s.desc ? `-${s.id}` : s.id)) // Convert sorting object to query format
+            .join(',');
         params.append('sort', sortString);
     }
-    params.append('page', (pagination.value.pageIndex + 1).toString());
-    params.append('perPage', pagination.value.pageSize.toString());
+
+    // Apply pagination
+    if (pagination.value.pageIndex > 0)
+    params.append('page', pagination.value.pageIndex + 1);
+
 
     router.get(route('clients.index'), Object.fromEntries(params.entries()), {
         preserveScroll: true,
@@ -250,30 +254,19 @@ const confirmDelete = () => {
 
 // Approve Client
 const approveClient = (id) => {
-    try {
-        isLoading.value = true;
-        router.patch(
-            `/dashboard/clients/${id}/approve`,
-            {},
-            {
-                onSuccess: () => {
-                    isLoading.value = false;
-                    successMessage.value = 'Client Has Been Approved Successfully.';
-                    errorMessage.value = '';
-                    setTimeout(() => {
-                        successMessage.value = '';
-                    }, 3000);
-                },
+
+    isLoading.value = true;
+    router.patch(route('clients.approve', id ),{},
+        {
+            onSuccess: () => {
+                isLoading.value = false;
+                successMessage.value = 'Client Has Been Approved Successfully.';
+                setTimeout(() => {
+                    successMessage.value = '';
+                }, 3000);
             },
-        );
-    } catch (error) {
-        isLoading.value = false;
-        errorMessage.value = 'Failed to Approve Client.';
-        successMessage.value = '';
-        setTimeout(() => {
-            errorMessage.value = '';
-        }, 3000);
-    }
+        },
+    );
 };
 </script>
 
@@ -290,18 +283,8 @@ const approveClient = (id) => {
             <ManageDataTable
                 title="Clients"
                 :columns="columns"
-                :data="
-                    props.clients.data
-                        .filter((client) => {
-                            if (userRole === 'admin' || userRole === 'manager') return true;
-                            if (userRole === 'receptionist') return client.approved_by === null;
-                            return false;
-                        })
-                        .map((client) => ({
-                            ...client,
-                            country: countries.find((country) => +country.id === +client.country) || 'Unknown',
-                        }))
-                "
+                :errors="errors"
+                :data="props.clients.data"
                 :pagination="pagination"
                 :filters="filters"
                 :manual-pagination="true"

@@ -45,12 +45,13 @@ const filters = ref({
     name: params.get('filter[name]') || '',
     email: params.get('filter[email]'),
 });
-const sorting = ref([
+const sorting = params.get('sort')? ref<SortingValue[]>([
     {
         id: params.get('sort')?.replace('-', '') || '',
         desc: params.get('sort')?.includes('-') || false,
     },
-]);
+]):ref<SortingValue[]>([]);
+
 const pagination = ref({
     pageIndex: props.receptionists.meta.current_page - 1,
     pageSize: props.receptionists.meta.per_page,
@@ -136,17 +137,22 @@ const columns = [
 // Fetch Receptionists
 const fetchReceptionists = () => {
     const params = new URLSearchParams();
-
+    // Apply filtering
     Object.entries(filters.value).forEach(([key, value]) => {
         if (value) params.append(`filter[${key}]`, value);
     });
 
+    // Apply sorting
     if (sorting.value.length > 0) {
-        const sortString = sorting.value.map((s) => (s.desc ? `-${s.id}` : s.id)).join(',');
+        const sortString = sorting.value
+            .map((s: SortingValue) => (s.desc ? `-${s.id}` : s.id)) // Convert sorting object to query format
+            .join(',');
         params.append('sort', sortString);
     }
-    params.append('page', (pagination.value.pageIndex + 1).toString());
-    params.append('perPage', pagination.value.pageSize.toString());
+
+    // Apply pagination
+    if (pagination.value.pageIndex > 0)
+    params.append('page', pagination.value.pageIndex + 1);
 
     router.get(route('receptionists.index'), Object.fromEntries(params.entries()), {
         preserveScroll: true,

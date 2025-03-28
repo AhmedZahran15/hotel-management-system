@@ -40,12 +40,12 @@ const filters = ref({
     state: params.get('filter[state]'),
     floor_number: params.get('filter[floor_number]'),
 });
-const sorting = ref<SortingValue[]>([
+const sorting = params.get('sort')? ref<SortingValue[]>([
     {
         id: params.get('sort')?.replace('-', '') || '',
         desc: params.get('sort')?.includes('-') || false,
     },
-]);
+]): ref<SortingValue[]>([]);
 const pagination = ref({
     pageIndex: props.rooms.meta.current_page - 1,
     pageSize: props.rooms.meta.per_page,
@@ -64,18 +64,12 @@ const columns = ref<ColumnDef<Room>[]>([
         cell: (info: any) =>
             info.row.original.manager_id == page.props.auth.user.id || page.props.auth.user.roles.includes('admin')
                 ? [
-                      h(Button, { variant: 'default', class: 'mx-1', onClick: () => handleEdit(info.row.original) }, () => 'Edit'),
-                      h(
-                          Button,
-                          {
-                              variant: 'destructive',
-                              class: 'mx-1',
-                              disabled: info.row.original.state == 'occupied',
-                              onClick: () => handleDelete(info.row.original),
-                          },
-                          () => 'Remove',
-                      ),
-                  ]
+                    h(Button, { variant: 'default', class: 'mx-1', onClick: () => handleEdit(info.row.original) }, () => 'Edit'),
+                    h(Button,
+                        {variant: 'destructive',class: 'mx-1',disabled: info.row.original.state == 'occupied', onClick: () => handleDelete(info.row.original),},
+                        () => 'Remove',
+                    ),
+                ]
                 : '',
     },
 ]);
@@ -85,20 +79,26 @@ if (props.rooms?.data?.length > 0 && props.rooms.data[0]?.manager) {
 }
 
 const fetchData = (url?: string) => {
+
     const params = new URLSearchParams();
-    if (filters.value.room_price) {
-        params.append('filter[room_price]', (filters.value.room_price * 100).toString());
-    }
+    // Apply filtering
     Object.entries(filters.value).forEach(([key, value]) => {
-        if (value && key !== 'room_price') params.append(`filter[${key}]`, value);
+        if (value) params.append(`filter[${key}]`, value);
     });
+
+    // Apply sorting
     if (sorting.value.length > 0) {
-        const sortString = sorting.value.map((s: SortingValue) => (s.desc ? `-${s.id}` : s.id)).join(',');
+        const sortString = sorting.value
+            .map((s: SortingValue) => (s.desc ? `-${s.id}` : s.id)) // Convert sorting object to query format
+            .join(',');
         params.append('sort', sortString);
     }
-    params.append('page', (pagination.value.pageIndex + 1).toString());
-    params.append('perPage', pagination.value.pageSize.toString());
-    
+
+    // Apply pagination
+    if (pagination.value.pageIndex > 0)
+    params.append('page', pagination.value.pageIndex + 1);
+
+
     router.get(url || route('rooms.index'), Object.fromEntries(params.entries()), {
         preserveScroll: true,
         preserveState: true,

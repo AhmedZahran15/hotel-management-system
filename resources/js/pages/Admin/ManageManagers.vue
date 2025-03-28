@@ -22,12 +22,12 @@ const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
 const selectedManagerId = ref(null);
-const form = ref({ 
-    name: '', 
-    email: '', 
-    password: '', 
-    password_confirmation: '', 
-    national_id: '', 
+const form = ref({
+    name: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
+    national_id: '',
     avatar_image: null });
 
 const errors = computed(() => page.props.errors);
@@ -36,12 +36,13 @@ const filters = ref({
     name: params.get('filter[name]') || '',
     email: params.get('filter[email]')||'',
 });
-const sorting = ref([
+const sorting = params.get('sort')? ref<SortingValue[]>([
     {
         id: params.get('sort')?.replace('-', '') || '',
         desc: params.get('sort')?.includes('-') || false,
     },
-]);
+]):ref<SortingValue[]>([]);
+
 const pagination = ref({
     pageIndex: props.managers.meta.current_page - 1,
     pageSize: props.managers.meta.per_page,
@@ -62,7 +63,7 @@ const columns = [
                 h('img', {
                     src: row.getValue('avatar_image'),
                     alt: 'Avatar',
-                    class: 'w-12 h-12 rounded-full object-cover',
+                    class: 'w-12 h-12 rounded-full object-cover dark:bg-gray-600 ',
                 }),
             ]),
     },
@@ -78,18 +79,23 @@ const columns = [
 
 // Fetch Managers
 const fetchManagers = () => {
-    const params = new URLSearchParams();
-
+     const params = new URLSearchParams();
+    // Apply filtering
     Object.entries(filters.value).forEach(([key, value]) => {
         if (value) params.append(`filter[${key}]`, value);
     });
 
+    // Apply sorting
     if (sorting.value.length > 0) {
-        const sortString = sorting.value.map((s) => (s.desc ? `-${s.id}` : s.id)).join(',');
+        const sortString = sorting.value
+            .map((s: SortingValue) => (s.desc ? `-${s.id}` : s.id)) // Convert sorting object to query format
+            .join(',');
         params.append('sort', sortString);
     }
-    params.append('page', (pagination.value.pageIndex + 1).toString());
-    params.append('perPage', pagination.value.pageSize.toString());
+
+    // Apply pagination
+    if (pagination.value.pageIndex > 0)
+    params.append('page', pagination.value.pageIndex + 1);
 
     router.get(route('managers.index'), Object.fromEntries(params.entries()), {
         preserveScroll: true,
@@ -217,8 +223,8 @@ const confirmDelete = () => {
             </ManageDataTable>
 
             <!-- Delete Modal -->
-            <ManageModal 
-            v-if="isDeleteModalOpen" 
+            <ManageModal
+            v-if="isDeleteModalOpen"
             title="Deleting Manager" v-model:open="isDeleteModalOpen" :buttonsVisible="false">
                 <template #description>
                     <p class="text-lg">Are you sure you want to delete this manager?</p>

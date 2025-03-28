@@ -27,7 +27,6 @@ const props = defineProps({
     buttonsVisible:{type:Boolean ,default:true},
     errors: {type:Object, default: () => ({})},
 });
-console.log(props.errors);
 const errors = computed(() => props.errors);
 const emit = defineEmits(["confirm", "update:open"]);
 

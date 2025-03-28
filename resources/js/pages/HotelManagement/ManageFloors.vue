@@ -27,13 +27,14 @@ const filters = ref({
     number: params.get('filter[number]') || '',
     name: params.get('filter[name]') || '',
 });
-const sorting = ref<SortingValue[]>([]);
-sorting.value = [
+
+const sorting = params.get('sort')? ref<SortingValue[]>([
     {
         id: params.get('sort')?.replace('-', '') || '',
         desc: params.get('sort')?.includes('-') || false,
     },
-];
+]):ref<SortingValue[]>([]);
+
 const pagination = ref({
     pageIndex: props.floors.meta.current_page - 1,
     pageSize: props.floors.meta.per_page,
@@ -53,20 +54,20 @@ const columns = ref<ColumnDef<Floor>[]>([
         cell: (info: any) =>
             info.row.original.manager_id == page.props.auth.user.id || page.props.auth.user.roles[0] == 'admin'
                 ? [
-                      h(Button, { variant: 'default', class: 'mx-1', onClick: () => handleEdit(info.row.original) }, () => 'Edit'),
-                      h(
-                          Button,
-                          {
-                              variant: 'destructive',
-                              class: 'mx-1',
-                              disabled: info.row.original.roomsCount != 0,
-                              onClick: () => handleDelete(info.row.original),
-                              // if:info.row.original.manager.id  == page.props.auth.user.id || page.props.auth.user.roles[0] == "admin",
-                          },
-                          () => 'Remove',
-                      ),
-                  ]
-                : '',
+                    h(Button, { variant: 'default', class: 'mx-1', onClick: () => handleEdit(info.row.original) }, () => 'Edit'),
+                    h(
+                        Button,
+                        {
+                            variant: 'destructive',
+                            class: 'mx-1',
+                            disabled: info.row.original.roomsCount != 0,
+                            onClick: () => handleDelete(info.row.original),
+                            // if:info.row.original.manager.id  == page.props.auth.user.id || page.props.auth.user.roles[0] == "admin",
+                        },
+                        () => 'Remove',
+                    ),
+                ]
+            : '',
     },
 ]);
 //append Manger column in case of Admin (Depending on the data sent from the backend)
@@ -75,6 +76,7 @@ if (props.floors?.data?.length > 0 && props.floors.data[0]?.manager) {
 }
 
 const fetchData = (url?: string) => {
+
     const params = new URLSearchParams();
     // Apply filtering
     Object.entries(filters.value).forEach(([key, value]) => {
@@ -90,8 +92,7 @@ const fetchData = (url?: string) => {
     }
 
     // Apply pagination
-    params.append('perPage', pagination.value.pageSize);
-    params.append('dataSize', pagination.value.dataSize);
+    if (pagination.value.pageIndex > 0)
     params.append('page', pagination.value.pageIndex + 1);
 
     // Fetch data with updated parameters
@@ -215,31 +216,13 @@ const closeAddModal = () => {
     resetAddForm();
 };
 
-//AlertDismiss
-const dismissError = () => {
-    page.props.errors = {};
-};
+
 </script>
 
 <template>
     <Head title="Manage Floors" />
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 rounded-xl px-4 py-4">
-            <!-- Errors -->
-            <Alert
-                class="mx-auto mt-4 w-10/12"
-                v-for="(value, index) of errors"
-                :key="index"
-                :show="true"
-                :variant="'destructive'"
-                :title="index"
-                :message="value"
-            >
-                <template v-slot:icon>
-                    <AlertCircle class="h-4 w-4" />
-                </template>
-                <template v-slot:dismissBtn><Button :variant="'destructive'" @click="dismissError">dismiss</Button></template>
-            </Alert>
 
             <!-- DataTable -->
             <div class="px-6">
@@ -248,27 +231,20 @@ const dismissError = () => {
                     :data="props.floors.data"
                     :filters="filters"
                     :pagination="pagination"
+                    :errors="errors"
                     :manual-pagination="true"
                     :manual-sorting="true"
                     :manual-filtering="true"
                     :sorting="sorting"
-                    @update:sorting="
-                        (newSorting) => {
-                            sorting = newSorting;
-                            //fetchData();
-                        }
+                    @update:sorting="(newSorting) => {sorting = newSorting;
+                            fetchData();}
                     "
                     @update:filters="
-                        (newFilters) => {
-                            filters = newFilters;
-                            fetchData();
-                        }
-                    "
+                        (newFilters) => {filters = newFilters;
+                            fetchData();}"
                     @update:pagination="
-                        (newPagination) => {
-                            pagination = newPagination;
-                            //fetchData();
-                        }
+                        (newPagination) => {pagination = newPagination;
+fetchData();}
                     "
                 >
                     <template #table-action>

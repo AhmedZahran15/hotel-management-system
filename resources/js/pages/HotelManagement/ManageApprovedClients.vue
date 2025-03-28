@@ -10,7 +10,6 @@ const breadcrumbs = [
 ];
 
 const props = defineProps(['approved_clients']);
-console.log(props);
 const params = new URLSearchParams(window.location.search);
 const filters = ref({
     name: params.get('filter[name]') || '',
