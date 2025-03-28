@@ -32,7 +32,7 @@ class RoomController extends Controller
         ->allowedSorts(['number', 'capacity','state','room_price','floor_number','manager_name'])
         ->leftJoin('users', function ($join) {
             $join->on('rooms.creator_user_id', '=', 'users.id');})
-        ->select('rooms.*', 'users.name as manager_name') 
+        ->select('rooms.*', 'users.name as manager_name')
         ->with(['floor','creatorUser']);
 
         // Apply different resource collections dynamically
@@ -57,12 +57,11 @@ class RoomController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request);
         $request -> validate([
             "floor_number"=>["required","int",Rule::exists("floors","number")],
             "number"=>["required","integer","min_digits:4", Rule::unique('rooms','number')],
             "capacity"=>["required","integer","max:5"],
-            "room_price"=>["required","integer",],
+            "room_price"=>["required","integer","min:10"],
             "state"=>["required","in:available,occupied,being_reserved,maintenance",],
         ]);
         $request["creator_user_id"]= Auth::user()->id;

@@ -21,7 +21,7 @@ class RoomFactory extends Factory
         return [
             "number" => fake()->unique()->numberBetween(1000, 9999),
             "capacity" => fake()->numberBetween(1, 5),
-            "room_price" =>fake()->randomElement([40,45,50]),
+            "room_price" =>fake()->randomElement([40,45,50,55,60,65,70,75,80,85,90,95,100])*100,
             "state" => fake()->randomElement(['available', 'maintenance']),
             "floor_number" => Floor::inRandomOrder()->first()->number,
             "creator_user_id" => User::role(['manager', 'admin'])->inRandomOrder()->value('id') ?? 1,
