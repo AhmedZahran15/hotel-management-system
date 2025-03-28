@@ -52,7 +52,7 @@ class ClientController extends Controller
                 }
             }),
         ])
- ->allowedSorts([
+        ->allowedSorts([
         'name',
         AllowedSort::custom('email', new class implements \Spatie\QueryBuilder\Sorts\Sort {
             public function __invoke(Builder $query, bool $descending, string $property) {
@@ -90,9 +90,53 @@ class ClientController extends Controller
     // return  clietns that are approved by the logged in user
     public function approved()
     {
-        return Inertia::render("HotelManagement/ManageApprovedClients", [
-            "approved_clients" => ClientResource::collection(Client::with('user', 'phones','countryInfo')->where("approved_by", Auth::id())->paginate(10))
-        ]);
+
+        $query = QueryBuilder::for(Client::class)
+        ->allowedFilters([
+            AllowedFilter::partial('name'),
+            AllowedFilter::custom('country', new class implements Filter {
+                public function __invoke(Builder $query, $value, string $property) {
+                    $query->whereHas('countryInfo', function ($q) use ($value) {
+                        $q->where('name', 'like', "%{$value}%"); // Assuming country name is stored in `name` column
+                    });
+                }
+            }),
+            AllowedFilter::custom('email', new class implements Filter {
+                public function __invoke(Builder $query, $value, string $property)
+                {
+                    $query->whereHas('user', function ($q) use ($value) {
+                        $q->where('email', 'like', "%{$value}%");
+                    });
+                }
+            }),
+        ])
+        ->allowedSorts([
+        'name',
+        AllowedSort::custom('email', new class implements \Spatie\QueryBuilder\Sorts\Sort {
+            public function __invoke(Builder $query, bool $descending, string $property) {
+                $direction = $descending ? 'desc' : 'asc';
+                $query->orderBy(
+                    DB::raw('(SELECT email FROM users WHERE users.id = clients.user_id)'),
+                    $direction
+                );
+            }
+        }),
+        AllowedSort::custom('country', new class implements \Spatie\QueryBuilder\Sorts\Sort {
+            public function __invoke(Builder $query, bool $descending, string $property) {
+                $direction = $descending ? 'desc' : 'asc';
+                $query->orderBy(
+                    DB::raw('(SELECT name FROM countries WHERE countries.id = clients.country)'),
+                    $direction
+                );
+            }
+        }),
+        ])->with(['user', 'phones', 'countryInfo']);
+        $query->where("approved_by", Auth::id())->paginate(10);
+
+        $clients = ClientResource::collection($query->paginate(10));
+
+
+        return Inertia::render("HotelManagement/ManageApprovedClients", ["approved_clients" => $clients]);
     }
 
     /**
@@ -228,7 +272,7 @@ class ClientController extends Controller
     public function approve(Client $client)
     {
         // Ensure only authorized users can approve clients
-        if (!Auth::check() || !Auth::user()->hasAnyPermission(['approve clients', 'manage clients'])) {
+        if (!Auth::check() || !Auth::user()->hasAnyPermission(['approve clients','view clients' ,'manage clients'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
