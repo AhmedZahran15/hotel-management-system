@@ -98,11 +98,6 @@ class HandleInertiaRequests extends Middleware
             // Load phones relationship first, then create the resource
             $user->profile->load('phones');
             $formattedProfile = (new ClientResource($user->profile))->resolve();
-
-            // Format phones array
-            $formattedProfile['phones'] = $formattedProfile['phones']
-                ->map(fn($phoneObj) => $phoneObj->resolve()['phone']);
-
             return $formattedProfile;
         }
 
