@@ -51,6 +51,9 @@ class AuthenticatedSessionController extends Controller
         $user->save();
         $request->session()->regenerate();
         // Use the route name directly instead of RouteServiceProvider::HOME
+        if(Auth::user()->user_type === 'client') {
+            return redirect()->intended(default: route('home'));
+        }
         return redirect()->intended(default: route('dashboard'));
     }
 

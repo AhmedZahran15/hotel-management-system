@@ -11,7 +11,7 @@ Route::get('reservations/make', [ReservationController::class, 'makeReservation'
 Route::middleware(['auth', 'verified', 'role:client'])
     ->prefix('dashboard')->group(function () {
         Route::post('reservations', [ReservationController::class, 'store'])->name('reservations.store');
-        Route::get('reservations/create', [ReservationController::class, 'create'])->name('reservations.create_client');
+        Route::get('reservations/rooms/{roomId}', [ReservationController::class, 'create'])->name('reservations.create');
 
         //payment
         Route::get('/reservations/payment/success', [ReservationController::class, 'paymentSuccess'])

@@ -109,13 +109,12 @@ class ReservationController extends Controller
     }
 
     public function create($roomId): Response
-    {
-        $room = Room::findOrFail($roomId);
-
-        return Inertia::render('Reservations/Create', [
-            'room' => $room,
-        ]);
-    }
+{
+    $room = Room::findOrFail($roomId);
+    return Inertia::render('Reservations/Create', [
+        'room' => $room,
+    ]);
+}
 
     public function store(StoreReservationRequest $request)
     {
