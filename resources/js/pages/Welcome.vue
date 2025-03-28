@@ -25,7 +25,7 @@ import { Link } from '@inertiajs/vue3';
                         <Link href="/reservations/make">
                             <Button size="lg" class="font-medium">Book Now</Button>
                         </Link>
-                        <Button variant="outline" size="lg" class="border-white text-black hover:bg-white/70"> Learn More </Button>
+                        <Button variant="outline" size="lg" class=""> Learn More </Button>
                     </div>
                 </div>
             </div>
@@ -145,8 +145,8 @@ import { Link } from '@inertiajs/vue3';
                 <Link href="/reservations/make">
                     <Button
                         size="lg"
-                        variant="default"
-                        class="mt-8 inline-flex w-full items-center justify-center border-2 border-white text-white hover:bg-white hover:text-neutral-900 sm:w-auto"
+                        variant="secondary"
+                        class=""
                     >
                         Make a Reservation
                     </Button>

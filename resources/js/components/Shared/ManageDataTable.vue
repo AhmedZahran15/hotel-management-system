@@ -125,8 +125,8 @@ const toggleSort = (columnId: string) => {
         <!-- Pagination -->
         <div class="mt-4 flex flex-wrap justify-center gap-2 flex-nowrap overflow-x-auto">
             <Button @click="pagination.pageIndex -= 1" :disabled="pagination.pageIndex === 0" class="rounded border px-3 py-1">Prev</Button>
-            <Button v-for="link in links" :key="link" @click="pagination.pageIndex = link - 1" :class="['rounded border px-3 py-1', pagination.pageIndex === link - 1 ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300']">{{ link }}</Button>
-            <Button @click="pagination.pageIndex += 1" :disabled="pagination.pageIndex === links.length - 1" class="rounded border px-3 py-1">Next</Button>
+            <Button v-for="link in links" :key="link" @click="pagination.pageIndex = link - 1" :class="['rounded border px-3 py-1', pagination.pageIndex === link - 1 ? ' dark:bg-white dark:text-black ' : 'bg-gray-200 hover:bg-gray-300 text-black dark:bg-gray-700 dark:text-white']">{{ link }}</Button>
+            <Button @click="pagination.pageIndex += 1" :disabled="pagination.pageIndex === links.length - 1" class="rounded border px-3 py-1 ">Next</Button>
         </div>
     </div>
 </template>
