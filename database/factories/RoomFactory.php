@@ -18,6 +18,9 @@ class RoomFactory extends Factory
      */
     public function definition(): array
     {
+        $roomTypes = ['Deluxe', 'Standard', 'Suite', 'Premium', 'Executive', 'Family'];
+        $roomFeatures = ['Ocean View', 'Mountain View', 'City View', 'Garden View'];
+
         return [
             "number" => fake()->unique()->numberBetween(1000, 9999),
             "capacity" => fake()->numberBetween(1, 5),
@@ -25,6 +28,8 @@ class RoomFactory extends Factory
             "state" => fake()->randomElement(['available', 'maintenance']),
             "floor_number" => Floor::inRandomOrder()->first()->number,
             "creator_user_id" => User::role(['manager', 'admin'])->inRandomOrder()->value('id') ?? 1,
+            "title" => fake()->randomElement($roomTypes) . ' ' . fake()->randomElement($roomFeatures) . ' Room',
+            "description" => fake()->paragraph(3),
         ];
     }
 }
