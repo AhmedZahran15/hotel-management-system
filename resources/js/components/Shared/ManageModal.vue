@@ -25,7 +25,7 @@ const props = defineProps({
     contentClass: {type: String, default:"max-w-3xl  max-h-[90vh] overflow-y-auto"}, // Class for content container
     disableEsc: { type: Boolean, default: true },
     buttonsVisible:{type:Boolean ,default:true},
-    errors: {type:Object, default: {}}
+    errors: {type:Object, default: () => ({})},
 });
 console.log(props.errors);
 const errors = computed(() => props.errors);
