@@ -112,7 +112,7 @@ const goToReservation = (roomId: number) => {
         });
         return;
     }
-    router.get(route('reservations.create_client', roomId));
+    router.get(route('reservations.create', roomId));
 };
 
 // Format price as currency - only used as fallback if price_formatted is not available
