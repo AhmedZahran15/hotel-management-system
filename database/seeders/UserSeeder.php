@@ -17,8 +17,8 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         //$users =  User::factory(20)->create();
-        for($i =0; $i<20 ; $i++ ){
-            if($i<2){
+        for($i =0; $i<50 ; $i++ ){
+            if($i<5){
                 $user = User::create([
                     'name' => fake()->name(),
                     'email' => fake()->unique()->safeEmail(),
@@ -37,7 +37,7 @@ class UserSeeder extends Seeder
                     "manager_id"=> null,
                 ]);
             }
-            else if($i<7){
+            else if($i<14){
                 $user = User::create([
                     'name' => fake()->name(),
                     'email' => fake()->unique()->safeEmail(),
