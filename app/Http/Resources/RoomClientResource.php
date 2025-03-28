@@ -22,9 +22,7 @@ class RoomClientResource extends JsonResource
             'price_formatted' => '$' . number_format($this->room_price / 100, 2),
             'state' => $this->state,
             'floor_number' => $this->floor_number,
-            'image_url' => $this->when($this->getFirstMedia('room_images'), function() {
-                return $this->getFirstMedia('room_images')->getUrl();
-            }),
+            'image_url' => $this->getImageUrl(),
         ];
     }
 }
