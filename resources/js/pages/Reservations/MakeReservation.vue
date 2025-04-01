@@ -47,19 +47,12 @@ interface Filters {
     sort?: string; // Add sort parameter
 }
 
-// Updated breadcrumbs without dashboard
-const breadcrumbs = [
-    { title: 'Home', href: route('home') },
-    { title: 'Make a Reservation', href: route('reservations.make'), active: true },
-];
-
 const page = usePage();
 
 const props = defineProps<{
     rooms: RoomsPagination;
     filters: Filters;
 }>();
-console.log(props.rooms);
 // State
 const filters = ref({
     search: props.filters?.search || '',
@@ -112,7 +105,7 @@ const goToReservation = (roomId: number) => {
         });
         return;
     }
-    router.get(route('reservations.create', roomId));
+    router.get(route('reservations.create', { roomId: roomId }));
 };
 
 // Format price as currency - only used as fallback if price_formatted is not available
@@ -171,7 +164,7 @@ const goToPage = (pageNumber: number) => {
 
 <template>
     <Head title="Make a Reservation" />
-    <PublicLayout :breadcrumbs="breadcrumbs">
+    <PublicLayout>
         <div class="container px-6 py-8 sm:mx-auto">
             <div class="mb-6 flex items-center justify-between">
                 <h1 class="text-2xl font-bold">Available Rooms</h1>
