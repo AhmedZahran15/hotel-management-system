@@ -54,6 +54,8 @@ class ClientController extends Controller
         ])
         ->allowedSorts([
         'name',
+        "id",
+        "gender",
         AllowedSort::custom('email', new class implements \Spatie\QueryBuilder\Sorts\Sort {
             public function __invoke(Builder $query, bool $descending, string $property) {
                 $direction = $descending ? 'desc' : 'asc';
@@ -63,7 +65,7 @@ class ClientController extends Controller
                 );
             }
         }),
-        AllowedSort::custom('country', new class implements \Spatie\QueryBuilder\Sorts\Sort {
+        AllowedSort::custom('country.name', new class implements \Spatie\QueryBuilder\Sorts\Sort {
             public function __invoke(Builder $query, bool $descending, string $property) {
                 $direction = $descending ? 'desc' : 'asc';
                 $query->orderBy(
@@ -112,6 +114,8 @@ class ClientController extends Controller
         ])
         ->allowedSorts([
         'name',
+        "id",
+        "gender",
         AllowedSort::custom('email', new class implements \Spatie\QueryBuilder\Sorts\Sort {
             public function __invoke(Builder $query, bool $descending, string $property) {
                 $direction = $descending ? 'desc' : 'asc';
@@ -121,7 +125,7 @@ class ClientController extends Controller
                 );
             }
         }),
-        AllowedSort::custom('country', new class implements \Spatie\QueryBuilder\Sorts\Sort {
+        AllowedSort::custom('country.name', new class implements \Spatie\QueryBuilder\Sorts\Sort {
             public function __invoke(Builder $query, bool $descending, string $property) {
                 $direction = $descending ? 'desc' : 'asc';
                 $query->orderBy(
@@ -130,8 +134,8 @@ class ClientController extends Controller
                 );
             }
         }),
-        ])->with(['user', 'phones', 'countryInfo']);
-        $query->where("approved_by", Auth::id())->paginate(10);
+    ])->with(['user', 'phones', 'countryInfo']);
+       $query->where("approved_by", Auth::id())->paginate(10);
 
         $clients = ClientResource::collection($query->paginate(10));
 
@@ -186,7 +190,7 @@ class ClientController extends Controller
         //handle phone;
         if ($request->phone) {
             $phone = Phone::create([
-                "phone" => $request->phone,
+                "phone_number" => $request->phone,
                 "client_id" => $client->id
             ]);
         }

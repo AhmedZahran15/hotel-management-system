@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Head, router, usePage } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import ManageDataTable from '@/components/Shared/ManageDataTable.vue'
+import {formulateURL, extractSorting} from '@/utils/helpers';
 
 const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -11,69 +12,49 @@ const breadcrumbs = [
 
 const props = defineProps(['approved_clients']);
 const params = new URLSearchParams(window.location.search);
-const filters = ref({
-    name: params.get('filter[name]') || '',
-    email: params.get('filter[email]') || '',
-    country: params.get('filter[country]')||'',
-});
-const sorting = params.get('sort')? ref<SortingValue[]>([
-    {
-        id: params.get('sort')?.replace('-', '') || '',
-        desc: params.get('sort')?.includes('-') || false,
-    },
-]): ref<SortingValue[]>([]);
-const pagination = ref({
-  pageIndex: props.approved_clients?.meta?.current_page -1 ,
-  pageSize: props.approved_clients?.meta?.per_page || 10,
-  dataSize: props.approved_clients?.meta?.total || 0,
-});
 
+const filters = ref([
+    {column:"Name", value: params.get('filter[name]')||'', urlName: 'name'},
+    {column:"Email", value: params.get('filter[email]')||'', urlName: 'email'},
+    {column:"Country", value: params.get('filter[country]')||'', urlName: 'country'},
+]);
+
+const sorting = ref(extractSorting(params));
+
+const pagination = ref({
+    pageIndex: props.approved_clients.meta.current_page - 1,
+    pageSize: props.approved_clients.meta.per_page,
+    dataSize: props.approved_clients.meta.total,
+});
 // Table Columns
 const columns = [
-    { accessorKey: 'id', header: 'ID' },
-    { accessorKey: 'name', header: 'Client Name' },
-    { accessorKey: 'email', header: 'Email' },
+    { accessorKey: 'id', header: 'ID',sortable: true},
+    { accessorKey: 'name', header: 'Client Name', sortable: true},
+    { accessorKey: 'email', header: 'Email', sortable: true },
+    { accessorKey: 'country.name', header: 'Country', sortable: true },
     {
         accessorKey: 'phones.0',
         header: 'Phone',
         cell: ({ row }) => (row.original.phones && row.original.phones.length > 0 ? row.original.phones[0] : 'N/A'),
     },
-    { accessorKey: 'country.name', header: 'Country' },
-    { accessorKey: 'gender', header: 'Gender' },
+    { accessorKey: 'gender', header: 'Gender', sortable: true },
 ];
 
 // Fetch Clients
 const fetchApprovedClients = () => {
-     const params = new URLSearchParams();
-    // Apply filtering
-    Object.entries(filters.value).forEach(([key, value]) => {
-        if (value) params.append(`filter[${key}]`, value);
-    });
-
-    // Apply sorting
-    if (sorting.value.length > 0) {
-        const sortString = sorting.value
-            .map((s: SortingValue) => (s.desc ? `-${s.id}` : s.id)) // Convert sorting object to query format
-            .join(',');
-        params.append('sort', sortString);
-    }
-
-    // Apply pagination
-    if (pagination.value.pageIndex > 0)
-    params.append('page', pagination.value.pageIndex + 1);
+    const params = formulateURL(filters.value, sorting.value, pagination.value);
 
     router.get(route('clients.approved'), Object.fromEntries(params.entries()), {
         preserveScroll: true,
         preserveState: true,
         only: ['approved_clients'],
-        onSuccess: (response) => {
+        onSuccess: () => {
             pagination.value = {
-                pageIndex: response.props.approved_clients.meta.current_page - 1,
-                pageSize: response.props.approved_clients.meta.per_page,
-                dataSize: response.props.approved_clients.meta.total,
+                pageIndex: props.approved_clients.meta.current_page - 1,
+                pageSize: props.approved_clients.meta.per_page,
+                dataSize: props.approved_clients.meta.total,
             };
         },
-
     });
 };
 

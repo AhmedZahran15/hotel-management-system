@@ -4,12 +4,11 @@ import ManageDataTable from '@/components/Shared/ManageDataTable.vue';
 import ManageModal from '@/components/Shared/ManageModal.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, h, ref } from 'vue';
-
+import {formulateURL, extractSorting} from '@/utils/helpers';
+import * as z from 'zod'
+import Form from '@/components/Shared/Form.vue';
 // Success Message
 const successMessage = ref('');
 
@@ -31,28 +30,18 @@ const errors = computed(() => page.props.errors);
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
-const selectedClientId = ref(null);
+const selectedClient = ref(null);
 const isLoading = ref(false);
-const form = ref({
-    name: '',
-    email: '',
-    country: '',
-    gender: '',
-    phones: '',
-    avatar_image: null,
-});
 const params = new URLSearchParams(window.location.search);
-const filters = ref({
-    name: params.get('filter[name]') || '',
-    email: params.get('filter[email]') || '',
-    country: params.get('filter[country]')||'',
-});
-const sorting = params.get('sort')? ref<SortingValue[]>([
-    {
-        id: params.get('sort')?.replace('-', '') || '',
-        desc: params.get('sort')?.includes('-') || false,
-    },
-]): ref<SortingValue[]>([]);
+
+const filters = ref([
+    {column:"Name", value: params.get('filter[name]')||'', urlName: 'name'},
+    {column:"Email", value: params.get('filter[email]')||'', urlName: 'email'},
+    {column:"Country", value: params.get('filter[country]')||'', urlName: 'country'},
+]);
+
+const sorting = ref(extractSorting(params));
+
 const pagination = ref({
     pageIndex: props.clients.meta.current_page - 1,
     pageSize: props.clients.meta.per_page,
@@ -61,12 +50,12 @@ const pagination = ref({
 
 // Table Columns
 const columns = [
-    { accessorKey: 'id', header: 'ID' },
-    { accessorKey: 'name', header: 'Name' },
-    { accessorKey: 'email', header: 'Email' },
-    { accessorKey: 'country.name', header: 'Country' },
+    { accessorKey: 'id', header: 'ID',sortable: true },
+    { accessorKey: 'name', header: 'Name',sortable: true },
+    { accessorKey: 'email', header: 'Email', sortable: true },
+    { accessorKey: 'country.name', header: 'Country',sortable: true },
     { accessorKey: 'phones.0', header: 'Phone' },
-    { accessorKey: 'gender', header: 'Gender' },
+    { accessorKey: 'gender', header: 'Gender',sortable: true },
     {
         accessorKey: 'approved_by',
         header: 'Status',
@@ -91,7 +80,7 @@ const columns = [
             if (userRole === 'manager' || userRole === 'admin') {
                 buttons.push(
                     h(Button, { variant: 'default', class: 'mx-1', onClick: () => openEditModal(client) }, () => 'Edit'),
-                    h(Button, { variant: 'destructive', class: 'mx-1', onClick: () => openDeleteModal(client.id) }, () => 'Remove'),
+                    h(Button, { variant: 'destructive', class: 'mx-1', onClick: () => openDeleteModal(client) }, () => 'Remove'),
                     client.approved_by === null
                         ? h(
                             Button,
@@ -129,24 +118,7 @@ const columns = [
 
 // Fetch Clients
 const fetchClients = () => {
-    const params = new URLSearchParams();
-    // Apply filtering
-    Object.entries(filters.value).forEach(([key, value]) => {
-        if (value) params.append(`filter[${key}]`, value);
-    });
-
-    // Apply sorting
-    if (sorting.value.length > 0) {
-        const sortString = sorting.value
-            .map((s: SortingValue) => (s.desc ? `-${s.id}` : s.id)) // Convert sorting object to query format
-            .join(',');
-        params.append('sort', sortString);
-    }
-
-    // Apply pagination
-    if (pagination.value.pageIndex > 0)
-    params.append('page', pagination.value.pageIndex + 1);
-
+    const params = formulateURL(filters.value, sorting.value, pagination.value);
 
     router.get(route('clients.index'), Object.fromEntries(params.entries()), {
         preserveScroll: true,
@@ -162,61 +134,42 @@ const fetchClients = () => {
     });
 };
 
-// Open Edit Modal
-const openEditModal = (client) => {
-    page.props.errors = {};
-    form.value = {
-        ...client,
-        country: typeof client.country === 'object' ? client.country.id : client.country,
-        avatar_image: null,
-    };
-    isEditModalOpen.value = true;
-};
-
-// Open Add Modal
-const openAddModal = (client) => {
-    page.props.errors = {};
-    resetAddForm();
-    isAddModalOpen.value = true;
-};
-
-// Open Delete Modal
-const openDeleteModal = (id) => {
-    selectedClientId.value = id;
-    isDeleteModalOpen.value = true;
-};
-
-// Reset Add Form
-const resetAddForm = () => {
-    form.value = {
-        name: '',
-        email: '',
-        country: '',
-        gender: '',
-        avatar_image: null,
-        password: '',
-        password_confirmation: '',
-    };
-};
-// Handle Image Upload
-const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    delete errors.value.avatar_image;
-    if (file && !['image/jpeg', 'image/jpg'].includes(file.type)) {
-        errors.value.avatar_image = 'Only JPG and JPEG files are allowed.';
-        form.value.avatar_image = null;
-        return;
+const formSchema =
+    z.object({
+        name: z.string().min(3, 'Client name is required').max(50, 'Too long').describe('Client name'),
+        email: z.string().email('client email is required').max(100, 'Too long').describe('client email'),
+        phone: z.string().regex(new RegExp(/^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/)).describe('phone number'),
+        country: z.enum(page.props.countries.map((country) => country.name), { required_error: 'Country is required' }).describe('Country'),
+        gender: z.enum(['male', 'female'], { required_error: 'Gender is required' }).describe('Gender'),
+        password: z.string().min(8, 'Password must be at least 8 characters long').describe('Password'),
+        password_confirmation: z.string().min(8, 'Password must be at least 8 characters long').describe('Password confirmation'),
+    });
+//ensures the password fields are hidden
+const fieldConfig ={
+    password_confirmation: {
+        inputProps:{type: 'password'}
+        },
+        password: {
+            inputProps:{type: 'password'}
+        },
+        gender:{component:'radio'},
     }
-    form.value.avatar_image = file;
+
+//handle avatar photo
+const handleFileChange = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (input.files && input.files.length > 0) {
+    image.value = input.files[0];
+  }
 };
+const image = ref(null);
 
 // Handle Add Client
-const handleAdd = () => {
-
-    const formData = new FormData();
-    Object.keys(form.value).forEach((key) => {
-        if (form.value[key] !== null) formData.append(key, form.value[key]);
-    });
+const onAddSubmit = (data:any) => {
+    const formData = {...data, avatar_image: image.value};
+    formData.country = page.props.countries.find((country) => country.name === data.country).id.toString();
+    if(image.value)formData.avatar_image = image.value
+    else delete formData.avatar_image
     router.post(route('clients.store'), formData, {
         onSuccess: () => {
             isAddModalOpen.value = false;
@@ -225,25 +178,59 @@ const handleAdd = () => {
     });
 };
 
-// Handle Edit Client
-const handleEdit = () => {
-    const formData = new FormData();
-    formData.append('_method', 'PATCH');
-    Object.keys(form.value).forEach((key) => {
-        if (form.value[key] !== null) formData.append(key, form.value[key]);
+
+const editFormSchema =
+    z.object({
+        name: z.string().min(3, 'Client name is required').max(50, 'Too long').describe('Client name'),
+        email: z.string().email('client email is required').max(100, 'Too long').describe('client email'),
+        phone: z.string().regex(new RegExp(/^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/)).describe('phone number'),
+        country: z.enum(page.props.countries.map((country) => country.name), { required_error: 'Country is required' }).describe('Country'),
+        gender: z.enum(['male', 'female'], { required_error: 'Gender is required' }).describe('Gender'),
+        password: z.string().min(8, 'Password must be at least 8 characters long').optional().describe('Password'),
+        password_confirmation: z.string().min(8, 'Password must be at least 8 characters long').optional().describe('Password confirmation'),
     });
 
+
+// Open Edit Modal
+const openEditModal = (client) => {
+    selectedClient.value = {...client};
+    console.log(selectedClient.value);
+    selectedClient.value.country = client.country.name;
+    selectedClient.value.phone = client.phones[0];
+    isEditModalOpen.value = true;
+};
+
+
+const onEditSubmit = (data:any) => {
+    const formData = {...data, avatar_image: image.value};
+    formData.country = page.props.countries.find((country) => country.name === data.country).id.toString();
+
+    if(image.value)formData.avatar_image = image.value
+    else delete formData.avatar_image
+
+    if(!data.password || data.password === ''){
+        delete formData.password;
+        delete formData.password_confirmation;
+    }
+    formData['_method']= 'PATCH';
+
     // Submit the form
-    router.post(`/dashboard/clients/${form.value.id}`, formData, {
+    router.post(route('clients.update', selectedClient.value.id), formData, {
         onSuccess: () => {
             isEditModalOpen.value = false;
         },
     });
 };
 
+// Open Delete Modal
+const openDeleteModal = (client) => {
+    selectedClient.value = client;
+    isDeleteModalOpen.value = true;
+};
+
 // Confirm Delete
 const confirmDelete = () => {
-    router.delete(`/dashboard/clients/${selectedClientId.value}`, {
+    router.delete(route('clients.destroy', selectedClient.value.id), {
         preserveState: true,
         onSuccess: () => {
             isDeleteModalOpen.value = false;
@@ -311,7 +298,7 @@ const approveClient = (id) => {
                 "
             >
                 <template #table-action>
-                    <Button variant="default" @click="openAddModal">Add Client</Button>
+                    <Button variant="default" @click="isAddModalOpen = true">Add Client</Button>
                 </template>
             </ManageDataTable>
 
@@ -332,72 +319,20 @@ const approveClient = (id) => {
                 title="Edit Client"
                 v-model:open="isEditModalOpen"
                 :buttonsVisible="false"
-                :errors="errors">
+                :errors="errors"
+                :disableEsc="false">
                 <template #description>
-                    <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
-                        <div class="flex flex-col gap-1">
-                            <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="phones">Phone Number</Label>
-                            <Input id="phone" v-model="form.phones" type="tel" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="country">Country</Label>
-                            <Select v-model="form.country">
-                                <SelectTrigger id="country" class="w-full">
-                                    <SelectValue placeholder="Select a country" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem v-for="country in countries" :key="country.id" :value="country.id">
-                                        {{ country.name }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="gender">Gender</Label>
-                            <RadioGroup v-model="form.gender" id="gender" class="flex items-center gap-4" :key="'gender-group-' + isEditModalOpen">
-                                <div class="flex items-center">
-                                    <RadioGroupItem value="male" id="edit-male" class="mr-2" />
-                                    <Label for="edit-male">Male</Label>
-                                </div>
-                                <div class="flex items-center">
-                                    <RadioGroupItem value="female" id="edit-female" class="mr-2" />
-                                    <Label for="edit-female">Female</Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="avatar">Avatar</Label>
-                            <Input id="avatar" type="file" @change="handleImageUpload" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="password">Password (leave empty to keep current)</Label>
-                            <Input id="password" type="password" v-model="form.password" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="password_confirmation">Confirm Password</Label>
-                            <Input id="password_confirmation" type="password" v-model="form.password_confirmation" />
-                        </div>
-
-                        <div class="flex justify-end gap-2">
-                            <Button variant="secondary" @click="isEditModalOpen = false">Close</Button>
-                            <Button type="submit">Update</Button>
-                        </div>
-                    </form>
+                    <Form :schema="editFormSchema"
+                        :submitText="'Update'"
+                        :initialValues="selectedClient"
+                        :fieldConfig="fieldConfig"
+                        @submit="onEditSubmit($event);"
+                        @cancel="isEditModalOpen = false ">
+                            <div class="form-group">
+                                <label for="image">Client Photo</label>
+                                <Input type="file" id="image" name="image" @change="handleFileChange"  />
+                            </div>
+                    </Form>
                 </template>
             </ManageModal>
 
@@ -406,72 +341,21 @@ const approveClient = (id) => {
                 :errors="errors"
                 title="Add Client"
                 v-model:open="isAddModalOpen"
-                :buttonsVisible="false">
+                :buttonsVisible="false"
+                :disableEsc="false"
+                >
                 <template #description>
-
-                    <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
-                        <div class="flex flex-col gap-1">
-                            <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="phones">Phone Number</Label>
-                            <Input id="phone" v-model="form.phones" type="tel" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="country">Country</Label>
-                            <Select v-model="form.country">
-                                <SelectTrigger id="country" class="w-full">
-                                    <SelectValue placeholder="Select a country" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem v-for="country in countries" :key="country.id" :value="country.id">
-                                        {{ country.name }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="gender">Gender</Label>
-                            <RadioGroup v-model="form.gender" id="gender" class="flex items-center gap-4">
-                                <RadioGroupItem value="male" id="male" class="mr-2" />
-                                <Label for="male">Male</Label>
-                                <RadioGroupItem value="female" id="female" class="mr-2" />
-                                <Label for="female">Female</Label>
-                            </RadioGroup>
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="avatar">Avatar</Label>
-                            <Input id="avatar" type="file" @change="handleImageUpload" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="password">Password</Label>
-                            <Input id="password" type="password" v-model="form.password" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="password_confirmation">Confirm Password</Label>
-                            <Input id="password_confirmation" type="password" v-model="form.password_confirmation" />
-                        </div>
-
-                        <div class="flex justify-end gap-2">
-                            <Button
-                                variant="secondary"
-                                @click=" () => {isAddModalOpen = false;resetAddForm();}">Close</Button
-                            >
-                            <Button type="submit">Add</Button>
-                        </div>
-                    </form>
+                    <Form :schema="formSchema"
+                        :submitText="'Add'"
+                        :initialValues="{}"
+                        :fieldConfig="fieldConfig"
+                        @submit="onAddSubmit($event);"
+                        @cancel="isAddModalOpen = false ">
+                            <div class="form-group">
+                                <label for="image">Client Photo</label>
+                                <Input type="file" id="image" name="image" @change="handleFileChange"  />
+                            </div>
+                    </Form>
                 </template>
             </ManageModal>
         </div>
