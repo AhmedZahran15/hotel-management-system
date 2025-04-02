@@ -42,14 +42,14 @@ const table = useVueTable({
 watch(sorting, (newSorting) => emit('update:sorting', newSorting), { deep: true });
 watch(pagination, (newPagination) => emit('update:pagination', newPagination), { deep: true });
 
-const toggleSort = (columnId: string) => {
-    if (!Object.keys(filters.value).includes(columnId)) return;
-
-    const existingIndex = sorting.value.findIndex((s) => s.id === columnId);
+const toggleSort = (columnAccessorKey: string) => {
+    const sortable = props.columns.find((c) => c.accessorKey === columnAccessorKey)?.sortable  ?? false ;
+    if( !sortable ) return;
+    const existingIndex = sorting.value.findIndex((s) => s.id === columnAccessorKey);
     pagination.value.pageIndex = 0;
 
     if (existingIndex === -1) {
-        sorting.value.push({ id: columnId, desc: false });
+        sorting.value.push({ id: columnAccessorKey, desc: false });
     } else if (!sorting.value[existingIndex].desc) {
         sorting.value[existingIndex].desc = true;
     } else {
@@ -63,12 +63,12 @@ const toggleSort = (columnId: string) => {
         <!-- Filters -->
         <div class="flex flex-col gap-4 py-4">
             <div class="grid w-full gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                <div v-for="(value, column) in filters" :key="column" class="flex items-center gap-3 min-w-0">
-                    <Label class="text-left font-bold">{{ column }}:</Label>
+                <div v-for="filter in filters" :key="filter.column" class="flex items-center gap-3 min-w-0">
+                    <Label class="text-left font-bold">{{ filter.column }}:</Label>
                     <Input
                         type="text"
-                        v-model="filters[column]"
-                        :placeholder="'Filter ' + column + '...'"
+                        v-model="filter.value"
+                        :placeholder="'Filter ' + filter.column + ' ...'"
                         class="w-2/3 flex-grow shadow-md"
                         @keyup.enter="pagination.pageIndex = 0; emit('update:filters', filters)"
                     />
@@ -95,12 +95,12 @@ const toggleSort = (columnId: string) => {
                             v-for="header in headerGroup.headers"
                             :key="header.id"
                             class="cursor-pointer text-center px-4 py-2 transition hover:bg-gray-100 whitespace-nowrap"
-                            @click="toggleSort(header.column.id)"
+                            @click="toggleSort(header.column.columnDef.accessorKey)"
                         >
                             <span class="flex items-center justify-center gap-1">
                                 <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header" :props="header.getContext()" />
-                                <span v-if="sorting.find((s) => s.id === header.column.id)">
-                                    <ArrowUp class="h-4 w-4 text-gray-500" v-if="!sorting.find((s) => s.id === header.column.id)?.desc" />
+                                <span v-if="sorting.find((s) => s.id === header.column.columnDef.accessorKey)">
+                                    <ArrowUp class="h-4 w-4 text-gray-500" v-if="!sorting.find((s) => s.id === header.column.columnDef.accessorKey)?.desc" />
                                     <ArrowDown class="h-4 w-4 text-gray-500" v-else />
                                 </span>
                             </span>
