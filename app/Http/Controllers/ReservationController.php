@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
 // use Stripe\Session;
 use Stripe\Checkout\Session;
@@ -30,7 +31,41 @@ class ReservationController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $query = Reservation::with(['room', 'client']);
+
+        // Start the query builder
+        $query = QueryBuilder::for(Reservation::class)
+            ->allowedIncludes(['room', 'client', 'client.approvedBy'])
+            ->allowedSorts([
+                'id',
+                'created_at',
+                'updated_at',
+                'reservation_price',   // Sort by room price
+                'room_number',  // Sort by room number
+                'accompany_number',
+                AllowedSort::callback('client.name', function ($query, string $direction) {
+                    $direction = strtolower($direction) === '1' ? 'desc' : 'asc'; // Ensure it's "asc" or "desc"
+                    $query->join('clients', 'reservations.client_id', '=', 'clients.id')
+                        ->orderBy('clients.name', $direction);
+                }),
+            ])
+            ->allowedFilters([
+                AllowedFilter::partial('room_number'),
+                AllowedFilter::partial('reservation_price'),
+                AllowedFilter::exact('accompany_number'),
+                AllowedFilter::scope('date_between'), // Custom date range filter
+                AllowedFilter::callback('client.name', function ($query, $value) {
+                    $query->whereHas('client', function ($q) use ($value) {
+                        $q->where('name', 'LIKE', "%$value%");
+                    });
+                }),
+                AllowedFilter::callback('room.price', function ($query, $value) {
+                    $query->whereHas('room', function ($q) use ($value) {
+                        $q->where('price', $value);
+                    });
+                }),
+            ]);
+
+        // Apply role-based restrictions
         if ($user->hasRole('admin')) {
             $query->with('client.approvedBy:id,name,email');
         } elseif ($user->hasRole('manager')) {
@@ -53,11 +88,13 @@ class ReservationController extends Controller
             }
         }
 
-        $reservations = $query->orderBy('id', 'asc')->paginate(10);
+        // Execute the query with pagination
+        $reservations = $query->paginate(10);
+
+        // Return response
         return Inertia::render('HotelManagement/ManageReservations', [
             'reservations' => $reservations,
         ]);
-        // return $reservations;
     }
 
     /**
