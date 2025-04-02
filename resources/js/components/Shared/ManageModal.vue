@@ -85,7 +85,7 @@ const dismissError = (error) => {
                         :message="value">
                         <template v-slot:icon><AlertCircle class="h-4 w-4" /></template>
                         <template v-slot:dismissBtn>
-                            <Button class="bg-white text-black" @click="dismissError(index)">Dismiss</Button>
+                            <Button :variant="'destructive'" @click="dismissError(index)">Dismiss</Button>
                         </template>
                     </Alert>
                     <slot name="description">{{ description }}</slot>
