@@ -1,8 +1,8 @@
 export const formulateURL = (filters:any,sorting: any,pagination:any)=>{
     const params = new URLSearchParams();
     // Apply filtering
-    Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(`filter[${key}]`, value);
+    filters.forEach((filter: any) => {
+        if (filter.value) params.append(`filter[${filter.urlName}]`, filter.value);
     });
 
     // Apply sorting
@@ -18,5 +18,19 @@ export const formulateURL = (filters:any,sorting: any,pagination:any)=>{
     params.append('page', pagination.pageIndex + 1);
 
     return params;
+}
+export const extractSorting = (params: URLSearchParams) => {
+    const sortParams = params.get('sort');
+    let sorting : SortingValue[] = [];
+    if (sortParams) {
+        sorting = sortParams.split(',').map(sort => {
+            return {
+                id: sort.replace('-', ''), // Remove '-' to get the column name
+                desc: sort.startsWith('-'), // If '-' is present, sort descending
+                urlName: sort.replace('-', '') // Same as column name for URL handling
+            };
+        });
+    }
+    return sorting
 }
 
