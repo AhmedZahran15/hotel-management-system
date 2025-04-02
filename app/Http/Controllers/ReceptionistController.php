@@ -26,7 +26,7 @@ class ReceptionistController extends Controller
             AllowedFilter::partial('name'),
             AllowedFilter::partial('email'),
             ])
-        ->allowedSorts(['name', 'email',])
+        ->allowedSorts(['name', 'email','id', 'created_at'])
         ->with(['profile', 'creator']);
 
         $resource = $user->hasRole('admin') ? ReceptionistAdminResource::class : ReceptionistManagerResource::class;

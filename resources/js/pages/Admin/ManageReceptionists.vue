@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, h, ref } from 'vue';
-
+import {formulateURL, extractSorting} from '@/utils/helpers';
 //error ,success messages
 const successMessage = ref('');
 const errorMessage = ref('');
@@ -41,16 +41,13 @@ const isLoading = ref(false);
 const form = ref({ name: '', email: '', password: '', password_confirmation: '', national_id: '', avatar_image: null });
 
 const params = new URLSearchParams(window.location.search);
-const filters = ref({
-    name: params.get('filter[name]') || '',
-    email: params.get('filter[email]'),
-});
-const sorting = params.get('sort')? ref<SortingValue[]>([
-    {
-        id: params.get('sort')?.replace('-', '') || '',
-        desc: params.get('sort')?.includes('-') || false,
-    },
-]):ref<SortingValue[]>([]);
+
+const filters = ref([
+    {column:"Name", value: params.get('filter[name]')||'', urlName: 'name'},
+    {column:"Email", value: params.get('filter[email]')||'', urlName: 'email'},
+]);
+
+const sorting = ref(extractSorting(params));
 
 const pagination = ref({
     pageIndex: props.receptionists.meta.current_page - 1,
@@ -60,25 +57,26 @@ const pagination = ref({
 
 // Table Columns
 const columns = [
-    { accessorKey: 'id', header: 'ID' },
-    { accessorKey: 'name', header: 'Name' },
-    { accessorKey: 'email', header: 'Email' },
+    { accessorKey: 'id', header: 'ID', sortable: true },
+    { accessorKey: 'name', header: 'Name', sortable: true },
+    { accessorKey: 'email', header: 'Email', sortable: true },
     {
         accessorKey: 'created_at',
         header: 'Created At',
+        sortable: true,
         cell: (info) => new Date(info.getValue()).toLocaleString(),
     },
     ...(isAdmin
         ? [
-              {
-                  accessorKey: 'creator',
-                  header: 'Manager Creator',
-                  cell: (info) => {
-                      const creator = info.getValue();
-                      return creator && creator.name ? creator.name : 'Manager not found';
-                  },
-              },
-          ]
+            {
+                accessorKey: 'creator',
+                header: 'Manager Creator',
+                cell: (info) => {
+                    const creator = info.getValue();
+                    return creator && creator.name ? creator.name : 'Manager not found';
+                },
+            },
+        ]
         : []),
         {
             accessorKey: 'Actions',
@@ -136,24 +134,7 @@ const columns = [
 
 // Fetch Receptionists
 const fetchReceptionists = () => {
-    const params = new URLSearchParams();
-    // Apply filtering
-    Object.entries(filters.value).forEach(([key, value]) => {
-        if (value) params.append(`filter[${key}]`, value);
-    });
-
-    // Apply sorting
-    if (sorting.value.length > 0) {
-        const sortString = sorting.value
-            .map((s: SortingValue) => (s.desc ? `-${s.id}` : s.id)) // Convert sorting object to query format
-            .join(',');
-        params.append('sort', sortString);
-    }
-
-    // Apply pagination
-    if (pagination.value.pageIndex > 0)
-    params.append('page', pagination.value.pageIndex + 1);
-
+    const params = formulateURL(filters.value, sorting.value, pagination.value);
     router.get(route('receptionists.index'), Object.fromEntries(params.entries()), {
         preserveScroll: true,
         preserveState: true,
