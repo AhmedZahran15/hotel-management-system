@@ -97,6 +97,7 @@ class HandleInertiaRequests extends Middleware
         if ($user->user_type == "client") {
             // Load phones relationship first, then create the resource
             $user->profile->load('phones');
+            $user->profile->load('countryInfo');
             $formattedProfile = (new ClientResource($user->profile))->resolve();
             return $formattedProfile;
         }
