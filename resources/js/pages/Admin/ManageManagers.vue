@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, h, ref } from 'vue';
+import {formulateURL, extractSorting} from '@/utils/helpers';
+
 
 // Breadcrumbs for navigation
 const breadcrumbs = [
@@ -32,16 +34,13 @@ const form = ref({
 
 const errors = computed(() => page.props.errors);
 const params = new URLSearchParams(window.location.search);
-const filters = ref({
-    name: params.get('filter[name]') || '',
-    email: params.get('filter[email]')||'',
-});
-const sorting = params.get('sort')? ref<SortingValue[]>([
-    {
-        id: params.get('sort')?.replace('-', '') || '',
-        desc: params.get('sort')?.includes('-') || false,
-    },
-]):ref<SortingValue[]>([]);
+
+const filters = ref([
+    {column:"Name", value: params.get('filter[name]')||'', urlName: 'name'},
+    {column:"Email", value: params.get('filter[email]')||'', urlName: 'email'},
+]);
+
+const sorting = ref(extractSorting(params));
 
 const pagination = ref({
     pageIndex: props.managers.meta.current_page - 1,
@@ -49,11 +48,12 @@ const pagination = ref({
     dataSize: props.managers.meta.total,
 });
 
+
 // Table Columns
 const columns = [
-    { accessorKey: 'id', header: 'ID' },
-    { accessorKey: 'name', header: 'Name' },
-    { accessorKey: 'email', header: 'Email' },
+    { accessorKey: 'id', header: 'ID', sortable:true },
+    { accessorKey: 'name', header: 'Name', sortable:true },
+    { accessorKey: 'email', header: 'Email', sortable:true },
     { accessorKey: 'profile.national_id', header: 'National ID' },
     {
         accessorKey: 'avatar_image',
@@ -79,23 +79,8 @@ const columns = [
 
 // Fetch Managers
 const fetchManagers = () => {
-     const params = new URLSearchParams();
-    // Apply filtering
-    Object.entries(filters.value).forEach(([key, value]) => {
-        if (value) params.append(`filter[${key}]`, value);
-    });
-
-    // Apply sorting
-    if (sorting.value.length > 0) {
-        const sortString = sorting.value
-            .map((s: SortingValue) => (s.desc ? `-${s.id}` : s.id)) // Convert sorting object to query format
-            .join(',');
-        params.append('sort', sortString);
-    }
-
-    // Apply pagination
-    if (pagination.value.pageIndex > 0)
-    params.append('page', pagination.value.pageIndex + 1);
+    console.log(sorting.value)
+    const params = formulateURL(filters.value, sorting.value,pagination.value);
 
     router.get(route('managers.index'), Object.fromEntries(params.entries()), {
         preserveScroll: true,
@@ -191,6 +176,7 @@ const confirmDelete = () => {
             <ManageDataTable
                 title="Managers"
                 :columns="columns"
+                :errors="errors"
                 :data="props.managers.data"
                 :pagination="pagination"
                 :filters="filters"

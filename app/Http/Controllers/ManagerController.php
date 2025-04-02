@@ -26,7 +26,7 @@ class ManagerController extends Controller
             AllowedFilter::partial('name'),
             AllowedFilter::partial('email'),
             ])
-        ->allowedSorts(['name', 'email',])
+        ->allowedSorts(['id','name', 'email',])
         ->with(['profile']);
 
         return Inertia::render('Admin/ManageManagers', ['managers' => UserResource::collection( $query->paginate(10))]);
