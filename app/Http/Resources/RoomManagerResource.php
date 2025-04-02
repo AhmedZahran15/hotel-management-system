@@ -20,6 +20,7 @@ class RoomManagerResource extends JsonResource
             "capacity"=> $this->capacity,
             "room_price"=> $this->room_price/100,
             "state" => $this->state,
+            "floor_number"=>$this->floor_number,
             "floor"=> new FloorManagerResource($this->whenLoaded("floor")),
             "manager_id"=>$this->creator_user_id,
             "title"=>$this->title,

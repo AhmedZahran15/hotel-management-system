@@ -17,7 +17,7 @@ class FloorManagerResource extends JsonResource
         return [
             "number"=> $this->number,
             "name"=> $this->name,
-            "roomsCount" => $this->whenLoaded('rooms', fn() => $this->rooms->count()),
+            "rooms_count" => $this->whenLoaded('rooms', fn() => $this->rooms->count()),
             "reservedRoomsCount" => $this->whenLoaded('rooms', fn() => $this->rooms->where('state', "occupied")->count()),
             "availabledRoomsCount" => $this->whenLoaded('rooms', fn() => $this->rooms->where('state', "available")->count()),
             "manager_id" => $this->creator_user_id,
