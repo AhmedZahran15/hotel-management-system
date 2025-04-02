@@ -1,16 +1,16 @@
 <script setup lang="ts">
+import Form from '@/components/Shared/Form.vue';
 import DataTable from '@/components/Shared/ManageDataTable.vue';
 import Modal from '@/components/Shared/ManageModal.vue';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast/use-toast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
+import { formulateURL, extractSorting } from '@/utils/helpers.ts';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { computed, defineProps, h, ref } from 'vue';
-import {formulateURL} from '@/utils/helpers.ts';
-import * as z from 'zod'
-import Form from '@/components/Shared/Form.vue';
+import * as z from 'zod';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Manage Floors',
@@ -22,17 +22,12 @@ const page = usePage();
 const props = defineProps(['floors']);
 const errors = computed(() => page.props.errors);
 const params = new URLSearchParams(window.location.search);
-const filters = ref({
-    number: params.get('filter[number]') || '',
-    name: params.get('filter[name]') || '',
-});
+const filters = ref([
+    {column:"Floor Number", value: params.get('filter[number]')||'', urlName: 'number'},
+    {column:"Floor Name", value: params.get('filter[name]')||'', urlName: 'name'},
+]);
 
-const sorting = params.get('sort')? ref<SortingValue[]>([
-    {
-        id: params.get('sort')?.replace('-', '') || '',
-        desc: params.get('sort')?.includes('-') || false,
-    },
-]):ref<SortingValue[]>([]);
+const sorting = ref(extractSorting(params));
 
 const pagination = ref({
     pageIndex: props.floors.meta.current_page - 1,
@@ -41,20 +36,31 @@ const pagination = ref({
 });
 //Columns for DataTable
 const columns = ref<ColumnDef<Floor>[]>([
-    { accessorKey: 'number', header: 'Floor Number' },
-    { accessorKey: 'name', header: 'Floor Name' },
-    { accessorKey: 'roomsCount', header: 'No of rooms' },
-    { accessorKey: 'reservedRoomsCount', header: 'Reserved' },
-    { accessorKey: 'availabledRoomsCount', header: 'Available' },
-    {accessorKey: 'Edit', header: 'Actions',
+    { accessorKey: 'number', header: 'Floor Number',sortable: true },
+    { accessorKey: 'name', header: 'Floor Name',sortable: true },
+    { accessorKey: 'rooms_count', header: 'No of rooms',sortable: true },
+    { accessorKey: 'reservedRoomsCount', header: 'Reserved',sortable: false },
+    { accessorKey: 'availabledRoomsCount', header: 'Available',sortable: false },
+    {
+        accessorKey: 'Edit',
+        header: 'Actions',
         cell: (info: any) =>
             info.row.original.manager_id == page.props.auth.user.id || page.props.auth.user.roles[0] == 'admin'
-                ?[
+                ? [
                     h(Button, { variant: 'default', class: 'mx-1', onClick: () => handleEdit(info.row.original) }, () => 'Edit'),
-                    h(Button,{variant: 'destructive', class: 'mx-1', disabled: info.row.original.roomsCount != 0,
-                            onClick: () => handleDelete(info.row.original),},() => 'Remove',),
+                    h(
+                        Button,
+                        {
+                            variant: 'destructive',
+                            class: 'mx-1',
+                            disabled: info.row.original.roomsCount != 0,
+                            onClick: () => handleDelete(info.row.original),
+                        },
+                        () => 'Remove',
+                    ),
                 ]
-                : '',}
+                : '',
+    },
 ]);
 
 //append Manger column in case of Admin (Depending on the data sent from the backend)
@@ -63,7 +69,6 @@ if (props.floors?.data?.length > 0 && props.floors.data[0]?.manager) {
 }
 
 const fetchData = (url?: string) => {
-
     const params = formulateURL(filters.value, sorting.value, pagination.value);
 
     // Fetch data with updated parameters
@@ -98,10 +103,9 @@ const deleteConfirmed = () => {
 };
 
 //form validation
-const FormSchema =
-    z.object({
-        FloorName: z.string().min(2, 'Floor name is required').max(50, 'Too long').describe('Floor name'),
-    });
+const FormSchema = z.object({
+    FloorName: z.string().min(2, 'Floor name is required').max(50, 'Too long').describe('Floor name'),
+});
 
 // Edit functionality
 const editModalOpen = ref<boolean>(false);
@@ -113,12 +117,11 @@ const editForm = ref({
 
 const handleEdit = (floor: Floor) => {
     selectedFloor.value = floor;
-    editForm.value["FloorName"] = floor.name;
+    editForm.value['FloorName'] = floor.name;
     editModalOpen.value = true;
 };
 
 const onEditSubmit = (formValues: any) => {
-    console.log('formValues', formValues);
     if (selectedFloor.value) {
         router.put(
             route('floors.update', selectedFloor.value.number),
@@ -139,11 +142,11 @@ const onEditSubmit = (formValues: any) => {
 // Add functionality
 const addModalOpen = ref<boolean>(false);
 const onAddSubmit = (formValues: any) => {
-    console.log('formValues', formValues);
+    console.log(formValues);
     router.post(
         route('floors.store'),
         {
-            name: formValues.addFloorName,
+            name: formValues.FloorName,
         },
         {
             preserveScroll: true,
@@ -161,7 +164,6 @@ const onAddSubmit = (formValues: any) => {
     <Head title="Manage Floors" />
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 rounded-xl px-4 py-4">
-
             <!-- DataTable -->
             <div class="px-6">
                 <DataTable
@@ -174,19 +176,27 @@ const onAddSubmit = (formValues: any) => {
                     :manual-sorting="true"
                     :manual-filtering="true"
                     :sorting="sorting"
-                    @update:sorting="(newSorting) => {sorting = newSorting;
-                            fetchData();}
+                    @update:sorting="
+                        (newSorting) => {
+                            sorting = newSorting;
+                            fetchData();
+                        }
                     "
                     @update:filters="
-                        (newFilters) => {filters = newFilters;
-                            fetchData();}"
+                        (newFilters) => {
+                            filters = newFilters;
+                            fetchData();
+                        }
+                    "
                     @update:pagination="
-                        (newPagination) => {pagination = newPagination;
-fetchData();}
+                        (newPagination) => {
+                            pagination = newPagination;
+                            fetchData();
+                        }
                     "
                 >
                     <template #table-action>
-                        <Button @click="addModalOpen=true" class="px-16">Add Floor</Button>
+                        <Button @click="addModalOpen = true" class="px-16">Add Floor</Button>
                     </template>
                 </DataTable>
             </div>
@@ -212,13 +222,16 @@ fetchData();}
                 v-model:open="editModalOpen"
                 :buttonsVisible="false"
                 :disableEsc="false"
-                :errors="errors">
+                :errors="errors"
+            >
                 <template #description>
-                    <Form :schema="FormSchema"
+                    <Form
+                        :schema="FormSchema"
                         :initialValues="editForm"
                         :submitText="'Update'"
-                        @submit="onEditSubmit($event);"
-                        @cancel="editModalOpen = false"/>
+                        @submit="onEditSubmit($event)"
+                        @cancel="editModalOpen = false"
+                    />
                 </template>
             </Modal>
 
@@ -229,13 +242,10 @@ fetchData();}
                 v-model:open="addModalOpen"
                 :buttonsVisible="false"
                 :disableEsc="false"
-                :errors="errors">
-                <template #description >
-                        <Form :schema="FormSchema"
-                            :submitText="'Add'"
-                            :initialValues="{}"
-                            @submit="onAddSubmit($event);"
-                            @cancel="AddModalOpen = false"/>
+                :errors="errors"
+            >
+                <template #description>
+                    <Form :schema="FormSchema" :submitText="'Add'" :initialValues="{}" @submit="onAddSubmit($event)" @cancel="AddModalOpen = false" />
                 </template>
             </Modal>
         </div>

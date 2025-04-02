@@ -14,17 +14,27 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
-
+use Spatie\QueryBuilder\AllowedSort;
 
 class FloorController extends Controller
 {
     public function index(){
         $query = QueryBuilder::for(Floor::class)
+        ->withCount('rooms') // Adds a `rooms_count` column automatically
         ->allowedFilters([
             AllowedFilter::partial('number'),
             AllowedFilter::partial('name'),
         ])
-        ->allowedSorts(['number', 'name'])
+        ->allowedSorts([
+            'number',
+            'name',
+            'rooms_count', // This now works without issues
+            AllowedSort::callback('manager.name', function ($query, string $direction) {
+                $direction = strtolower($direction) === '1' ? 'desc' : 'asc';
+                $query->join('users', 'floors.creator_user_id', '=', 'users.id')
+                    ->orderBy('users.name', $direction);
+            }),
+        ])
         ->with('rooms');
 
     if (Auth::user()->hasRole("manager")) {
