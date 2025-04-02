@@ -9,6 +9,7 @@ use App\Rules\UserHasRoleOrPermission;
 use Illuminate\Broadcasting\Broadcasters\AblyBroadcaster;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -111,21 +112,23 @@ class RoomController extends Controller
      */
     public function update(Request $request, Room $room)
     {
-
         // $room = Room::with(["creatorUser","floor"])->where("number",$room)->firstOrFail();
         $request -> validate([
             "floor_number"=>["required","int",Rule::exists("floors","number")],
-            "number"=>["required","integer","min_digits:4", Rule::unique('rooms')->ignore($room->number)],
+            "number"=>["required","integer","min_digits:4", Rule::unique('rooms', 'number')->ignore($room->number, 'number')],
             "capacity"=>["required","integer","max:5"],
             "room_price"=>["required","integer",],
             "state"=>["required","in:available,occupied,being_reserved,maintenance"],
             "title"=>["required","string","max:255",'min:5'],
             "description"=>["required","string",'min:5'],
-            'image' => ['required', 'image', 'mimes:jpeg,jpg', 'max:2048'],
+            'image' => ['sometimes', 'image', 'mimes:jpeg,jpg', 'max:2048'],
         ]);
         $room->update($request->only('floor_number','number','capacity','room_price','state','title','description'));
-        $room->updateImage($request->file('image'));
-        return back()->with("success","floor updated");
+
+        if($request->file('image'))
+            $room->updateImage($request->file('image'));
+
+            return back()->with("success","floor updated");
     }
 
     /**
