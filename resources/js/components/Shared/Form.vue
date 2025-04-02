@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 const props = defineProps({
   schema: Object,
   submitText: String,
-  initialValues: Object
+  initialValues: Object,
+  fieldConfig: Object
 });
 
 const emit = defineEmits(["submit","cancel"]);
@@ -18,21 +19,6 @@ const form = useForm({
   initialValues: props.initialValues || {}
 });
 
-// Handle file input manually
-const selectedFile = ref<File | null>(null);
-
-const handleFileChange = (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  if (input.files && input.files.length > 0) {
-    selectedFile.value = input.files[0];
-  }
-};
-
-watch(selectedFile, (newFile) => {
-  if (newFile) {
-    form.setFieldValue('image', newFile);
-  }
-});
 </script>
 
 <template>
@@ -41,18 +27,15 @@ watch(selectedFile, (newFile) => {
       class="w-2/3 space-y-6"
       :schema="schema"
       :form="form"
-      @submit="emit('submit', { ...form.values, image: selectedFile })"
+      :field-config="fieldConfig"
+      @submit="emit('submit', form.values )"
     >
-      <!-- Custom File Input -->
-      <div class="form-group">
-        <label for="image">Room Image</label>
-        <Input type="file" id="image" @change="handleFileChange" />
-      </div>
+    <slot></slot>
 
       <Button type="submit">
         {{ props.submitText ?? 'Submit' }}
       </Button>
-      <Button class="mx-4" :variant="'secondary'" @click="$emit('cancel')" >
+      <Button class="mx-3" :variant="'secondary'" @click="$emit('cancel')" >
         Cancel
       </Button>
     </AutoForm>
