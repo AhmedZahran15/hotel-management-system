@@ -236,13 +236,6 @@ const submit = async () => {
     }
 };
 
-// Simplified function for rare cases where automatic handling doesn't work
-const handleStripeNextAction = (paymentIntent) => {
-    // This is only needed in rare cases since automatic_payment_methods is true
-    if (paymentIntent.next_action && paymentIntent.next_action.type === 'redirect_to_url') {
-        window.location.href = paymentIntent.next_action.redirect_to_url.url;
-    }
-};
 
 // Lifecycle hooks
 onMounted(() => {
@@ -254,7 +247,7 @@ onUnmounted(() => {
         try {
             card.value.unmount();
         } catch (error) {
-            // Silent cleanup failure is acceptable
+            console.error('Error unmounting card element:', error);
         }
     }
 });
