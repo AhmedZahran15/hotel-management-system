@@ -9,10 +9,10 @@ use App\Rules\UserHasRoleOrPermission;
 use Illuminate\Broadcasting\Broadcasters\AblyBroadcaster;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class RoomController extends Controller
@@ -30,10 +30,14 @@ class RoomController extends Controller
             AllowedFilter::exact('state'),
             AllowedFilter::exact('floor_number'),
             ])
-        ->allowedSorts(['number', 'capacity','state','room_price','floor_number','manager_name'])
-        ->leftJoin('users', function ($join) {
-            $join->on('rooms.creator_user_id', '=', 'users.id');})
-        ->select('rooms.*', 'users.name as manager_name')
+            ->allowedSorts(['number', 'capacity','state','room_price','floor_number',
+                AllowedSort::callback('manager.name', function ($query, string $direction) {
+                $direction = strtolower($direction) === '1' ? 'desc' : 'asc';
+                $query->join('users', 'rooms.creator_user_id', '=', 'users.id')
+                ->select('rooms.*', 'users.name as manager_name')
+                ->orderBy('users.name', $direction);
+                }),
+        ])
         ->with(['floor','creatorUser']);
 
         // Apply different resource collections dynamically
@@ -112,6 +116,7 @@ class RoomController extends Controller
      */
     public function update(Request $request, Room $room)
     {
+
         // $room = Room::with(["creatorUser","floor"])->where("number",$room)->firstOrFail();
         $request -> validate([
             "floor_number"=>["required","int",Rule::exists("floors","number")],
@@ -124,7 +129,6 @@ class RoomController extends Controller
             'image' => ['sometimes', 'image', 'mimes:jpeg,jpg', 'max:2048'],
         ]);
         $room->update($request->only('floor_number','number','capacity','room_price','state','title','description'));
-
         if($request->file('image'))
             $room->updateImage($request->file('image'));
 

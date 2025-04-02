@@ -9,8 +9,9 @@ import { Head, router, usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { computed, defineProps, h, ref } from 'vue';
 import type { Room } from '@/types';
-import {formulateURL} from '@/utils/helpers';
+import {formulateURL, extractSorting} from '@/utils/helpers';
 import * as z from 'zod'
+import { Input } from '@/components/ui/input';
 import Form from '@/components/Shared/Form.vue';
 
 // Define missing types
@@ -20,19 +21,16 @@ const page = usePage();
 const props = defineProps(['rooms']);
 const errors = computed(() => page.props.errors);
 const params = new URLSearchParams(window.location.search);
-const filters = ref({
-    number: params.get('filter[number]') || '',
-    capacity: params.get('filter[capacity]'),
-    room_price: params.get('filter[room_price]'),
-    state: params.get('filter[state]'),
-    floor_number: params.get('filter[floor_number]'),
-});
-const sorting = params.get('sort')? ref<SortingValue[]>([
-    {
-        id: params.get('sort')?.replace('-', '') || '',
-        desc: params.get('sort')?.includes('-') || false,
-    },
-]): ref<SortingValue[]>([]);
+const filters = ref([
+    {column:"Room Number", value: params.get('filter[number]')||'', urlName: 'number'},
+    {column:"Room Capacity", value: params.get('filter[capacity]')||'', urlName: 'capacity'},
+    {column:"Room Price", value: params.get('filter[room_price]')||'', urlName: 'room_price'},
+    {column:"State", value: params.get('filter[state]')||'', urlName: 'state'},
+    {column:"Floor Number", value: params.get('filter[floor_number]')||'', urlName: 'floor_number'},
+]);
+
+const sorting = ref(extractSorting(params));
+
 const pagination = ref({
     pageIndex: props.rooms.meta.current_page - 1,
     pageSize: props.rooms.meta.per_page,
@@ -40,11 +38,11 @@ const pagination = ref({
 });
 
 const columns = ref<ColumnDef<Room>[]>([
-    { accessorKey: 'number', header: 'Room Number' },
-    { accessorKey: 'capacity', header: 'Room Capacity' },
-    { accessorKey: 'room_price', header: 'Price in $' },
-    { accessorKey: 'state', header: 'State' },
-    { accessorKey: 'floor.number', header: 'Floor Number' },
+    { accessorKey: 'number', header: 'Room Number', sortable: true },
+    { accessorKey: 'capacity', header: 'Room Capacity', sortable: true },
+    { accessorKey: 'room_price', header: 'Price in $' ,sortable: true },
+    { accessorKey: 'state', header: 'State', sortable: true },
+    { accessorKey: 'floor_number', header: 'Floor Number', sortable: true },
     {
         accessorKey: 'Edit',
         header: 'Actions',
@@ -62,7 +60,7 @@ const columns = ref<ColumnDef<Room>[]>([
 ]);
 
 if (props.rooms?.data?.length > 0 && props.rooms.data[0]?.manager) {
-    columns.value.splice(2, 0, { accessorKey: 'manager.name', header: 'Manager' });
+    columns.value.splice(2, 0, { accessorKey: 'manager.name', header: 'Manager', sortable: true });
 }
 
 const fetchData = (url?: string) => {
@@ -108,19 +106,29 @@ const FormSchema =
         capacity: z.number().min(1, 'Capacity is required').max(5, 'Max capacity is 5').describe('Room Capacity'),
         room_price: z.number().min(10, 'Price cannot be less than $10').max(1000000, 'Max price is $1000000').describe('Room Price'),
         state: z.enum(['available', 'maintenance']).describe('Room State'),
-        image: z.instanceof(File).describe('Room Image'),
+        //image: z.instanceof(File).describe('Room Image'),
 
     });
+
+const handleFileChange = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (input.files && input.files.length > 0) {
+    image.value = input.files[0];
+  }
+};
+const image = ref(null);
 
 // Add
 const addModalOpen = ref<boolean>(false);
 const onAddSubmit = (data: any) => {
-   data.room_price = Number(data.room_price) * 100;
-    router.post(route('rooms.store'), data, {
+    const formData = {...data, image: image.value};
+    formData.room_price*=100 ;
+    router.post(route('rooms.store'), formData, {
         preserveScroll: true,
         onSuccess: () => {
             addModalOpen.value = false;
-            toast({ title: 'Room added successfully!' });
+            toast({ title:'Room added successfully!' });
+            image.value = null;
         },
     });
 };
@@ -134,8 +142,7 @@ const editFormSchema =
         capacity: z.number().min(1, 'Capacity is required').max(5, 'Max capacity is 5').describe('Room Capacity'),
         room_price: z.number().min(10, 'Price cannot be less than $10').max(1000000, 'Max price is $1000000').describe('Room Price'),
         state: z.enum(['available', 'maintenance']).describe('Room State'),
-        image: z.instanceof(File).optional().describe('Room Image'),
-
+//        image: z.instanceof(File).optional().describe('Room Image'),
     });
 //Editing
 const editModalOpen = ref<boolean>(false);
@@ -148,14 +155,15 @@ const handleEdit = (room: Room) => {
 
 
 const onEditSubmit = (data:any) => {
-    data.room_price = Number(data.room_price) * 100;
-    data.number = selectedRoom.value.number;
-    if(!data.image) delete data.image;
-    console.log(data);
-    data["_method"] ="PUT";
+    const formData = {...data, image: image.value};
+    formData.room_price*=100 ;
+    formData.number = selectedRoom.value.number;
+    if(image.value) formData.image = image.value;
+    else delete formData.image;
+    formData["_method"] ="PUT";
     router.post(
         route('rooms.update', selectedRoom.value?.number),
-        data,
+        formData,
         {
             preserveScroll: true,
             onSuccess: () => {
@@ -239,7 +247,12 @@ const onEditSubmit = (data:any) => {
                             :submitText="'Update'"
                             :initialValues="selectedRoom"
                             @submit="onEditSubmit($event);"
-                            @cancel="editModalOpen = false"/>
+                            @cancel="editModalOpen = false">
+                             <div class="form-group">
+                                <label for="image">Room Image</label>
+                                <Input type="file" id="image" name="image" @change="handleFileChange"  />
+                            </div>
+                            </Form>
 
                 </template>
             </Modal>
@@ -258,7 +271,12 @@ const onEditSubmit = (data:any) => {
                             :submitText="'Add'"
                             :initialValues="{}"
                             @submit="onAddSubmit($event);"
-                            @cancel="addModalOpen = false"/>
+                            @cancel="addModalOpen = false">
+                            <div class="form-group">
+                                <label for="image">Room Image</label>
+                                <Input type="file" id="image" name="image" @change="handleFileChange"  />
+                            </div>
+                            </Form>
                 </template>
             </Modal>
 
