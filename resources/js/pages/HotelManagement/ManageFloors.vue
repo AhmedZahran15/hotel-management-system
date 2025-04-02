@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import Alert from '@/components/Shared/Alert.vue';
 import DataTable from '@/components/Shared/ManageDataTable.vue';
 import Modal from '@/components/Shared/ManageModal.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/toast/use-toast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
-import { AlertCircle } from 'lucide-vue-next';
 import { computed, defineProps, h, ref } from 'vue';
-
+import {formulateURL} from '@/utils/helpers.ts';
+import * as z from 'zod'
+import Form from '@/components/Shared/Form.vue';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Manage Floors',
@@ -47,29 +46,17 @@ const columns = ref<ColumnDef<Floor>[]>([
     { accessorKey: 'roomsCount', header: 'No of rooms' },
     { accessorKey: 'reservedRoomsCount', header: 'Reserved' },
     { accessorKey: 'availabledRoomsCount', header: 'Available' },
-    {
-        accessorKey: 'Edit',
-        header: 'Actions',
-
+    {accessorKey: 'Edit', header: 'Actions',
         cell: (info: any) =>
             info.row.original.manager_id == page.props.auth.user.id || page.props.auth.user.roles[0] == 'admin'
-                ? [
+                ?[
                     h(Button, { variant: 'default', class: 'mx-1', onClick: () => handleEdit(info.row.original) }, () => 'Edit'),
-                    h(
-                        Button,
-                        {
-                            variant: 'destructive',
-                            class: 'mx-1',
-                            disabled: info.row.original.roomsCount != 0,
-                            onClick: () => handleDelete(info.row.original),
-                            // if:info.row.original.manager.id  == page.props.auth.user.id || page.props.auth.user.roles[0] == "admin",
-                        },
-                        () => 'Remove',
-                    ),
+                    h(Button,{variant: 'destructive', class: 'mx-1', disabled: info.row.original.roomsCount != 0,
+                            onClick: () => handleDelete(info.row.original),},() => 'Remove',),
                 ]
-            : '',
-    },
+                : '',}
 ]);
+
 //append Manger column in case of Admin (Depending on the data sent from the backend)
 if (props.floors?.data?.length > 0 && props.floors.data[0]?.manager) {
     columns.value.splice(2, 0, { accessorKey: 'manager.name', header: 'Manager' });
@@ -77,23 +64,7 @@ if (props.floors?.data?.length > 0 && props.floors.data[0]?.manager) {
 
 const fetchData = (url?: string) => {
 
-    const params = new URLSearchParams();
-    // Apply filtering
-    Object.entries(filters.value).forEach(([key, value]) => {
-        if (value) params.append(`filter[${key}]`, value);
-    });
-
-    // Apply sorting
-    if (sorting.value.length > 0) {
-        const sortString = sorting.value
-            .map((s: SortingValue) => (s.desc ? `-${s.id}` : s.id)) // Convert sorting object to query format
-            .join(',');
-        params.append('sort', sortString);
-    }
-
-    // Apply pagination
-    if (pagination.value.pageIndex > 0)
-    params.append('page', pagination.value.pageIndex + 1);
+    const params = formulateURL(filters.value, sorting.value, pagination.value);
 
     // Fetch data with updated parameters
     router.get(url || route('floors.index'), Object.fromEntries(params.entries()), {
@@ -126,73 +97,53 @@ const deleteConfirmed = () => {
     selectedFloor.value = null;
 };
 
-// Form data objects
+//form validation
+const FormSchema =
+    z.object({
+        FloorName: z.string().min(2, 'Floor name is required').max(50, 'Too long').describe('Floor name'),
+    });
+
+// Edit functionality
+const editModalOpen = ref<boolean>(false);
+
+// Inetial values for edit form
 const editForm = ref({
     floorName: '',
 });
 
-const addForm = ref({
-    addFloorName: '',
-});
-
-// Create reset functions for forms
-const resetAddForm = () => {
-    addForm.value = {
-        addFloorName: '',
-    };
-    // Clear any validation errors
-    page.props.errors = {};
-};
-
-const resetEditForm = () => {
-    // Clear any validation errors
-    page.props.errors = {};
-};
-
-// Edit functionality
-const editModalOpen = ref<boolean>(false);
 const handleEdit = (floor: Floor) => {
-    resetEditForm(); // Clear previous errors
     selectedFloor.value = floor;
+    editForm.value["FloorName"] = floor.name;
     editModalOpen.value = true;
-
-    // Set the form values
-    editForm.value = {
-        floorName: floor.name || '',
-    };
 };
 
-// Add functionality
-const addModalOpen = ref<boolean>(false);
-const openAddModal = () => {
-    resetAddForm(); // Reset form and clear errors
-    addModalOpen.value = true;
-};
-
-const onEditSubmit = () => {
+const onEditSubmit = (formValues: any) => {
+    console.log('formValues', formValues);
     if (selectedFloor.value) {
         router.put(
             route('floors.update', selectedFloor.value.number),
             {
-                name: editForm.value.floorName,
+                name: formValues.FloorName,
             },
             {
                 preserveScroll: true,
                 onSuccess: () => {
                     editModalOpen.value = false;
                     toast({ title: 'Floor updated successfully!' });
-                    router.get(page.url);
                 },
             },
         );
     }
 };
 
-const onAddSubmit = () => {
+// Add functionality
+const addModalOpen = ref<boolean>(false);
+const onAddSubmit = (formValues: any) => {
+    console.log('formValues', formValues);
     router.post(
         route('floors.store'),
         {
-            name: addForm.value.addFloorName,
+            name: formValues.addFloorName,
         },
         {
             preserveScroll: true,
@@ -204,19 +155,6 @@ const onAddSubmit = () => {
         },
     );
 };
-
-// Close modal functions
-const closeEditModal = () => {
-    editModalOpen.value = false;
-    resetEditForm();
-};
-
-const closeAddModal = () => {
-    addModalOpen.value = false;
-    resetAddForm();
-};
-
-
 </script>
 
 <template>
@@ -248,7 +186,7 @@ fetchData();}
                     "
                 >
                     <template #table-action>
-                        <Button @click="openAddModal" class="px-16">Add Floor</Button>
+                        <Button @click="addModalOpen=true" class="px-16">Add Floor</Button>
                     </template>
                 </DataTable>
             </div>
@@ -274,24 +212,13 @@ fetchData();}
                 v-model:open="editModalOpen"
                 :buttonsVisible="false"
                 :disableEsc="false"
-                @update:open="
-                    (val) => {
-                        if (!val) resetEditForm();
-                    }
-                "
-            >
+                :errors="errors">
                 <template #description>
-                    <div class="flex flex-col justify-center gap-4 p-6">
-                        <div>
-                            <label class="text-sm font-medium">Floor Name</label>
-                            <Input type="text" placeholder="Enter floor name" v-model="editForm.floorName" />
-                            <p v-if="errors.name" class="text-sm text-red-500">{{ errors.name }}</p>
-                        </div>
-                        <div class="flex justify-end gap-2">
-                            <Button variant="outline" @click="closeEditModal">Cancel</Button>
-                            <Button @click="onEditSubmit">Update</Button>
-                        </div>
-                    </div>
+                    <Form :schema="FormSchema"
+                        :initialValues="editForm"
+                        :submitText="'Update'"
+                        @submit="onEditSubmit($event);"
+                        @cancel="editModalOpen = false"/>
                 </template>
             </Modal>
 
@@ -302,24 +229,13 @@ fetchData();}
                 v-model:open="addModalOpen"
                 :buttonsVisible="false"
                 :disableEsc="false"
-                @update:open="
-                    (val) => {
-                        if (!val) resetAddForm();
-                    }
-                "
-            >
-                <template #description>
-                    <div class="flex flex-col justify-center gap-4 p-6">
-                        <div>
-                            <label class="text-sm font-medium">Floor Name</label>
-                            <Input type="text" placeholder="Please write a descriptive name" v-model="addForm.addFloorName" />
-                            <p v-if="errors.name" class="text-sm text-red-500">{{ errors.name }}</p>
-                        </div>
-                        <div class="flex justify-end gap-2">
-                            <Button variant="outline" @click="closeAddModal">Cancel</Button>
-                            <Button @click="onAddSubmit">Add</Button>
-                        </div>
-                    </div>
+                :errors="errors">
+                <template #description >
+                        <Form :schema="FormSchema"
+                            :submitText="'Add'"
+                            :initialValues="{}"
+                            @submit="onAddSubmit($event);"
+                            @cancel="AddModalOpen = false"/>
                 </template>
             </Modal>
         </div>
