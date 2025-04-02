@@ -100,7 +100,7 @@ if (page.props.auth.user.roles.includes('client')) {
         },
         {
             title: 'Make Reservation',
-            href: route('reservations.create'),
+            href: route('reservations.make'),
             icon: CalendarCheck,
         },
     );

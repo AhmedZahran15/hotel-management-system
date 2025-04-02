@@ -31,8 +31,6 @@ const fetchReservations = () => {
         {
             page: pagination.value.pageIndex + 1,
             perPage: pagination.value.pageSize,
-            sorting: sorting.value,
-            filters: filters.value,
         },
         {
             preserveState: true,
@@ -54,30 +52,11 @@ const fetchReservations = () => {
                 :columns="columns"
                 :data="reservations"
                 :pagination="pagination"
-                :filters="filters"
                 :manual-pagination="true"
                 :manual-sorting="true"
                 :manual-filtering="true"
-                :sorting="sorting"
                 :showFilters="false"
-                @update:sorting="
-                    (newSorting) => {
-                        sorting = newSorting;
-                        fetchReservations();
-                    }
-                "
-                @update:filters="
-                    (newFilters) => {
-                        filters = newFilters;
-                        fetchReservations();
-                    }
-                "
-                @update:pagination="
-                    (newPagination) => {
-                        pagination = newPagination;
-                        fetchReservations();
-                    }
-                "
+
             >
             </ManageDataTable>
         </div>
