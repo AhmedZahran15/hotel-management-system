@@ -11,13 +11,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
 // use Stripe\Session;
-use Stripe\Checkout\Session;
 
 class ReservationController extends Controller
 {
@@ -108,7 +108,6 @@ class ReservationController extends Controller
     {
         // Get original filters for passing to the view
         $filters = $request->only(['search', 'capacity', 'price_min', 'price_max']);
-
         // Start with a base query for available rooms
         $query = Room::where('state', 'available');
 
@@ -124,14 +123,14 @@ class ReservationController extends Controller
             $query->where('capacity', $request->capacity);
         }
         if ($request->has('price_min') && !empty($request->price_min)) {
-            $query->where('room_price', '>=', $request->price_min);
+            $query->where('room_price', '>=', $request->price_min * 100);
         }
         if ($request->has('price_max') && !empty($request->price_max)) {
-            $query->where('room_price', '<=', $request->price_max);
+            $query->where('room_price', '<=', $request->price_max * 100);
         }
         // Use QueryBuilder just for sorting
         $rooms = QueryBuilder::for($query)
-            ->allowedSorts(['room_price', 'capacity', 'name'])
+            ->allowedSorts(['room_price', 'capacity'])
             ->defaultSort('room_price')
             ->with(['media'])
             ->paginate(9);
@@ -141,52 +140,53 @@ class ReservationController extends Controller
 
         return Inertia::render('Reservations/MakeReservation', [
             'rooms' => $formattedRooms,
-            'filters' => $filters,
         ]);
     }
 
-    public function create($roomId): Response
-{
-    $room = Room::findOrFail($roomId);
-    return Inertia::render('Reservations/Create', [
-        'room' => $room,
-    ]);
-}
+    /**
+     * Show the form for creating a new reservation.
+     */
+    public function create(Request $request, $roomId)
+    {
+        $room = Room::findOrFail($roomId);
+
+        return Inertia::render('Reservations/CreateReservation', [
+            'room' => (new RoomClientResource($room))->resolve(),
+        ]);
+    }
 
     public function store(StoreReservationRequest $request)
     {
         try {
             $room = Room::findOrFail($request->room_number);
-            $session = $this->reservationService->createCheckoutSession(
+            $paymentIntent = $this->reservationService->processPayment(
                 $request->validated(),
                 $room
             );
-            return response()->json(['sessionId' => $session->id], 200);
+
+            if ($paymentIntent->status === 'succeeded') {
+                // Return an Inertia redirect response instead of plain JSON
+                return redirect()->route('reservations.index')
+                    ->with('flash.success', 'Payment processed successfully')
+                    ->with('flash.response', [
+                        'success' => true,
+                        'message' => 'Payment processed successfully',
+                        'redirectUrl' => route('reservations.index')
+                    ]);
+            } else {
+                // Return an Inertia response with the payment intent
+                return back()->with('flash.response', [
+                    'success' => false,
+                    'message' => 'Payment requires additional steps',
+                    'paymentIntent' => $paymentIntent
+                ]);
+            }
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
-
-    public function paymentSuccess(Request $request)
-    {
-        try {
-            // Verify payment with Stripe
-            $session = Session::retrieve($request->session_id);
-
-            // Create reservation
-            $reservation = $this->reservationService->createReservation([
-                'reservation_date' => $session->metadata->reservation_date,
-                'payment_id' => $session->payment_intent,
-                'accompany_number' => $session->metadata->accompany_number,
-                'client_id' => $session->metadata->client_id,
-                'room_number' => $session->metadata->room_number,
-            ], Room::findOrFail($session->metadata->room_number));
-
-            return redirect()->route('reservations.show', $reservation->id)
-                ->with('success', 'Reservation confirmed!');
-        } catch (\Exception $e) {
-            return redirect()->route('reservations.index')
-                ->with('error', 'Payment verification failed: ' . $e->getMessage());
+            // Return an Inertia response with the error
+            Log::error('Reservation creation failed: ' . $e->getMessage());
+            return back()->withErrors([
+                'message' => $e->getMessage()
+            ]);
         }
     }
 
@@ -227,21 +227,5 @@ class ReservationController extends Controller
         //     'rooms' => $rooms,
         // ]);
         return $rooms;
-    }
-
-    public function paymentCancel(Request $request)
-    {
-        try {
-            if ($request->session_id) {
-                $session = Session::retrieve($request->session_id);
-                $room = Room::findOrFail($session->metadata->room_number);
-                $this->reservationService->handlePaymentCancellation($room);
-            }
-            return redirect()->route('reservations.available')
-                ->with('info', 'Reservation has been cancelled.');
-        } catch (\Exception $e) {
-            return redirect()->route('reservations.available')
-                ->with('error', 'Something went wrong with cancellation.');
-        }
     }
 }
