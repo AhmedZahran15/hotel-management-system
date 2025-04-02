@@ -127,8 +127,4 @@ class ReservationService
      * @param  Room  $room
      * @return void
      */
-    public function handlePaymentCancellation(Room $room)
-    {
-        $room->update(['state' => 'available']);
-    }
 }
