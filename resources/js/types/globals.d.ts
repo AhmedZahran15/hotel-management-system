@@ -16,6 +16,7 @@ declare global {
     interface SortingValue {
         id: string;
         desc: boolean
+        urlName: string
     }
     interface Room {
         number: number;

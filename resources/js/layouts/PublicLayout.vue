@@ -14,7 +14,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 <template>
     <div class="flex min-h-screen flex-col bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
-        <Head :title="title" />
+        <Head :title="props.title" />
 
         <PublicHeader />
 
