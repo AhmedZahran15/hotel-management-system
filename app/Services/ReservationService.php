@@ -42,7 +42,7 @@ class ReservationService
 
             // Create payment intent parameters
             $paymentIntentParams = [
-                'amount' => $room->room_price, // Room price is already in cents
+                'amount' => $room->room_price*100, // Room price is already in cents
                 'currency' => 'usd',
                 'payment_method' => $data['payment_method_id'],
                 'confirm' => true, // Confirm the payment immediately
