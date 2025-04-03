@@ -149,7 +149,10 @@ class ReservationController extends Controller
     public function create(Request $request, $roomId)
     {
         $room = Room::findOrFail($roomId);
-
+        if ($room->state !== 'available') {
+            return redirect()->route('reservations.make')
+                ->with('flash.error', 'Room is not available for reservation.');
+        }
         return Inertia::render('Reservations/CreateReservation', [
             'room' => (new RoomClientResource($room))->resolve(),
         ]);
