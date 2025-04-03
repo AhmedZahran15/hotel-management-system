@@ -137,19 +137,12 @@ const formSchema = z
     .object({
         name: z.string().min(3, 'Client name is required').max(50, 'Too long').describe('Client name'),
         email: z.string().email('client email is required').max(100, 'Too long').describe('client email'),
-        phone: z
-            .string()
-            .regex(new RegExp(/^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/))
-            .describe('phone number'),
-        country: z
-            .enum(
-                page.props.countries.map((country) => country.name),
-                { required_error: 'Country is required' },
-            )
-            .describe('Country'),
+        phone: z.string().regex(new RegExp(/^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/)).describe('phone number'),
+        country: z.enum(page.props.countries.map((country) => country.name),{ required_error: 'Country is required' },).describe('Country'),
         gender: z.enum(['male', 'female'], { required_error: 'Gender is required' }).describe('Gender'),
         password: z.string().min(8, 'Password must be at least 8 characters long').describe('Password'),
         password_confirmation: z.string().describe('Password Confirmation'),
+        avatar_image: z.instanceof(File).optional().describe('Avatar'),
     }).refine((data) => data.password === data.password_confirmation, {
         message: 'Passwords do not match',
         path: ['password_confirmation'],
@@ -163,23 +156,16 @@ const fieldConfig = {
         inputProps: { type: 'password' },
     },
     gender: { component: 'radio' },
+    avatar_image: {
+        inputProps: { type: 'file', accept: 'image/jpeg, image/jpg' },
+        component: 'file',
+    },
 };
-
-//handle avatar photo
-const handleFileChange = (event: Event) => {
-const input = event.target as HTMLInputElement;
-if (input.files && input.files.length > 0) {
-image.value = input.files[0];
-}
-};
-const image = ref(null);
 
 // Handle Add Client
 const onAddSubmit = (data: any) => {
-    const formData = { ...data, avatar_image: image.value };
+    const formData = { ...data };
     formData.country = page.props.countries.find((country) => country.name === data.country).id.toString();
-    if (image.value) formData.avatar_image = image.value;
-    else delete formData.avatar_image;
     router.post(route('clients.store'), formData, {
         onSuccess: () => {
             isAddModalOpen.value = false;
@@ -191,19 +177,12 @@ const editFormSchema = z
     .object({
         name: z.string().min(3, 'Client name is required').max(50, 'Too long').describe('Client name'),
         email: z.string().email('client email is required').max(100, 'Too long').describe('client email'),
-        phone: z
-            .string()
-            .regex(new RegExp(/^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/))
-            .describe('phone number'),
-        country: z
-            .enum(
-                page.props.countries.map((country) => country.name),
-                { required_error: 'Country is required' },
-            )
-            .describe('Country'),
+        phone: z.string().regex(new RegExp(/^([+]?[\s0-9]+)?(\d{3}|[(]?[0-9]+[)])?([-]?[\s]?[0-9])+$/)).describe('phone number'),
+        country: z.enum(page.props.countries.map((country) => country.name),{ required_error: 'Country is required' },).describe('Country'),
         gender: z.enum(['male', 'female'], { required_error: 'Gender is required' }).describe('Gender'),
         password: z.string().min(8, 'Password must be at least 8 characters long').optional().describe('Password'),
         password_confirmation: z.string().optional().describe('Password confirmation'),
+        avatar_image: z.instanceof(File).optional().describe('Avatar'),
     }).refine((data) => data.password === data.password_confirmation, {
         message: 'Passwords do not match',
         path: ['password_confirmation'],
@@ -213,18 +192,14 @@ const editFormSchema = z
 // Open Edit Modal
 const openEditModal = (client) => {
     selectedClient.value = { ...client };
-    console.log(selectedClient.value);
     selectedClient.value.country = client.country.name;
     selectedClient.value.phone = client.phones[0];
     isEditModalOpen.value = true;
 };
 
 const onEditSubmit = (data: any) => {
-    const formData = { ...data, avatar_image: image.value };
+    const formData = { ...data };
     formData.country = page.props.countries.find((country) => country.name === data.country).id.toString();
-
-    if (image.value) formData.avatar_image = image.value;
-    else delete formData.avatar_image;
 
     if (!data.password || data.password === '') {
         delete formData.password;
@@ -349,10 +324,6 @@ const approveClient = (id) => {
                         :fieldConfig="fieldConfig"
                         @submit="onEditSubmit($event);"
                         @cancel="isEditModalOpen = false ">
-                            <div class="form-group">
-                                <label for="image">Client Photo</label>
-                                <Input type="file" id="image" name="image" @change="handleFileChange"  accept="image/jpg, image/jpeg" />
-                            </div>
                     </Form>
                 </template>
             </ManageModal>
@@ -373,10 +344,6 @@ const approveClient = (id) => {
                         :fieldConfig="fieldConfig"
                         @submit="onAddSubmit($event);"
                         @cancel="isAddModalOpen = false ">
-                            <div class="form-group">
-                                <label for="image">Client Photo</label>
-                                <Input type="file" id="image" name="image" @change="handleFileChange"  accept="image/jpg, image/jpeg" />
-                            </div>
                     </Form>
                 </template>
             </ManageModal>

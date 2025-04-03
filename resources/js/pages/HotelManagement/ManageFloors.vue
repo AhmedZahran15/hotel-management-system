@@ -142,7 +142,6 @@ const onEditSubmit = (formValues: any) => {
 // Add functionality
 const addModalOpen = ref<boolean>(false);
 const onAddSubmit = (formValues: any) => {
-    console.log(formValues);
     router.post(
         route('floors.store'),
         {

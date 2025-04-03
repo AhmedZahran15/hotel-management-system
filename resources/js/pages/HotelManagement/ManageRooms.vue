@@ -106,29 +106,25 @@ const FormSchema =
         capacity: z.number().min(1, 'Capacity is required').max(5, 'Max capacity is 5').describe('Room Capacity'),
         room_price: z.number().min(10, 'Price cannot be less than $10').max(1000000, 'Max price is $1000000').describe('Room Price'),
         state: z.enum(['available', 'maintenance']).describe('Room State'),
-        //image: z.instanceof(File).describe('Room Image'),
+        image: z.instanceof(File).describe('Room Image'),
 
     });
-
-const handleFileChange = (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  if (input.files && input.files.length > 0) {
-    image.value = input.files[0];
-  }
-};
-const image = ref(null);
-
+const fieldConfig = {
+    image: {
+        inputProps: { type: 'file', accept: 'image/jpeg, image/jpg' },
+        component: 'file',
+    },
+}
 // Add
 const addModalOpen = ref<boolean>(false);
 const onAddSubmit = (data: any) => {
-    const formData = {...data, image: image.value};
+    const formData = {...data};
     formData.room_price*=100 ;
     router.post(route('rooms.store'), formData, {
         preserveScroll: true,
         onSuccess: () => {
             addModalOpen.value = false;
             toast({ title:'Room added successfully!' });
-            image.value = null;
         },
     });
 };
@@ -142,7 +138,7 @@ const editFormSchema =
         capacity: z.number().min(1, 'Capacity is required').max(5, 'Max capacity is 5').describe('Room Capacity'),
         room_price: z.number().min(10, 'Price cannot be less than $10').max(1000000, 'Max price is $1000000').describe('Room Price'),
         state: z.enum(['available', 'maintenance']).describe('Room State'),
-//        image: z.instanceof(File).optional().describe('Room Image'),
+        image: z.instanceof(File).optional().describe('Room Image'),
     });
 //Editing
 const editModalOpen = ref<boolean>(false);
@@ -244,14 +240,11 @@ const onEditSubmit = (data:any) => {
                 >
                 <template #description>
                     <Form :schema="editFormSchema"
+                            :fieldConfig="fieldConfig"
                             :submitText="'Update'"
                             :initialValues="selectedRoom"
                             @submit="onEditSubmit($event);"
                             @cancel="editModalOpen = false">
-                             <div class="form-group">
-                                <label for="image">Room Image</label>
-                                <Input type="file" id="image" name="image" @change="handleFileChange"  />
-                            </div>
                             </Form>
 
                 </template>
@@ -268,14 +261,11 @@ const onEditSubmit = (data:any) => {
                 @update:open="(val) => {if (!val) resetAddForm();}">
                 <template #description>
                     <Form :schema="FormSchema"
+                            :fieldConfig="fieldConfig"
                             :submitText="'Add'"
                             :initialValues="{}"
                             @submit="onAddSubmit($event);"
                             @cancel="addModalOpen = false">
-                            <div class="form-group">
-                                <label for="image">Room Image</label>
-                                <Input type="file" id="image" name="image" @change="handleFileChange"  />
-                            </div>
                             </Form>
                 </template>
             </Modal>
