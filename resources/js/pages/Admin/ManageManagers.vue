@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
+import Form from '@/components/Shared/Form.vue';
 import ManageDataTable from '@/components/Shared/ManageDataTable.vue';
 import ManageModal from '@/components/Shared/ManageModal.vue';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, h, ref } from 'vue';
 import {formulateURL, extractSorting} from '@/utils/helpers';
+import * as z from 'zod';
 
 
 // Breadcrumbs for navigation
@@ -23,15 +25,7 @@ const page = usePage();
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
-const selectedManagerId = ref(null);
-const form = ref({
-    name: '',
-    email: '',
-    password: '',
-    password_confirmation: '',
-    national_id: '',
-    avatar_image: null });
-
+const selectedManager = ref(null);
 const errors = computed(() => page.props.errors);
 const params = new URLSearchParams(window.location.search);
 
@@ -47,7 +41,6 @@ const pagination = ref({
     pageSize: props.managers.meta.per_page,
     dataSize: props.managers.meta.total,
 });
-
 
 // Table Columns
 const columns = [
@@ -72,14 +65,13 @@ const columns = [
         header: 'Actions',
         cell: ({ row }) => [
             h(Button, { variant: 'default', class: 'mx-1', onClick: () => openEditModal(row.original) }, () => 'Edit'),
-            h(Button, { variant: 'destructive', class: 'mx-1', onClick: () => openDeleteModal(row.original.id) }, () => 'Remove'),
+            h(Button, { variant: 'destructive', class: 'mx-1', onClick: () => openDeleteModal(row.original) }, () => 'Remove'),
         ],
     },
 ];
 
 // Fetch Managers
 const fetchManagers = () => {
-    console.log(sorting.value)
     const params = formulateURL(filters.value, sorting.value,pagination.value);
 
     router.get(route('managers.index'), Object.fromEntries(params.entries()), {
@@ -96,76 +88,93 @@ const fetchManagers = () => {
     });
 };
 
+const formSchema =
+z.object({
+    name: z.string().min(3, 'Manager name is required').max(50, 'Too long').describe('Manager name'),
+    email: z.string().email('Manager email is required').max(100, 'Too long').describe('Manager email'),
+    national_id: z.string().regex(new RegExp(/^[0-9]{10,}$/)).describe('National ID'),
+    password: z.string().min(8, 'Password must be at least 8 characters long').describe('Password'),
+    password_confirmation: z.string().describe('Password Confirmation'),
+    avatar_image: z.instanceof(File).optional().describe('Avatar'),
+    })
+    .refine((data) => data.password === data.password_confirmation, {
+    message: 'Passwords do not match',
+    path: ['password_confirmation'],
+});
+
+const fieldConfig = {
+    password_confirmation: {
+        inputProps: { type: 'password' },
+    },
+    password: {
+        inputProps: { type: 'password' },
+    },
+    avatar_image: {
+        inputProps: { type: 'file', accept: 'image/jpeg, image/jpg' },
+        component: 'file',
+    },
+};
+const onAddSubmit = (data: any) => {
+const formData = { ...data };
+  // add any additional form data processing here
+  router.post(route('managers.store'), formData, {
+    onSuccess: () => {
+      isAddModalOpen.value = false;
+    },
+  });
+};
+
 // Open Edit Modal
-const openEditModal = (manager) => {
-    form.value = { ...manager, avatar_image: null };
-        page.props.errors = {};
+const openEditModal = (manager:any) => {
+    selectedManager.value = { ...manager };
+    delete selectedManager.value.avatar_image;
+    page.props.errors = {};
     isEditModalOpen.value = true;
 };
-// Open Add Modal
-const openAddModal = () => {
-    form.value = { name: '', email: '', password: '', password_confirmation: '', national_id: '', avatar_image: null };
-    page.props.errors = {};
-    isAddModalOpen.value = true;
-};
-
-// Open Delete Modal
-const openDeleteModal = (id) => {
-    selectedManagerId.value = id;
-    isDeleteModalOpen.value = true;
-};
-
-// Handle Image Upload
-const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    delete errors.value.avatar_image;
-    if (file && !['image/jpeg', 'image/jpg'].includes(file.type)) {
-        errors.value.avatar_image = 'Only JPG and JPEG files are allowed.';
-        form.value.avatar_image = null;
-        return;
-    }
-    form.value.avatar_image = file;
-};
-
-// Handle Add Manager
-const handleAdd = () => {
-    const formData = new FormData();
-    Object.keys(form.value).forEach((key) => {
-        if (form.value[key] !== null) formData.append(key, form.value[key]);
+const editFormSchema = z
+    .object({
+        name: z.string().min(3, 'Manager name is required').max(50, 'Too long').describe('Manager name'),
+        email: z.string().email('Manager email is required').max(100, 'Too long').describe('Manager email'),
+        national_id: z.string().min(1, 'National ID is required').describe('National ID'),
+        password: z.string().min(8, 'Password must be at least 8 characters long').optional().describe('Password'),
+        password_confirmation: z.string().optional().describe('Password Confirmation'),
+        avatar_image: z.instanceof(File).optional().describe('Avatar'),
+        })
+    .refine((data) => {
+        if (data.password && data.password !== data.password_confirmation) {
+            return { message: 'Passwords do not match', path: ['password_confirmation'] };
+        }
+        return true;
     });
-    router.post(route('managers.store'), formData, {
-        onSuccess: () => {
-            isAddModalOpen.value = false;
-        },
-    });
-};
-
-// Handle Edit Manager
-const handleEdit = () => {
-    const formData = new FormData();
-    formData.append('_method', 'PATCH');
-    Object.keys(form.value).forEach((key) => {
-        if (form.value[key] !== null) formData.append(key, form.value[key]);
-    });
-
-    router.post(`/dashboard/managers/${form.value.id}`, formData, {
+const onEditSubmit = (data: any) => {
+    const formData = { ...data };
+    formData["_method"] = 'PUT';
+    router.post(route('managers.update', selectedManager.value?.id), formData, {
+        preserveScroll: true,
+        preserveState: true,
         onSuccess: () => {
             isEditModalOpen.value = false;
         },
     });
 };
 
+
+
+// Open Delete Modal
+const openDeleteModal = (manager:any) => {
+    selectedManager.value = manager;
+    isDeleteModalOpen.value = true;
+};
+
 // Confirm Delete
 const confirmDelete = () => {
-    router.delete(`/dashboard/managers/${selectedManagerId.value}`, {
+    router.delete(route('managers.destroy', selectedManager.value?.id), {
         preserveState: true,
         onSuccess: () => {
             isDeleteModalOpen.value = false;
         },
     });
-    isDeleteModalOpen.value = false;
 };
-
 </script>
 
 <template>
@@ -204,7 +213,7 @@ const confirmDelete = () => {
                 "
             >
                 <template #table-action>
-                    <Button variant="default" @click="openAddModal">Add Manager</Button>
+                    <Button variant="default" @click="isAddModalOpen = true">Add Manager</Button>
                 </template>
             </ManageDataTable>
 
@@ -224,36 +233,15 @@ const confirmDelete = () => {
             <!-- Edit Modal -->
             <ManageModal v-if="isEditModalOpen" title="Edit Manager" v-model:open="isEditModalOpen" :buttonsVisible="false" :errors="errors">
                 <template #description>
-                    <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
-                        <div class="flex flex-col gap-1">
-                            <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name" />
-                        </div>
-
-                        <Label for="email">Email</Label>
-                        <Input id="email" v-model="form.email" type="email" />
-
-                        <Label for="national_id">National ID</Label>
-                        <Input id="national_id" v-model="form.national_id" />
-
-                        <Label for="avatar">Avatar</Label>
-                        <Input id="avatar" type="file" @change="handleImageUpload" />
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="password">Password (leave empty to keep current)</Label>
-                            <Input id="password" type="password" v-model="form.password" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="password_confirmation">Confirm Password</Label>
-                            <Input id="password_confirmation" type="password" v-model="form.password_confirmation" />
-                        </div>
-
-                        <div class="flex justify-end gap-2">
-                            <Button variant="secondary" @click="isEditModalOpen = false">Close</Button>
-                            <Button type="submit">Update</Button>
-                        </div>
-                    </form>
+                    <Form
+                        :schema="editFormSchema"
+                        :submitText="'Update Manager'"
+                        :initialValues="selectedManager"
+                        :fieldConfig="fieldConfig"
+                        @submit="onEditSubmit($event)"
+                        @cancel="isEditModalOpen = false "
+                    >
+                    </Form>
                 </template>
             </ManageModal>
 
@@ -261,42 +249,15 @@ const confirmDelete = () => {
             <ManageModal v-if="isAddModalOpen" title="Add Manager"
             v-model:open="isAddModalOpen" :disableEsc="false" :buttonsVisible="false" :errors="errors">
                 <template #description>
-                    <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
-                        <div class="flex flex-col gap-1">
-                            <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="national_id">National ID</Label>
-                            <Input id="national_id" v-model="form.national_id" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="avatar">Avatar</Label>
-                            <Input id="avatar" type="file" @change="handleImageUpload" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="password">Password</Label>
-                            <Input id="password" v-model="form.password" type="password" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="password_confirmation">Confirm Password</Label>
-                            <Input id="password_confirmation" v-model="form.password_confirmation" type="password" />
-                        </div>
-
-                        <div class="flex justify-end gap-2">
-                            <Button variant="secondary" @click="isAddModalOpen = false">Close</Button>
-                            <Button type="submit">Add</Button>
-                        </div>
-                    </form>
+                    <Form
+                        :schema="formSchema"
+                        :submitText="'Add'"
+                        :initialValues="{}"
+                        :fieldConfig="fieldConfig"
+                        @submit="onAddSubmit($event);"
+                        @cancel="isAddModalOpen = false "
+                        >
+                    </Form>
                 </template>
             </ManageModal>
         </div>

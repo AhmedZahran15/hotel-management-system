@@ -102,12 +102,12 @@ class ManagerController extends Controller
             'name' => $data['name'],
             'national_id' => $data['national_id'],
         ]);
-        return redirect()->route('managers.index')->with('success', 'Manager updated successfully.');
+        return redirect()->back()->with('success', 'Manager updated successfully.');
     }
 
     public function destroy(User $manager): RedirectResponse
     {
         $manager->delete();
-        return redirect()->route('managers.index')->with('success', 'Manager deleted successfully.');
+        return redirect()->back()->with('success', 'Manager deleted successfully.');
     }
 }
