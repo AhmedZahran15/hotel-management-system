@@ -142,7 +142,10 @@ const formSchema =
         country: z.enum(page.props.countries.map((country) => country.name), { required_error: 'Country is required' }).describe('Country'),
         gender: z.enum(['male', 'female'], { required_error: 'Gender is required' }).describe('Gender'),
         password: z.string().min(8, 'Password must be at least 8 characters long').describe('Password'),
-        password_confirmation: z.string().min(8, 'Password must be at least 8 characters long').describe('Password confirmation'),
+        password_confirmation: z.string().describe('Password Confirmation'),
+    }).refine((data) => data.password === data.password_confirmation, {
+        message: 'Passwords do not match',
+        path: ['password_confirmation'],
     });
 //ensures the password fields are hidden
 const fieldConfig ={
@@ -157,10 +160,10 @@ const fieldConfig ={
 
 //handle avatar photo
 const handleFileChange = (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  if (input.files && input.files.length > 0) {
-    image.value = input.files[0];
-  }
+const input = event.target as HTMLInputElement;
+if (input.files && input.files.length > 0) {
+image.value = input.files[0];
+}
 };
 const image = ref(null);
 
@@ -187,8 +190,11 @@ const editFormSchema =
         country: z.enum(page.props.countries.map((country) => country.name), { required_error: 'Country is required' }).describe('Country'),
         gender: z.enum(['male', 'female'], { required_error: 'Gender is required' }).describe('Gender'),
         password: z.string().min(8, 'Password must be at least 8 characters long').optional().describe('Password'),
-        password_confirmation: z.string().min(8, 'Password must be at least 8 characters long').optional().describe('Password confirmation'),
-    });
+        password_confirmation: z.string().optional().describe('Password confirmation'),
+    }).refine((data) => data.password === data.password_confirmation, {
+        message: 'Passwords do not match',
+        path: ['password_confirmation'],
+    });;
 
 
 // Open Edit Modal
@@ -330,7 +336,7 @@ const approveClient = (id) => {
                         @cancel="isEditModalOpen = false ">
                             <div class="form-group">
                                 <label for="image">Client Photo</label>
-                                <Input type="file" id="image" name="image" @change="handleFileChange"  />
+                                <Input type="file" id="image" name="image" @change="handleFileChange"  accept="image/jpg, image/jpeg" />
                             </div>
                     </Form>
                 </template>
@@ -353,7 +359,7 @@ const approveClient = (id) => {
                         @cancel="isAddModalOpen = false ">
                             <div class="form-group">
                                 <label for="image">Client Photo</label>
-                                <Input type="file" id="image" name="image" @change="handleFileChange"  />
+                                <Input type="file" id="image" name="image" @change="handleFileChange"  accept="image/jpg, image/jpeg" />
                             </div>
                     </Form>
                 </template>

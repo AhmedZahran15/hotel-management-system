@@ -25,7 +25,7 @@ import { Link } from '@inertiajs/vue3';
                         <Link href="/reservations/make">
                             <Button size="lg" class="font-medium">Book Now</Button>
                         </Link>
-                        <Button variant="outline" size="lg" class=""> Learn More </Button>
+                        <Button variant="secondary" size="lg" class=""> Learn More </Button>
                     </div>
                 </div>
             </div>
