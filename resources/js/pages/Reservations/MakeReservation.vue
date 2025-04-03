@@ -39,44 +39,50 @@ interface RoomsPagination {
     meta: PaginationMeta;
 }
 
-interface Filters {
-    search?: string;
-    capacity?: string;
-    price_min?: string;
-    price_max?: string;
-    sort?: string; // Add sort parameter
+interface DefaultFilters {
+    search: string;
+    capacity: string;
+    price_min: string;
+    price_max: string;
+    sort: string;
+    page: number;
 }
-
-// Updated breadcrumbs without dashboard
-const breadcrumbs = [
-    { title: 'Home', href: route('home') },
-    { title: 'Make a Reservation', href: route('reservations.make'), active: true },
-];
-
 const page = usePage();
 
 const props = defineProps<{
     rooms: RoomsPagination;
-    filters: Filters;
 }>();
-console.log(props.rooms);
+
 // State
+const params = new URLSearchParams(window.location.search);
 const filters = ref({
-    search: props.filters?.search || '',
-    capacity: props.filters?.capacity || '',
-    price_min: props.filters?.price_min || '',
-    price_max: props.filters?.price_max || '',
-    sort: props.filters?.sort || 'room_price', // Default sort by price (low to high)
+    search: params.get('search') || '',
+    capacity: params.get('capacity') || '',
+    price_min: params.get('price_min') || '',
+    price_max: params.get('price_max') || '',
+    sort: params.get('sort') || 'room_price',
+    page: parseInt(params.get('page') || '1', 10),
 });
+
+// Define default filter values
+const defaultFilters: DefaultFilters = {
+    search: '',
+    capacity: '',
+    price_min: '',
+    price_max: '',
+    sort: 'room_price',
+    page: 1,
+};
 
 // Methods
 const applyFilters = () => {
     // Create a URLSearchParams object for better handling of URL parameters
     const searchParams = new URLSearchParams();
 
-    // Add each filter value individually, only if it exists
+    // Add each filter value individually, only if it's different from default
     Object.entries(filters.value).forEach(([key, value]) => {
-        if (value) {
+        // Use type assertion to ensure TypeScript recognizes key as a valid property of defaultFilters
+        if (value && value !== defaultFilters[key as keyof DefaultFilters]) {
             searchParams.append(key, value.toString());
         }
     });
@@ -98,6 +104,7 @@ const resetFilters = () => {
         price_min: '',
         price_max: '',
         sort: 'room_price', // Reset sort to default
+        page: 1, // Add page reset to match DefaultFilters interface
     };
     applyFilters();
 };
@@ -112,7 +119,7 @@ const goToReservation = (roomId: number) => {
         });
         return;
     }
-    router.get(route('reservations.create', roomId));
+    router.get(route('reservations.create', { roomId: roomId }));
 };
 
 // Format price as currency - only used as fallback if price_formatted is not available
@@ -154,13 +161,10 @@ const getPageNumbers = (currentPage: number, lastPage: number) => {
 // For pagination, you can also use URLSearchParams
 const goToPage = (pageNumber: number) => {
     const searchParams = new URLSearchParams();
-
-    // Add the page parameter
-    searchParams.append('page', pageNumber.toString());
-
     // Add existing filters
+    filters.value.page = pageNumber;
     Object.entries(filters.value).forEach(([key, value]) => {
-        if (value) {
+        if (value && value !== defaultFilters[key as keyof DefaultFilters]) {
             searchParams.append(key, value.toString());
         }
     });
@@ -171,7 +175,7 @@ const goToPage = (pageNumber: number) => {
 
 <template>
     <Head title="Make a Reservation" />
-    <PublicLayout :breadcrumbs="breadcrumbs">
+    <PublicLayout>
         <div class="container px-6 py-8 sm:mx-auto">
             <div class="mb-6 flex items-center justify-between">
                 <h1 class="text-2xl font-bold">Available Rooms</h1>

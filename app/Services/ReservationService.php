@@ -7,19 +7,19 @@ use App\Models\Room;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use Stripe\Checkout\Session;
 use Stripe\Stripe;
+use Stripe\PaymentIntent;
 
 class ReservationService
 {
     /**
-     * Create a Stripe checkout session for the reservation
+     * Process a payment for a reservation using a payment method ID
      *
      * @param  array  $data
      * @param  Room   $room
-     * @return Session
+     * @return PaymentIntent
      */
-    public function createCheckoutSession(array $data, Room $room)
+    public function processPayment(array $data, Room $room)
     {
         // Verify room is available
         if ($room->state !== 'available') {
@@ -32,42 +32,69 @@ class ReservationService
             // Set room to being_reserved state
             $room->update(['state' => 'being_reserved']);
 
-            $session = Session::create([
-                'line_items' => [[
-                    'price_data' => [
-                        'currency' => 'usd',
-                        'product_data' => [
-                            'name' => "Room {$room->number} Reservation",
-                            'description' => "Reservation for {$data['reservation_date']}"
-                        ],
-                        'unit_amount' => $room->room_price, // Use room_price directly as it's already in cents
-                    ],
-                    'quantity' => 1,
-                ]],
-                'mode' => 'payment',
-                'success_url' => route('reservations.payment.success').'?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => route('reservations.payment.cancel'),
+            // Get the client ID from the authenticated user's profile
+            $user = Auth::user();
+            $client = $user->profile; // Assuming the client profile is accessible via 'profile' relation
+
+            if (!$client) {
+                throw new \Exception('Client profile not found for the authenticated user');
+            }
+
+            // Create payment intent parameters
+            $paymentIntentParams = [
+                'amount' => $room->room_price, // Room price is already in cents
+                'currency' => 'usd',
+                'payment_method' => $data['payment_method_id'],
+                'confirm' => true, // Confirm the payment immediately
+                'description' => "Room {$room->number} Reservation",
                 'metadata' => [
                     'room_number' => $room->number,
-                    'reservation_date' => $data['reservation_date'],
                     'accompany_number' => $data['accompany_number'],
-                    'client_id' => Auth::id()
+                    'client_id' => $client->id // Use client ID from profile instead of user ID
                 ],
-                'expires_at' => time() + (30 * 60) // Session expires in 30 minutes
-            ]);
+                // Always set automatic payment methods to force card-only payments
+                'automatic_payment_methods' => [
+                    'enabled' => true,
+                    'allow_redirects' => 'never'
+                ]
+            ];
 
-            return $session;
+            // Always add a return URL (use the app URL as fallback)
+            $paymentIntentParams['return_url'] = !empty($data['return_url'])
+                ? $data['return_url']
+                : config('app.url');
+
+            // Create a payment intent with the updated parameters
+            $paymentIntent = PaymentIntent::create($paymentIntentParams);
+
+            // If payment succeeded, create the reservation
+            if ($paymentIntent->status === 'succeeded') {
+                $this->createReservation([
+                    'payment_id' => $paymentIntent->id,
+                    'accompany_number' => $data['accompany_number'],
+                    'client_id' => $client->id, // Use client ID from profile instead of user ID
+                    'room_number' => $room->number,
+                    'reservation_date' => now(), // Add current date for the reservation
+                    'reservation_price' => $room->room_price, // Also include the price
+                ], $room);
+            }
+
+            return $paymentIntent;
         } catch (\Exception $e) {
-            // If session creation fails, revert room state
+            // If payment processing fails, revert room state
             $room->update(['state' => 'available']);
-            
-            Log::error('Stripe session creation failed: ' . $e->getMessage());
-            throw new \Exception('Payment session creation failed: ' . $e->getMessage());
+
+            Log::error('Stripe payment processing failed: ' . $e->getMessage(), [
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+            throw $e;
         }
     }
 
     /**
-     * Create a reservation after successful payment
+     * Create a reservation record
      *
      * @param  array  $data
      * @param  Room   $room
@@ -76,26 +103,19 @@ class ReservationService
     public function createReservation(array $data, Room $room)
     {
         return DB::transaction(function () use ($data, $room) {
-            // Verify room state
-            if ($room->state !== 'being_reserved') {
-                throw new \Exception('Room is no longer available for reservation');
-            }
-
-            // Create the reservation record
+            // Create the reservation
             $reservation = Reservation::create([
-                'reservation_date' => $data['reservation_date'],
-                'reservation_price' => $room->room_price, // Use room price from room
-                'client_id' => Auth::id(),
-                'room_number' => $room->number,
-                'payment_status' => 'paid',
-                'payment_id' => $data['payment_id'] ?? null,
-                'accompany_number' => $data['accompany_number']
+                'payment_id' => $data['payment_id'],
+                'accompany_number' => $data['accompany_number'],
+                'client_id' => $data['client_id'],
+                'room_number' => $data['room_number'],
+                'reservation_date' => $data['reservation_date'] ?? now(), // Use provided date or current date
+                'reservation_price' => $data['reservation_price'] ?? $room->room_price, // Use provided price or room price
+                'payment_status' => 'completed', // Add payment status
             ]);
 
-            // Update room state to occupied
-            $room->update([
-                'state' => 'occupied'
-            ]);
+            // Update room status to reserved
+            $room->update(['state' => 'occupied']);
 
             return $reservation;
         });
@@ -107,10 +127,4 @@ class ReservationService
      * @param  Room  $room
      * @return void
      */
-    public function handlePaymentCancellation(Room $room)
-    {
-        if ($room->state === 'being_reserved') {
-            $room->update(['state' => 'available']);
-        }
-    }
 }

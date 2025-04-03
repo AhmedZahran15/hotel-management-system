@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import PublicFooter from '@/components/Public/PublicFooter.vue';
 import PublicHeader from '@/components/Public/PublicHeader.vue';
+import { Toaster } from '@/components/ui/toast';
 import { Head } from '@inertiajs/vue3';
 
 interface Props {
@@ -24,4 +25,5 @@ const props = withDefaults(defineProps<Props>(), {
 
         <PublicFooter />
     </div>
+    <Toaster />
 </template>
