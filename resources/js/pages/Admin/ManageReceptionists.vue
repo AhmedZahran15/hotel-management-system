@@ -2,12 +2,13 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import ManageDataTable from '@/components/Shared/ManageDataTable.vue';
 import ManageModal from '@/components/Shared/ManageModal.vue';
+import Form from '@/components/Shared/Form.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, h, ref } from 'vue';
 import {formulateURL, extractSorting} from '@/utils/helpers';
+import * as z from 'zod';
+
 //error ,success messages
 const successMessage = ref('');
 const errorMessage = ref('');
@@ -36,10 +37,8 @@ const isAdmin = user?.roles[0].includes('admin');
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
-const selectedReceptionistId = ref(null);
+const selectedReceptionist = ref(null);
 const isLoading = ref(false);
-const form = ref({ name: '', email: '', password: '', password_confirmation: '', national_id: '', avatar_image: null });
-
 const params = new URLSearchParams(window.location.search);
 
 const filters = ref([
@@ -70,7 +69,7 @@ const columns = [
         ? [
             {
                 accessorKey: 'creator',
-                header: 'Manager Creator',
+                header: 'Manager',
                 cell: (info) => {
                     const creator = info.getValue();
                     return creator && creator.name ? creator.name : 'Manager not found';
@@ -101,32 +100,32 @@ const columns = [
                     {
                         variant: 'destructive',
                         class: 'mx-1',
-                        onClick: () => openDeleteModal(info.row.original.id),
+                        onClick: () => openDeleteModal(info.row.original),
                         disabled: !(isAdmin || isManagerAndCreator),
                     },
                     () => 'Remove',
                 ),
                 info.row.original.banned_at
                     ? h(
-                          Button,
-                          {
-                              variant: 'default',
-                              class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
-                              onClick: () => handleUnban(info.row.original.id),
-                              disabled: !(isAdmin || isManagerAndCreator) || isLoading.value,
-                          },
-                          () => 'Unban',
-                      )
+                        Button,
+                        {
+                            variant: 'default',
+                            class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
+                            onClick: () => handleUnban(info.row.original.id),
+                            disabled: !(isAdmin || isManagerAndCreator) || isLoading.value,
+                        },
+                        () => 'Unban',
+                    )
                     : h(
-                          Button,
-                          {
-                              variant: 'default',
-                              class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
-                              onClick: () => handleBan(info.row.original.id),
-                              disabled: !(isAdmin || isManagerAndCreator) || isLoading.value,
-                          },
-                          () => 'Ban',
-                      ),
+                        Button,
+                        {
+                            variant: 'default',
+                            class: 'mx-1 bg-yellow-500 hover:bg-yellow-600 text-white',
+                            onClick: () => handleBan(info.row.original.id),
+                            disabled: !(isAdmin || isManagerAndCreator) || isLoading.value,
+                        },
+                        () => 'Ban',
+                    ),
             ];
         },
     },
@@ -151,70 +150,96 @@ const fetchReceptionists = () => {
     });
 };
 
-// Open Edit Modal
-const openEditModal = (receptionist) => {
-    form.value = {...receptionist,
-        national_id: receptionist.profile?.national_id,
-        avatar_image: null};
-        page.props.errors = {};
-    isEditModalOpen.value = true;
-};
 // Open Add Modal
 const openAddModal = () => {
-    form.value = { name: '', email: '', password: '', password_confirmation: '', national_id: '', avatar_image: null };
     page.props.errors = {};
     isAddModalOpen.value = true;
 };
+const formSchema =
+z.object({
+    name: z.string().min(3, 'Receptionist name is required').max(50, 'Too long').describe('Receptionist name'),
+    email: z.string().email('Receptionist email is required').max(100, 'Too long').describe('Receptionist email'),
+    national_id: z.string().regex(new RegExp(/^[0-9]{10,}$/)).describe('National ID'),
+    password: z.string().min(8, 'Password must be at least 8 characters long').describe('Password'),
+    password_confirmation: z.string().describe('Password Confirmation'),
+    avatar_image: z.instanceof(File).optional().describe('Avatar'),
+    })
+    .refine((data) => data.password === data.password_confirmation, {
+    message: 'Passwords do not match',
+    path: ['password_confirmation'],
+});
 
-
-// Open Delete Modal
-const openDeleteModal = (id) => {
-    selectedReceptionistId.value = id;
-    isDeleteModalOpen.value = true;
+const fieldConfig = {
+    password_confirmation: {
+        inputProps: { type: 'password' },
+    },
+    password: {
+        inputProps: { type: 'password' },
+    },
+    avatar_image: {
+        inputProps: { type: 'file', accept: 'image/jpeg, image/jpg' },
+        component: 'file',
+    },
 };
 
-// Handle Image Upload
-const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    delete errors.value.avatar_image;
-    if (file && !['image/jpeg', 'image/jpg'].includes(file.type)) {
-        errors.value.avatar_image = 'Only JPG and JPEG files are allowed.';
-        form.value.avatar_image = null;
-        return;
-    }
-    form.value.avatar_image = file;
+const onAddSubmit = (data: any) => {
+const formData = { ...data };
+  // add any additional form data processing here
+  router.post(route('receptionists.store'), formData, {
+    onSuccess: () => {
+      isAddModalOpen.value = false;
+    },
+  });
 };
 
-// Handle Add Receptionist
-const handleAdd = () => {
-    const formData = new FormData();
-    Object.keys(form.value).forEach((key) => {
-        if (form.value[key] !== null) formData.append(key, form.value[key]);
-    });
-    router.post(route('receptionists.store'), formData, {
-        onSuccess: () => {
-            isAddModalOpen.value = false;
-        },
-    });
+
+
+
+// Open Edit Modal
+const openEditModal = (receptionist:any) => {
+    selectedReceptionist.value = { ...receptionist };
+    selectedReceptionist.value.national_id = receptionist.profile.national_id;
+    delete selectedReceptionist.value.avatar_image;
+    page.props.errors = {};
+    isEditModalOpen.value = true;
 };
 
-// Handle Edit Receptionist
-const handleEdit = () => {
-    const formData = new FormData();
-    formData.append('_method', 'PATCH');
-    Object.keys(form.value).forEach((key) => {
-        if (form.value[key] !== null) formData.append(key, form.value[key]);
-    });
-    router.post(route('receptionists.update',form.value.id), formData, {
+const editFormSchema = z
+    .object({
+        name: z.string().min(3, 'Receptionist name is required').max(50, 'Too long').describe('Receptionist name'),
+        email: z.string().email('Receptionist email is required').max(100, 'Too long').describe('Receptionist email'),
+        national_id: z.string().regex(new RegExp(/^[0-9]{10,}$/)).describe('National ID'),
+        password: z.string().min(8, 'Password must be at least 8 characters long').optional().describe('Password'),
+        password_confirmation: z.string().optional().describe('Password Confirmation'),
+        avatar_image: z.instanceof(File).optional().describe('Avatar'),
+        })
+   .refine((data) => data.password === data.password_confirmation, {
+    message: 'Passwords do not match',
+    path: ['password_confirmation'],
+});
+const onEditSubmit = (data: any) => {
+    const formData = { ...data };
+    formData["_method"] = 'PUT';
+    router.post(route('receptionists.update', selectedReceptionist.value?.id), formData, {
+        preserveScroll: true,
+        preserveState: true,
         onSuccess: () => {
             isEditModalOpen.value = false;
         },
     });
 };
 
+
+// Open Delete Modal
+const openDeleteModal = (receptionist:any) => {
+    selectedReceptionist.value = receptionist;
+    isDeleteModalOpen.value = true;
+};
+
 // Confirm Delete
 const confirmDelete = () => {
-    router.delete(`/dashboard/receptionists/${selectedReceptionistId.value}`, {
+    if(!selectedReceptionist.value) return;
+    router.delete(route('receptionists.destroy', selectedReceptionist.value.id), {
         preserveState: true,
     });
     isDeleteModalOpen.value = false;
@@ -223,9 +248,7 @@ const confirmDelete = () => {
 // Handle Ban
 const handleBan = (id) => {
         isLoading.value = true;
-        router.post(
-            route('ban', id),
-            {},
+        router.post(route('ban', id),{},
             {
                 onSuccess: () => {
                     isLoading.value = false;
@@ -296,81 +319,35 @@ const handleUnban = (id) => {
                     <Button variant="default" @click="openAddModal">Add Receptionist</Button>
                 </template>
             </ManageDataTable>
-
             <!-- Add Modal -->
             <ManageModal v-if="isAddModalOpen" title="Add Receptionist" v-model:open="isAddModalOpen" :buttonsVisible="false" :errors="errors">
                 <template #description>
-                    <form class="flex flex-col gap-4 p-6" @submit.prevent="handleAdd">
-                        <div class="flex flex-col gap-1">
-                            <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="national_id">National ID</Label>
-                            <Input id="national_id" v-model="form.national_id" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="avatar">Avatar</Label>
-                            <Input id="avatar" type="file" @change="handleImageUpload" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="password">Password</Label>
-                            <Input id="password" v-model="form.password" type="password" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="password_confirmation">Confirm Password</Label>
-                            <Input id="password_confirmation" v-model="form.password_confirmation" type="password" />
-                        </div>
-
-                        <div class="flex justify-end gap-2">
-                            <Button variant="secondary" @click="isAddModalOpen = false">Close</Button>
-                            <Button type="submit">Add</Button>
-                        </div>
-                    </form>
+                    <Form
+                        :schema="formSchema"
+                        :submitText="'Add Receptionist'"
+                        :initialValues="{}"
+                        :fieldConfig="fieldConfig"
+                        @submit="onAddSubmit($event)"
+                        @cancel="isAddModalOpen = false "
+                    >
+                    </Form>
                 </template>
             </ManageModal>
 
             <!-- Edit Modal -->
-            <ManageModal v-if="isEditModalOpen" title="Edit Receptionist" v-model:open="isEditModalOpen" :buttonsVisible="false" :erorrs="errors">
+            <ManageModal v-if="isEditModalOpen" title="Edit Receptionist" v-model:open="isEditModalOpen" :buttonsVisible="false" :errors="errors">
                 <template #description>
-                    <form class="flex flex-col gap-4 p-6" @submit.prevent="handleEdit">
-                        <div class="flex flex-col gap-1">
-                            <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="national_id">National ID</Label>
-                            <Input id="national_id" v-model="form.national_id" />
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <Label for="avatar">Avatar</Label>
-                            <Input id="avatar" type="file" @change="handleImageUpload" />
-                        </div>
-
-                        <div class="flex justify-end gap-2">
-                            <Button variant="secondary" @click="isEditModalOpen = false">Close</Button>
-                            <Button type="submit">Update</Button>
-                        </div>
-                    </form>
+                    <Form
+                        :schema="editFormSchema"
+                        :submitText="'Update Receptionist'"
+                        :initialValues="selectedReceptionist"
+                        :fieldConfig="fieldConfig"
+                        @submit="onEditSubmit($event)"
+                        @cancel="isEditModalOpen = false "
+                    >
+                    </Form>
                 </template>
             </ManageModal>
-
             <!-- Delete Modal -->
             <ManageModal v-if="isDeleteModalOpen" title="Deleting Receptionist" v-model:open="isDeleteModalOpen" :buttonsVisible="false">
                 <template #description>

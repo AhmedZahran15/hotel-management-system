@@ -116,14 +116,14 @@ class ReceptionistController extends Controller
             'national_id' => $data['national_id'],
         ]);
 
-        return redirect()->route('receptionists.index')
+        return redirect()->back()
             ->with('success', 'Receptionist updated successfully.');
     }
 
     public function destroy(User $receptionist): RedirectResponse
     {
         $receptionist->delete();
-        return redirect()->route('receptionists.index')
+        return redirect()->back()
             ->with('success', 'Receptionist deleted successfully.');
     }
 }
