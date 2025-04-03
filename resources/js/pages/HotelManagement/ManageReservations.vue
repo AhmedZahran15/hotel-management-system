@@ -44,15 +44,13 @@ const columns = [
 const fetchReservations = () => {
     //filters.value.reservation_price = filters.value.reservation_price ? filters.value.reservation_price * 100 : null;
     const params = formulateURL(filters.value, sorting.value, pagination.value);
-    console.log(params.toString());
     router.get(
-        route('reservations.index'),Object.fromEntries(params.entries()),
+        route('reservations.index'),
+        Object.fromEntries(params.entries()),
         {
-            page: pagination.value.pageIndex + 1,
-            perPage: pagination.value.pageSize,
-        },
-        {
+            only: ['reservations'],
             preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 pagination.value = {
                     pageIndex: props.reservations.current_page - 1,
@@ -60,7 +58,7 @@ const fetchReservations = () => {
                     dataSize: props.reservations.total,
                 };
             },
-        },
+        }
     );
 };
 </script>
