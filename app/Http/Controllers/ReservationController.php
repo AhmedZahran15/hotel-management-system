@@ -34,6 +34,7 @@ class ReservationController extends Controller
 
         // Start the query builder
         $query = QueryBuilder::for(Reservation::class)
+            ->with('client')
             ->allowedIncludes(['room', 'client', 'client.approvedBy'])
             ->allowedSorts([
                 'id',
