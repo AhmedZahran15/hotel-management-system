@@ -32,10 +32,19 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        $user = Auth::user();
+        // Check if the user is banned
+        if ($user->isBanned()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            // Flash the error message
+            return to_route('login')
+                ->withErrors(['email' => 'Your account has been banned.']);
+        }
         // Apply the client approval check right after successful authentication
-        if (Auth::user()->user_type === 'client') {
-            $client = Auth::user()->profile;
-
+        if ($user->user_type === 'client') {
+            $client =$user->profile;
             if ($client && $client->approved_by === null) {
                 Auth::logout();
                 $request->session()->invalidate();
@@ -46,12 +55,11 @@ class AuthenticatedSessionController extends Controller
                     ->withErrors(['approval' => 'Your account is pending approval. You will be notified once your account is approved.']);
             }
         }
-        $user = Auth::user();
         $user->last_login_at = Carbon::now();
         $user->save();
         $request->session()->regenerate();
         // Use the route name directly instead of RouteServiceProvider::HOME
-        if(Auth::user()->user_type === 'client') {
+        if($user->user_type === 'client') {
             return redirect()->intended(default: route('home'));
         }
         return redirect()->intended(default: route('dashboard'));
