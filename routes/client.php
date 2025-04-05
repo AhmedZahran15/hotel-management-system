@@ -20,6 +20,6 @@ Route::middleware(['auth'])->prefix("dashboard")->group(function () {
         Route::patch('clients/{client}/approve', [ClientController::class, 'approve'])->name('clients.approve');
     });
 
-    Route::middleware(['verified', 'role:admin|manager'])->get('manager/clients/export', [ClientExportController::class, 'export'])
+    Route::middleware(['verified', 'role:admin|manager'])->get('clients/export', [ClientExportController::class, 'export'])
         ->name('manager.clients.export');
 });
