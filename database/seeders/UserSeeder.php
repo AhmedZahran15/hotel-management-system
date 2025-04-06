@@ -76,6 +76,8 @@ class UserSeeder extends Seeder
                     "gender"=> fake()->randomElement(["male","female"]),
                     "approved_by"=>fake()->randomElement([
                         null,
+                        User::role("admin")->inRandomOrder()->value("id"),
+                        User::role("manager")->inRandomOrder()->value("id"),
                         User::role("receptionist")->inRandomOrder()->value("id")
                     ]),
                     "user_id" =>$user->id,
