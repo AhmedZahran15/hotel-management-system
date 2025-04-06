@@ -255,10 +255,10 @@ class ClientController extends Controller
         if (Auth::user()->id == $id) {
             $selfdelete = true;
         }
-        $client = Client::with("user")->findOrFail($id);
-        $user = $client->user;
-        $client->forceDelete();
-        $user->forceDelete();
+        $client = Client::with(['user', 'phones'])->findOrFail($id);
+        $client->phones()->delete();
+        $client->delete();
+        $client->user->delete();
         //case the user deleted his own account
         if ($selfdelete) {
             Auth::logout();
