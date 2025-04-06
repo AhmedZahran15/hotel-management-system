@@ -3,8 +3,8 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import Form from '@/components/Shared/Form.vue';
 import ManageDataTable from '@/components/Shared/ManageDataTable.vue';
 import ManageModal from '@/components/Shared/ManageModal.vue';
+import { Table2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { extractSorting, formulateURL } from '@/utils/helpers';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { computed, h, ref } from 'vue';
@@ -292,6 +292,11 @@ const approveClient = (id) => {
                 "
             >
                 <template #table-action>
+                     <a :href="route('manager.clients.export')"  class="mx-4">
+                        <Button v-if="userRole === 'admin'||userRole === 'manager' " variant="default" >
+                            <Table2 class="inline me-2" />Export clients
+                        </Button>
+                    </a>
                     <Button variant="default" @click="isAddModalOpen = true">Add Client</Button>
                 </template>
             </ManageDataTable>
