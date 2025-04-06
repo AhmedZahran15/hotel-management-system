@@ -12,11 +12,18 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class PhoneFactory extends Factory
 {
     protected $model = Phone::class;
+    
     public function definition(): array
     {
+        static $clientIds = null;
+        
+        if ($clientIds === null) {
+            $clientIds = Client::pluck('id')->toArray();
+        }
+        
         return [
-            'client_id' => Client::inRandomOrder()->first()->id,
-            'phone_number'  => $this->faker->phoneNumber,
+            'client_id' => $this->faker->randomElement($clientIds),
+            'phone_number' => $this->faker->unique()->phoneNumber,
         ];
     }
 }
