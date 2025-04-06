@@ -21,14 +21,15 @@ class StatisticsController extends Controller
             'female' => $femaleCount,
         ]);
     }
-    public function revenueChart()
+    public function revenueChart(Request $request, $year = null)
     {
+        $year = $year ?? now()->year;
         $months = range(1, 12);
         $revenueData = [];
         $monthLabels = [];
         foreach ($months as $month) {
             $monthLabels[] = date('F', mktime(0, 0, 0, $month, 10));
-            $revenueData[] = Reservation::whereYear('reservation_date', now()->year)
+            $revenueData[] = Reservation::whereYear('reservation_date', $year)
                 ->whereMonth('reservation_date', $month)
                 ->sum('reservation_price');
         }
@@ -39,17 +40,22 @@ class StatisticsController extends Controller
     }
     public function countriesChart()
     {
-        $countries = Reservation::with('client')
-            ->get()
-            ->groupBy(fn($r) => $r->client->country ?? 'Unknown');
-        $countryLabels = array_keys($countries->toArray());
-        $countryData = array_map(fn($group) => count($group), $countries->toArray());
+        $reservations = Reservation::with('client.countryInfo')->get();
+
+        $grouped = $reservations->groupBy(function ($reservation) {
+            return $reservation->client->countryInfo->name ?? 'Unknown';
+        });
+
+        $countryLabels = $grouped->keys();
+        $countryData = $grouped->map->count()->values();
+
         return response()->json([
             'labels' => $countryLabels,
             'data' => $countryData,
         ]);
     }
-    public function topClientsChart()    
+
+    public function topClientsChart()
     {
         $topClients = Reservation::selectRaw('client_id, count(*) as reservations_count')
             ->groupBy('client_id')
@@ -64,7 +70,4 @@ class StatisticsController extends Controller
             'data' => $clientData,
         ]);
     }
-
-    
-
 }
