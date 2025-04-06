@@ -11,7 +11,6 @@ import { computed, defineProps, h, ref } from 'vue';
 import type { Room } from '@/types';
 import {formulateURL, extractSorting} from '@/utils/helpers';
 import * as z from 'zod'
-import { Input } from '@/components/ui/input';
 import Form from '@/components/Shared/Form.vue';
 
 // Define missing types

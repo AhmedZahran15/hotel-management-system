@@ -78,7 +78,7 @@ const toggleSort = (columnAccessorKey: string) => {
             <div class="flex flex-wrap justify-between items-center gap-4">
                 <div v-show="Object.keys(filters).length > 0" class="flex gap-4 flex-wrap">
                     <Button class="px-6 sm:px-16 whitespace-nowrap" @click="pagination.pageIndex = 0; emit('update:filters', filters)">Filter</Button>
-                    <Button class="px-6 sm:px-16 whitespace-nowrap" variant="destructive" @click="pagination.pageIndex = 0; Object.keys(filters).forEach((key) => (filters[key] = '')); emit('update:filters', filters)">Clear</Button>
+                    <Button class="px-6 sm:px-16 whitespace-nowrap" variant="destructive" @click="pagination.pageIndex = 0; filters.forEach((f) => f.value = ''); emit('update:filters', filters)">Clear</Button>
                 </div>
                 <div class="flex justify-end w-full sm:w-auto">
                     <slot name="table-action"></slot>
