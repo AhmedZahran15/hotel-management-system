@@ -73,14 +73,12 @@ class HandleInertiaRequests extends Middleware
         $roles = $user->roles->pluck('name')
             ->map(fn($role) => strtolower(str($role)->title()));
 
-        $avatar = $user->getAvatarUrl();
         $userData = (new UserResource($user))->resolve();
 
         return [
             ...$userData,
             'profile' => $formattedProfile,
             'roles' => $roles,
-            'avatar' => $avatar,
             'permissions' => $permissions,
         ];
     }
