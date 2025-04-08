@@ -42,7 +42,7 @@ const user = page.props.auth.user as User;
 const user_type = user.user_type;
 const errors = computed(() => page.props.errors);
 const avatarImage = ref<File | null>(null);
-const avatarImagePreview = ref<string | null>(user.avatar || null);
+const avatarImagePreview = ref<string | null>(user.avatar_image || null);
 
 // Define validation schema with zod - conditionally based on user type
 const validationSchema = computed(() => {
@@ -125,7 +125,6 @@ onMounted(() => {
         email: user.email || '',
         avatar_image: null,
     };
-    console.log(user);
     if (user_type === 'client' && user.profile) {
         formValues.gender = (user.profile?.gender as 'male' | 'female') || 'male';
         formValues.country = user.profile?.country?.id.toString() || '';
@@ -137,8 +136,6 @@ onMounted(() => {
     setValues(formValues);
 });
 
-// Remove console.log for production
-// console.log(user);
 
 // Handle file upload
 const handleFileUpload = (event: Event) => {

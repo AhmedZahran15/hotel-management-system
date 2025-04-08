@@ -117,7 +117,6 @@ const mountCardElement = () => {
         }
 
         if (cardMounted.value) {
-            console.log('Card already mounted, skipping');
             return;
         }
 
