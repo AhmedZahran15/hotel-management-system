@@ -37,7 +37,8 @@ class Room extends Model implements HasMedia
     {
         $this->addMediaCollection('room_images')
             ->singleFile() // Only keep one image per room
-            ->acceptsMimeTypes(['image/jpeg', 'image/jpg', 'image/png']);
+            ->acceptsMimeTypes(['image/jpeg', 'image/jpg', 'image/png'])
+            ->useDisk('s3');
     }
 
     /**
