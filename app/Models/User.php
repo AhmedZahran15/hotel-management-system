@@ -53,6 +53,7 @@ class User extends Authenticatable implements BannableInterface, HasMedia // add
         $this->addMediaCollection('avatar_image')
             ->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/jpg'])
+            ->useDisk('s3')
             ->useFallbackUrl(asset('default-avatar.jpg'));
     }
 
