@@ -25,19 +25,19 @@ import { Link } from '@inertiajs/vue3';
                         <Link href="/reservations/make">
                             <Button size="lg" class="font-medium">Book Now</Button>
                         </Link>
-                        <Button variant="secondary" size="lg" class=""> Learn More </Button>
+                        <Button variant="secondary" size="lg"> Learn More </Button>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Features section -->
-        <div class="bg-white py-16">
+        <div class="bg-white py-16 dark:bg-background">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="text-center">
-                    <h2 class="text-primary-600 text-base font-semibold uppercase tracking-wide">Features</h2>
-                    <p class="mt-1 text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight">Why Choose Our Hotel</p>
-                    <p class="mx-auto mt-5 max-w-xl text-xl text-gray-500">
+                    <h2 class="text-base font-semibold uppercase tracking-wide text-primary">Features</h2>
+                    <p class="mt-1 text-4xl font-extrabold text-gray-900 dark:text-foreground sm:text-5xl sm:tracking-tight">Why Choose Our Hotel</p>
+                    <p class="mx-auto mt-5 max-w-xl text-xl text-gray-500 dark:text-muted-foreground">
                         Experience the perfect blend of luxury, comfort, and exceptional service at our premium hotel.
                     </p>
                 </div>
@@ -45,12 +45,12 @@ import { Link } from '@inertiajs/vue3';
                 <div class="mt-12">
                     <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
                         <div class="pt-6">
-                            <div class="flow-root rounded-lg bg-gray-50 px-6 pb-8">
+                            <div class="flow-root rounded-lg bg-gray-50 px-6 pb-8 dark:bg-card">
                                 <div class="-mt-6">
                                     <div>
-                                        <span class="inline-flex items-center justify-center rounded-md bg-blue-500 p-3 shadow-lg">
+                                        <span class="inline-flex items-center justify-center rounded-md bg-primary p-3 shadow-lg">
                                             <svg
-                                                class="h-6 w-6 text-white"
+                                                class="h-6 w-6 text-white dark:text-background"
                                                 xmlns="http://www.w3.org/2000/svg"
                                                 fill="none"
                                                 viewBox="0 0 24 24"
@@ -65,8 +65,8 @@ import { Link } from '@inertiajs/vue3';
                                             </svg>
                                         </span>
                                     </div>
-                                    <h3 class="mt-8 text-lg font-medium text-gray-900">Luxury Accommodations</h3>
-                                    <p class="mt-5 text-base text-gray-500">
+                                    <h3 class="mt-8 text-lg font-medium text-gray-900 dark:text-foreground">Luxury Accommodations</h3>
+                                    <p class="mt-5 text-base text-gray-500 dark:text-muted-foreground">
                                         Our elegantly appointed rooms and suites offer the perfect blend of comfort, style, and modern amenities.
                                     </p>
                                 </div>
@@ -74,12 +74,12 @@ import { Link } from '@inertiajs/vue3';
                         </div>
 
                         <div class="pt-6">
-                            <div class="flow-root rounded-lg bg-gray-50 px-6 pb-8">
+                            <div class="flow-root rounded-lg bg-gray-50 px-6 pb-8 dark:bg-card">
                                 <div class="-mt-6">
                                     <div>
-                                        <span class="inline-flex items-center justify-center rounded-md bg-blue-500 p-3 shadow-lg">
+                                        <span class="inline-flex items-center justify-center rounded-md bg-primary p-3 shadow-lg">
                                             <svg
-                                                class="h-6 w-6 text-white"
+                                                class="h-6 w-6 text-white dark:text-background"
                                                 xmlns="http://www.w3.org/2000/svg"
                                                 fill="none"
                                                 viewBox="0 0 24 24"
@@ -94,8 +94,8 @@ import { Link } from '@inertiajs/vue3';
                                             </svg>
                                         </span>
                                     </div>
-                                    <h3 class="mt-8 text-lg font-medium text-gray-900">24/7 Service</h3>
-                                    <p class="mt-5 text-base text-gray-500">
+                                    <h3 class="mt-8 text-lg font-medium text-gray-900 dark:text-foreground">24/7 Service</h3>
+                                    <p class="mt-5 text-base text-gray-500 dark:text-muted-foreground">
                                         Our dedicated staff is available around the clock to ensure your stay is comfortable and hassle-free.
                                     </p>
                                 </div>
@@ -103,12 +103,12 @@ import { Link } from '@inertiajs/vue3';
                         </div>
 
                         <div class="pt-6">
-                            <div class="flow-root rounded-lg bg-gray-50 px-6 pb-8">
+                            <div class="flow-root rounded-lg bg-gray-50 px-6 pb-8 dark:bg-card">
                                 <div class="-mt-6">
                                     <div>
-                                        <span class="inline-flex items-center justify-center rounded-md bg-blue-500 p-3 shadow-lg">
+                                        <span class="inline-flex items-center justify-center rounded-md bg-primary p-3 shadow-lg">
                                             <svg
-                                                class="h-6 w-6 text-white"
+                                                class="h-6 w-6 text-white dark:text-background"
                                                 xmlns="http://www.w3.org/2000/svg"
                                                 fill="none"
                                                 viewBox="0 0 24 24"
@@ -123,8 +123,8 @@ import { Link } from '@inertiajs/vue3';
                                             </svg>
                                         </span>
                                     </div>
-                                    <h3 class="mt-8 text-lg font-medium text-gray-900">Fine Dining</h3>
-                                    <p class="mt-5 text-base text-gray-500">
+                                    <h3 class="mt-8 text-lg font-medium text-gray-900 dark:text-foreground">Fine Dining</h3>
+                                    <p class="mt-5 text-base text-gray-500 dark:text-muted-foreground">
                                         Enjoy exceptional cuisine at our on-site restaurants, offering a diverse range of culinary experiences.
                                     </p>
                                 </div>
@@ -136,21 +136,19 @@ import { Link } from '@inertiajs/vue3';
         </div>
 
         <!-- CTA Section -->
-        <div class="bg-gray-100">
+        <div class="bg-gray-100 dark:bg-secondary">
             <div class="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 sm:py-20 lg:px-8">
-                <h2 class="text-3xl font-extrabold text-neutral-800 sm:text-4xl">
+                <h2 class="text-3xl font-extrabold text-neutral-800 dark:text-foreground sm:text-4xl">
                     <span class="block">Ready for an unforgettable stay?</span>
                 </h2>
-                <p class="text-primary-200 mt-4 text-lg leading-6">Book your room now and experience our world-class hospitality.</p>
-                <Link href="/reservations/make">
-                    <Button
-                        size="lg"
-                        variant="secondary"
-                        class=""
-                    >
-                        Make a Reservation
-                    </Button>
-                </Link>
+                <p class="mt-4 text-lg leading-6 text-muted-foreground dark:text-gray-300">
+                    Book your room now and experience our world-class hospitality.
+                </p>
+                <div class="mt-8">
+                    <Link href="/reservations/make">
+                        <Button size="lg" variant="default" class="font-medium"> Make a Reservation </Button>
+                    </Link>
+                </div>
             </div>
         </div>
     </PublicLayout>
