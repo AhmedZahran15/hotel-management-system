@@ -46,38 +46,39 @@ html {
     }
 
     .dark {
-        --background: 0 0% 3.9%;
-        --foreground: 0 0% 98%;
-        --card: 0 0% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 0% 3.9%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 0 0% 9%;
-        --secondary: 0 0% 14.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 0 0% 6.9%;
-        --muted-foreground: 0 0% 63.9%;
-        --accent: 0 0% 14.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 84% 60%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 14.9%;
-        --input: 0 0% 14.9%;
-        --ring: 0 0% 83.1%;
-        --chart-1: 220 70% 50%;
-        --chart-2: 160 60% 45%;
-        --chart-3: 30 80% 55%;
-        --chart-4: 280 65% 60%;
-        --chart-5: 340 75% 55%;
-        --sidebar-background: 0 0% 7%;
-        --sidebar-foreground: 0 0% 95.9%;
-        --sidebar-primary: 360, 100%, 100%;
-        --sidebar-primary-foreground: 0 0% 100%;
-        --sidebar-accent: 0 0% 15.9%;
-        --sidebar-accent-foreground: 240 4.8% 95.9%;
-        --sidebar-border: 0 0% 15.9%;
-        --sidebar-ring: 217.2 91.2% 59.8%;
+        /* New modern dark mode palette with blue/purple hues */
+        --background: 224 40% 10%; /* Deep blue-gray instead of black */
+        --foreground: 210 20% 98%; /* Slightly cool-toned white */
+        --card: 224 40% 12%; /* Slightly lighter than background */
+        --card-foreground: 210 20% 98%;
+        --popover: 224 40% 12%;
+        --popover-foreground: 210 20% 98%;
+        --primary: 250 95% 76%; /* Vibrant purple */
+        --primary-foreground: 224 40% 10%;
+        --secondary: 224 30% 20%; /* Darker blue-gray */
+        --secondary-foreground: 210 20% 98%;
+        --muted: 224 20% 18%; /* Muted blue-gray */
+        --muted-foreground: 220 10% 70%;
+        --accent: 250 30% 30%; /* Subtle purple accent */
+        --accent-foreground: 210 20% 98%;
+        --destructive: 0 84% 60%; /* Keep destructive red */
+        --destructive-foreground: 210 20% 98%;
+        --border: 224 30% 25%; /* Border with more distinction */
+        --input: 224 30% 22%; /* Input background with more distinction */
+        --ring: 250 95% 76%; /* Match primary for rings */
+        --chart-1: 250 95% 76%; /* Purple */
+        --chart-2: 190 80% 50%; /* Teal */
+        --chart-3: 140 60% 50%; /* Green */
+        --chart-4: 320 70% 60%; /* Pink */
+        --chart-5: 35 90% 60%; /* Orange */
+        --sidebar-background: 225 40% 12%; /* Sidebar bg slightly different from main */
+        --sidebar-foreground: 210 20% 98%;
+        --sidebar-primary: 250 95% 76%; /* Match primary */
+        --sidebar-primary-foreground: 224 40% 10%;
+        --sidebar-accent: 250 30% 30%; /* Match accent */
+        --sidebar-accent-foreground: 210 20% 98%;
+        --sidebar-border: 224 30% 25%; /* Match border */
+        --sidebar-ring: 250 95% 76%; /* Match ring */
     }
 }
 
