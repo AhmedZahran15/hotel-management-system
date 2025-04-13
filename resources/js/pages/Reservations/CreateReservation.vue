@@ -67,9 +67,9 @@ const initializeStripe = async () => {
             style: {
                 base: {
                     fontSize: '16px',
-                    color: '#32325d',
+                    color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#32325d',
                     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    '::placeholder': { color: '#aab7c4' },
+                    '::placeholder': { color: document.documentElement.classList.contains('dark') ? '#a1a1aa' : '#aab7c4' },
                 },
                 invalid: {
                     color: '#fa755a',
@@ -235,7 +235,6 @@ const submit = async () => {
     }
 };
 
-
 // Lifecycle hooks
 onMounted(() => {
     initializeStripe();
@@ -324,8 +323,8 @@ const navItems = [
                             </div>
                         </div>
 
-                        <div v-if="cardErrors" class="mt-1 text-sm text-red-500">{{ cardErrors }}</div>
-                        <p class="text-xs text-gray-500">Enter your card details above. This form is secure and encrypted.</p>
+                        <div v-if="cardErrors" class="mt-1 text-sm text-red-500 dark:text-red-400">{{ cardErrors }}</div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Enter your card details above. This form is secure and encrypted.</p>
                     </div>
 
                     <!-- Status indicator - simplified -->
@@ -382,13 +381,13 @@ const navItems = [
 }
 
 :deep(.stripe-element-focus) {
-    border-color: #80bdff;
+    border-color: var(--focus-border-color, #80bdff);
     outline: 0;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    box-shadow: 0 0 0 0.2rem var(--focus-shadow-color, rgba(0, 123, 255, 0.25));
 }
 
 :deep(.stripe-element-invalid) {
-    border-color: #dc3545;
+    border-color: var(--error-color, #dc3545);
 }
 
 /* Ensure iframe has proper display */
@@ -397,5 +396,18 @@ const navItems = [
     opacity: 1 !important;
     height: 24px !important;
     width: 100% !important;
+}
+
+/* Define CSS variables for theme support */
+:root {
+    --focus-border-color: #80bdff;
+    --focus-shadow-color: rgba(0, 123, 255, 0.25);
+    --error-color: #dc3545;
+}
+
+:root.dark {
+    --focus-border-color: #2563eb;
+    --focus-shadow-color: rgba(37, 99, 235, 0.25);
+    --error-color: #ef4444;
 }
 </style>
