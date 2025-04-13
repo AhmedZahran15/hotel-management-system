@@ -19,6 +19,10 @@ Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
 
+Route::get('/about', function () {
+    return Inertia::render('About');
+})->name('about');
+
 // Include Additional Route Files
 require __DIR__ . '/client.php';
 require __DIR__ . '/settings.php';
