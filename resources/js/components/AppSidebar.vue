@@ -5,17 +5,11 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, CableCar, Calendar, CalendarCheck, CircleUser, Folder, LayoutGrid, School, UserRoundPlus, Users } from 'lucide-vue-next';
+import { BookOpen, CableCar, Calendar, CalendarCheck, CircleUser, Folder, School, UserRoundPlus, Users } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const page = usePage();
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutGrid,
-    },
-];
+const mainNavItems: NavItem[] = [];
 
 // Common menu items definitions
 const manageFloorsItem = {
@@ -45,6 +39,7 @@ const manageClientsItem = {
 // Add items based on user role
 if (page.props.auth.user.roles.includes('admin')) {
     mainNavItems.push(
+
         {
             title: 'Manage Managers',
             href: route('managers.index'),
@@ -73,7 +68,8 @@ if (page.props.auth.user.roles.includes('manager')) {
 
 if (page.props.auth.user.roles.includes('receptionist')) {
     mainNavItems.push(
-        {
+        
+    {
         title: 'Manage Clients',
          href: route('clients.index'),
         icon: UserRoundPlus,
