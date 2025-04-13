@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ThemeToggle from '@/components/ThemeToggle.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -22,7 +23,7 @@ const getInitials = (name: string) => {
 </script>
 
 <template>
-    <header class="sticky top-0 z-40 w-full border-b bg-white/90 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/95">
+    <header class="sticky top-0 z-40 w-full border-b bg-white/85 shadow-sm backdrop-blur dark:border-border dark:bg-background/85">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex h-16 items-center justify-between">
                 <!-- Logo and main nav -->
@@ -35,31 +36,45 @@ const getInitials = (name: string) => {
                     <nav class="hidden md:ml-6 md:flex md:space-x-8">
                         <Link
                             href="/"
-                            class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-800 hover:text-gray-600 dark:text-gray-200 dark:hover:text-white"
-                            :class="{ 'border-primary-500 border-b-2': page.url === '/' }"
+                            class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-800 hover:text-gray-600 dark:text-foreground dark:hover:text-primary"
+                            :class="{ 'border-b-2 border-primary': page.url === '/' }"
                         >
                             Home
                         </Link>
                         <Link
                             href="/reservations/make"
-                            class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-800 hover:text-gray-600 dark:text-gray-200 dark:hover:text-white"
-                            :class="{ 'border-primary-500 border-b-2': page.url.includes('/reservations/make') }"
+                            class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-800 hover:text-gray-600 dark:text-foreground dark:hover:text-primary"
+                            :class="{ 'border-b-2 border-primary': page.url.includes('/reservations/make') }"
                         >
                             Make a Reservation
+                        </Link>
+                        <Link
+                            href="/about"
+                            class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-800 hover:text-gray-600 dark:text-foreground dark:hover:text-primary"
+                            :class="{ 'border-b-2 border-primary': page.url.includes('/about') }"
+                        >
+                            About Us
                         </Link>
                     </nav>
                 </div>
 
                 <!-- User menu / Auth buttons -->
-                <div class="flex items-center">
+                <div class="flex items-center space-x-2">
+                    <!-- Theme Toggle -->
+                    <div class="mr-2">
+                        <ThemeToggle variant="ghost" />
+                    </div>
+
                     <template v-if="isAuthenticated">
                         <!-- User dropdown -->
                         <DropdownMenu>
                             <DropdownMenuTrigger as="div" class="flex cursor-pointer items-center">
-                                <span class="mr-2 hidden text-sm text-gray-800 dark:text-gray-200 md:block">{{ auth.user.name }}</span>
+                                <span class="mr-2 hidden text-sm text-gray-800 dark:text-foreground md:block">{{ auth.user.name }}</span>
                                 <Avatar class="h-8 w-8">
                                     <AvatarImage v-if="auth.user.avatar_image" :src="auth.user.avatar_image" :alt="auth.user.name" />
-                                    <AvatarFallback v-else>{{ getInitials(auth.user.name) }}</AvatarFallback>
+                                    <AvatarFallback v-else class="bg-secondary text-secondary-foreground dark:bg-primary/20 dark:text-foreground">{{
+                                        getInitials(auth.user.name)
+                                    }}</AvatarFallback>
                                 </Avatar>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" class="w-56">
@@ -94,7 +109,7 @@ const getInitials = (name: string) => {
                     <div class="ml-4 flex items-center md:hidden">
                         <button
                             @click="mobileMenuOpen = !mobileMenuOpen"
-                            class="inline-flex items-center justify-center rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                            class="inline-flex items-center justify-center rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-600 dark:text-muted-foreground dark:hover:bg-secondary dark:hover:text-foreground"
                         >
                             <span class="sr-only">Open main menu</span>
                             <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -120,8 +135,8 @@ const getInitials = (name: string) => {
                         class="block border-l-4 py-2 pl-3 pr-4 text-base font-medium"
                         :class="
                             page.url === '/'
-                                ? 'border-primary-500 text-primary-700 bg-primary-50 dark:bg-gray-700 dark:text-gray-100'
-                                : 'border-transparent text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700'
+                                ? 'text-primary-700 border-primary bg-primary/10 dark:bg-secondary dark:text-foreground'
+                                : 'border-transparent text-gray-700 hover:bg-gray-50 dark:text-muted-foreground dark:hover:bg-secondary/70'
                         "
                     >
                         Home
@@ -131,29 +146,40 @@ const getInitials = (name: string) => {
                         class="block border-l-4 py-2 pl-3 pr-4 text-base font-medium"
                         :class="
                             page.url.includes('/reservations/make')
-                                ? 'border-primary-500 text-primary-700 bg-primary-50 dark:bg-gray-700 dark:text-gray-100'
-                                : 'border-transparent text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700'
+                                ? 'text-primary-700 border-primary bg-primary/10 dark:bg-secondary dark:text-foreground'
+                                : 'border-transparent text-gray-700 hover:bg-gray-50 dark:text-muted-foreground dark:hover:bg-secondary/70'
                         "
                     >
                         Make a Reservation
+                    </Link>
+                    <Link
+                        href="/about"
+                        class="block border-l-4 py-2 pl-3 pr-4 text-base font-medium"
+                        :class="
+                            page.url.includes('/about')
+                                ? 'text-primary-700 border-primary bg-primary/10 dark:bg-secondary dark:text-foreground'
+                                : 'border-transparent text-gray-700 hover:bg-gray-50 dark:text-muted-foreground dark:hover:bg-secondary/70'
+                        "
+                    >
+                        About Us
                     </Link>
                     <template v-if="isAuthenticated">
                         <Link
                             v-if="auth.user.roles.includes('client')"
                             href="/dashboard/reservations"
-                            class="block border-l-4 border-transparent py-2 pl-3 pr-4 text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                            class="block border-l-4 border-transparent py-2 pl-3 pr-4 text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-muted-foreground dark:hover:bg-secondary/70"
                         >
                             My Reservations
                         </Link>
                         <Link
                             href="/dashboard"
-                            class="block border-l-4 border-transparent py-2 pl-3 pr-4 text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                            class="block border-l-4 border-transparent py-2 pl-3 pr-4 text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-muted-foreground dark:hover:bg-secondary/70"
                         >
                             Dashboard
                         </Link>
                         <Link
                             href="/settings/profile"
-                            class="block border-l-4 border-transparent py-2 pl-3 pr-4 text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                            class="block border-l-4 border-transparent py-2 pl-3 pr-4 text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-muted-foreground dark:hover:bg-secondary/70"
                         >
                             Profile Settings
                         </Link>
@@ -161,7 +187,7 @@ const getInitials = (name: string) => {
                             href="/logout"
                             method="post"
                             as="button"
-                            class="block w-full border-l-4 border-transparent py-2 pl-3 pr-4 text-left text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                            class="block w-full border-l-4 border-transparent py-2 pl-3 pr-4 text-left text-base font-medium text-gray-700 hover:bg-gray-50 dark:text-muted-foreground dark:hover:bg-secondary/70"
                         >
                             Log Out
                         </Link>
