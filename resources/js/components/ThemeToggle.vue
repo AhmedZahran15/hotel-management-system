@@ -14,13 +14,12 @@ interface Props {
 }
 
 // Props with default values
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
     variant: 'outline',
     size: 'icon',
     align: 'end',
     displayMode: 'icon',
 });
-
 // Use the appearance composable
 const { appearance, updateAppearance } = useAppearance();
 
