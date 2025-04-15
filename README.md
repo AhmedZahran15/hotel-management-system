@@ -53,7 +53,7 @@ A modern and comprehensive hotel management solution built with Laravel and Vue.
 ### Backend
 
 - **PHP 8.2** with **Laravel 12** framework
-- **MySQL/PostgreSQL** database
+- **MySQL** database
 - **Spatie Media Library** for media management
 - **Spatie Permissions** for role-based access
 - **Stripe** for payment processing
@@ -175,10 +175,6 @@ php artisan test
 ## Deployment
 
 The system can be deployed to any standard PHP hosting environment that meets the prerequisites. For optimal performance, consider using Laravel Forge, Laravel Vapor, or similar deployment services.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Acknowledgements
 
