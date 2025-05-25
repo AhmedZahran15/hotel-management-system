@@ -5,7 +5,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, CableCar, Calendar, CalendarCheck, CircleUser, Folder, School, UserRoundPlus, Users } from 'lucide-vue-next';
+import { BarChart3, BookOpen, CableCar, Calendar, CalendarCheck, CircleUser, Folder, School, UserRoundPlus, Users } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const page = usePage();
@@ -36,10 +36,16 @@ const manageClientsItem = {
     icon: UserRoundPlus,
 };
 
+const statisticsItem = {
+    title: 'Statistics',
+    href: route('statistics.index'),
+    icon: BarChart3,
+};
+
 // Add items based on user role
 if (page.props.auth.user.roles.includes('admin')) {
     mainNavItems.push(
-
+        statisticsItem,
         {
             title: 'Manage Managers',
             href: route('managers.index'),
@@ -63,16 +69,16 @@ if (page.props.auth.user.roles.includes('admin')) {
 }
 
 if (page.props.auth.user.roles.includes('manager')) {
-    mainNavItems.push(manageReceptionistsItem, manageClientsItem, manageFloorsItem, manageRoomsItem);
+    mainNavItems.push(statisticsItem, manageReceptionistsItem, manageClientsItem, manageFloorsItem, manageRoomsItem);
 }
 
 if (page.props.auth.user.roles.includes('receptionist')) {
     mainNavItems.push(
-        
-    {
-        title: 'Manage Clients',
-         href: route('clients.index'),
-        icon: UserRoundPlus,
+        statisticsItem,
+        {
+            title: 'Manage Clients',
+            href: route('clients.index'),
+            icon: UserRoundPlus,
         },
         {
             title: 'My Approved Clients',
@@ -89,7 +95,7 @@ if (page.props.auth.user.roles.includes('receptionist')) {
 
 if (page.props.auth.user.roles.includes('client')) {
     mainNavItems.push(
-     {
+        {
             title: 'My Reservations',
             href: route('reservations.index'),
             icon: Calendar,
