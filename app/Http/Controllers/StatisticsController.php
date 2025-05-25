@@ -12,10 +12,17 @@ class StatisticsController extends Controller
     {
         return Inertia::render('Charts/Statistics');
     }
-    public function maleFemaleChart()
+    public function maleFemaleChart(Request $request)
     {
-        $maleCount = Reservation::whereHas('client', fn($q) => $q->where('gender', 'male'))->count();
-        $femaleCount = Reservation::whereHas('client', fn($q) => $q->where('gender', 'female'))->count();
+        $year = $request->get('year', now()->year);
+
+        $maleCount = Reservation::whereYear('reservation_date', $year)
+            ->whereHas('client', fn($q) => $q->where('gender', 'male'))
+            ->count();
+        $femaleCount = Reservation::whereYear('reservation_date', $year)
+            ->whereHas('client', fn($q) => $q->where('gender', 'female'))
+            ->count();
+
         return response()->json([
             'male' => $maleCount,
             'female' => $femaleCount,
@@ -38,16 +45,20 @@ class StatisticsController extends Controller
             'data' => $revenueData,
         ]);
     }
-    public function countriesChart()
+    public function countriesChart(Request $request)
     {
-        $reservations = Reservation::with('client.countryInfo')->get();
+        $year = $request->get('year', now()->year);
+
+        $reservations = Reservation::whereYear('reservation_date', $year)
+            ->with('client.countryInfo')
+            ->get();
 
         $grouped = $reservations->groupBy(function ($reservation) {
             return $reservation->client->countryInfo->name ?? 'Unknown';
         });
 
-        $countryLabels = $grouped->keys();
-        $countryData = $grouped->map->count()->values();
+        $countryLabels = $grouped->keys()->toArray();
+        $countryData = $grouped->map(fn($group) => $group->count())->values()->toArray();
 
         return response()->json([
             'labels' => $countryLabels,
@@ -55,9 +66,12 @@ class StatisticsController extends Controller
         ]);
     }
 
-    public function topClientsChart()
+    public function topClientsChart(Request $request)
     {
+        $year = $request->get('year', now()->year);
+
         $topClients = Reservation::selectRaw('client_id, count(*) as reservations_count')
+            ->whereYear('reservation_date', $year)
             ->groupBy('client_id')
             ->orderByDesc('reservations_count')
             ->limit(10)
@@ -70,4 +84,6 @@ class StatisticsController extends Controller
             'data' => $clientData,
         ]);
     }
+
+
 }
