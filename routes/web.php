@@ -6,7 +6,7 @@ use Inertia\Inertia;
 
 Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () {
     Route::get('/', function () {
-        return Inertia::render('Dashboard');
+        return redirect()->route('statistics.index');
     })->name('dashboard');
     Route::middleware(['role:admin'])->group(function () {
         Route::resource('managers', ManagerController::class);
